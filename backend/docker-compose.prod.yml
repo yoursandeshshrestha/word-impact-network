@@ -1,0 +1,60 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.prod
+    image: win-backend-prod-app
+    ports:
+      - '${PORT}:${PORT}'
+    depends_on:
+      - postgres
+      - redis
+    env_file:
+      - .env.prod
+    restart: always
+    command: npm start
+
+  postgres:
+    image: postgres:15-alpine
+    ports:
+      - '${DB_PORT}:${DB_PORT}'
+    environment:
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=${DB_NAME}
+    volumes:
+      - postgres_prod_data:/var/lib/postgresql/data
+    restart: always
+    env_file:
+      - .env.prod
+
+  redis:
+    image: redis:alpine
+    ports:
+      - '${REDIS_PORT}:${REDIS_PORT}'
+    command: redis-server --requirepass ${REDIS_PASSWORD}
+    volumes:
+      - redis_prod_data:/data
+    restart: always
+    env_file:
+      - .env.prod
+
+  pgadmin:
+    image: dpage/pgadmin4
+    ports:
+      - '5051:80' # Different port than local to avoid conflicts
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=admin@admin.com
+      - PGADMIN_DEFAULT_PASSWORD=admin
+    volumes:
+      - pgadmin_prod_data:/var/lib/pgadmin
+    depends_on:
+      - postgres
+    restart: always
+
+volumes:
+  postgres_prod_data:
+  redis_prod_data:
+  pgadmin_prod_data:
