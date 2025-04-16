@@ -8,41 +8,17 @@ RUN npm install -g pnpm
 # Copy package files
 COPY package.json pnpm-lock.yaml ./
 
+# Copy Prisma schema
+COPY prisma ./prisma/
+
 # Install dependencies
 RUN pnpm install
+
+# Generate Prisma client in the correct location
+RUN npx prisma generate
 
 # Copy the rest of the application
 COPY . .
 
-# Generate Prisma client
-RUN npx prisma generate
-
-# Build the application
+# Build the application (we already generated Prisma client above)
 RUN pnpm run build
-
-# Production stage
-FROM node:20-alpine
-
-WORKDIR /app
-
-# Install pnpm
-RUN npm install -g pnpm
-
-# Copy package files
-COPY package.json pnpm-lock.yaml ./
-
-# Install only production dependencies
-RUN pnpm install --prod
-
-# Copy built application from builder stage
-COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/prisma ./prisma
-
-# Generate Prisma client
-RUN npx prisma generate
-
-# Expose the port the app runs on
-EXPOSE 8080
-
-# Command to run the application
-CMD ["npm", "start"]
