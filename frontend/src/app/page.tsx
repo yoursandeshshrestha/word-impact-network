@@ -94,7 +94,7 @@ const Index = () => {
         <Programs />
         <Testimonials testimonials={testimonials} />
         <CTA />
-      </main>
+      </main> 
       <Footer />
       <ScrollTop showScrollTop={showScrollTop} scrollToTop={scrollToTop} />
     </div>
