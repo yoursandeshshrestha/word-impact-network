@@ -12,13 +12,13 @@ interface FeaturesProps {
 
 const Features: React.FC<FeaturesProps> = ({ features }) => {
   return (
-    <section className="py-24 bg-gradient-to-b from-[#f0eee6] to-[#f8f7f2]">
+    <section className="py-24 bg-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="max-w-3xl mx-auto text-center mb-16">
-          <h2 className="text-4xl font-bold mb-6 text-gray-800">
+          <h2 className="text-3xl font-light mb-4 text-gray-900">
             Why Choose Us
           </h2>
-          <p className="text-lg text-gray-700">
+          <p className="text-lg text-gray-600">
             Experience world-class education with modern learning tools and
             expert guidance.
           </p>
@@ -27,20 +27,13 @@ const Features: React.FC<FeaturesProps> = ({ features }) => {
           {features.map((feature, index) => (
             <div
               key={index}
-              className="bg-white rounded-lg p-8 transition-all duration-300 hover:shadow-md hover:-translate-y-1 relative"
+              className="bg-gray-50 rounded-lg p-8 transition-all duration-300 hover:shadow-sm"
             >
-              <div className="mb-6 text-blue-600">
-                <div className="inline-flex items-center justify-center p-3 bg-blue-50 rounded-lg">
-                  {feature.icon}
-                </div>
-              </div>
-              <h3 className="text-xl font-bold mb-3 text-gray-800">
+              <div className="mb-5 text-gray-900">{feature.icon}</div>
+              <h3 className="text-lg font-medium mb-3 text-gray-900">
                 {feature.title}
               </h3>
-              <p className="text-gray-700">{feature.description}</p>
-
-              {/* Subtle accent that matches hero's blue accent and stats */}
-              <div className="absolute bottom-0 left-0 right-0 h-1 bg-blue-500 opacity-30 rounded"></div>
+              <p className="text-gray-600 text-base">{feature.description}</p>
             </div>
           ))}
         </div>
