@@ -1,15 +1,17 @@
 import express, { Application, Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
+import cookieParser from 'cookie-parser';
+
 import compression from 'compression';
 import config from './config';
 import { connectDB } from './config/database';
 import { connectRedis } from './config/redis';
-import routes from './routes';
 
 const app: Application = express();
 
 app.use(cors());
+app.use(cookieParser());
 app.use(helmet());
 app.use(compression());
 app.use(express.json());
@@ -41,7 +43,6 @@ app.get('/', (_req: Request, res: Response) => {
 });
 
 // API Routes
-app.use(config.apiPrefix, routes);
 
 // 404 handler
 app.use((req: Request, res: Response, _next: NextFunction) => {
