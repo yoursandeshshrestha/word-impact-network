@@ -4,7 +4,7 @@ import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
 
 import compression from 'compression';
-import config from './config';
+import config from './types';
 import { connectDB } from './config/database';
 import { connectRedis } from './config/redis';
 
@@ -37,7 +37,7 @@ initServices();
 app.get('/', (_req: Request, res: Response) => {
   res.status(200).json({
     status: 'OK',
-    message: 'Server is running test sandesh',
+    message: 'Server is running',
     documentation: `${config.apiPrefix}/docs`,
   });
 });
