@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Menu, X } from "lucide-react";
 import DropdownNavItem from "@/common/components/DropdownNavItem";
+import Link from "next/link";
 
 // Sample data for dropdowns
 const programsData = [
@@ -177,14 +178,17 @@ const Header = () => {
           {/* Right side buttons */}
           <div className="hidden md:flex items-center space-x-6">
             <a
-              href="#signin"
+              href="/sign-in"
               className="text-gray-600 hover:text-black transition-colors text-sm font-medium"
             >
               Sign In
             </a>
-            <button className="bg-black hover:bg-gray-800 text-white rounded-md px-5 py-2 text-sm font-medium transition-colors">
+            <Link
+              className="bg-black hover:bg-gray-800 text-white rounded-md px-5 py-2 text-sm font-medium transition-colors"
+              href="/submit-application"
+            >
               Apply Now
-            </button>
+            </Link>
           </div>
 
           {/* Mobile menu button */}
