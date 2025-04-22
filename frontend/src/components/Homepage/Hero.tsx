@@ -1,13 +1,12 @@
-import React, { useState } from "react";
+import React from "react";
 import { ArrowRight } from "lucide-react";
+import Image from "next/image";
 
 interface HeroProps {
   isVisible: boolean;
 }
 
 const Hero: React.FC<HeroProps> = ({ isVisible }) => {
-  const [isImageLoaded, setIsImageLoaded] = useState(false);
-
   return (
     <section className="pt-32 pb-20 md:pt-40 md:pb-32 h-[90vh] flex justify-center items-center bg-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -47,11 +46,10 @@ const Hero: React.FC<HeroProps> = ({ isVisible }) => {
             }`}
           >
             <div className="relative z-10">
-              <img
+              <Image
                 src="/education-vector.svg"
                 alt="Education illustration"
                 className="w-full h-auto max-w-lg mx-auto"
-                onLoad={() => setIsImageLoaded(true)}
               />
             </div>
 

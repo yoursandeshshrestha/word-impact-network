@@ -1,6 +1,8 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import { ArrowLeft } from "lucide-react";
+import Link from "next/link";
+import Image from "next/image";
 
 const NotFound = () => {
   const [isVisible, setIsVisible] = useState(false);
@@ -29,17 +31,18 @@ const NotFound = () => {
               Oops! Page <span className="font-semibold">Not Found</span>
             </h1>
             <p className="text-lg md:text-xl text-gray-600 mb-10 max-w-xl">
-              The page you're looking for doesn't exist or has been moved. Let's
-              get you back on track to continue your learning journey.
+              The page you&apos;re looking for doesn&apos;t exist or has been
+              moved. Let&apos;s get you back on track to continue your learning
+              journey.
             </p>
             <div className="flex flex-col sm:flex-row gap-4">
-              <a
+              <Link
                 href="/"
                 className="bg-black hover:bg-gray-800 text-white px-8 py-3 rounded-md text-base font-medium flex items-center justify-center group transition-all"
               >
                 <ArrowLeft className="mr-2 h-5 w-5 group-hover:-translate-x-1 transition-transform" />
                 Return Home
-              </a>
+              </Link>
               <button className="border border-gray-300 text-gray-800 hover:border-gray-500 px-8 py-3 rounded-md text-base font-medium transition-all">
                 Contact Support
               </button>
@@ -54,7 +57,7 @@ const NotFound = () => {
             }`}
           >
             <div className="relative z-10 flex flex-col items-center">
-              <img
+              <Image
                 src="/page-not-found.svg"
                 alt="Page not found illustration"
                 className="w-full h-auto max-w-md mx-auto"

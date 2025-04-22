@@ -134,11 +134,11 @@ const Header = () => {
         <div className="flex items-center justify-between">
           {/* Logo */}
           <div className="flex-shrink-0">
-            <a href="/" className="flex items-center group">
+            <Link href="/" className="flex items-center group">
               <span className="text-xl font-medium text-gray-900">
                 EduCares
               </span>
-            </a>
+            </Link>
           </div>
 
           {/* Center nav */}
@@ -177,12 +177,12 @@ const Header = () => {
 
           {/* Right side buttons */}
           <div className="hidden md:flex items-center space-x-6">
-            <a
+            <Link
               href="/sign-in"
               className="text-gray-600 hover:text-black transition-colors text-sm font-medium"
             >
               Sign In
-            </a>
+            </Link>
             <Link
               className="bg-black hover:bg-gray-800 text-white rounded-md px-5 py-2 text-sm font-medium transition-colors"
               href="/submit-application"
@@ -224,7 +224,7 @@ const Header = () => {
                 className="block py-2 text-gray-600 hover:text-black text-sm"
                 onClick={() => setMobileMenuOpen(false)}
               >
-                Bachelor's Degree
+                Bachelor&apos;s Degree
               </a>
               <a
                 href="#certificate"

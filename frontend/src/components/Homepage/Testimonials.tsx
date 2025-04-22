@@ -1,5 +1,6 @@
 import React from "react";
 import { Quote, Star } from "lucide-react";
+import Image from "next/image";
 
 interface TestimonialItem {
   text: string;
@@ -41,7 +42,7 @@ const Testimonials: React.FC<TestimonialsProps> = ({ testimonials }) => {
               </div>
               <p className="text-gray-600 mb-8 italic">{testimonial.text}</p>
               <div className="flex items-center">
-                <img
+                <Image
                   src={testimonial.image || "/api/placeholder/40/40"}
                   alt={testimonial.author}
                   className="w-10 h-10 rounded-full mr-3"

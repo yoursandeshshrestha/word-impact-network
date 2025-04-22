@@ -61,7 +61,7 @@ const Programs = () => {
           <div className="bg-gray-50 rounded-lg p-8 transition-all duration-300 hover:shadow-sm">
             <Award className="h-8 w-8 mb-5 text-gray-900" />
             <h3 className="text-xl font-medium mb-3 text-gray-900">
-              Bachelor's Degree
+              Bachelor&apos;s Degree
             </h3>
             <p className="text-gray-600 mb-6">
               Comprehensive education with practical training and industry

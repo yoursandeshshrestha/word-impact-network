@@ -1,6 +1,6 @@
 "use client";
 import React, { useState } from "react";
-import { Calendar, Upload, Info } from "lucide-react";
+import { Upload, Info } from "lucide-react";
 
 interface ApplyPageProps {
   isVisible: boolean;
@@ -144,7 +144,7 @@ const ApplyPage: React.FC<ApplyPageProps> = ({ isVisible }) => {
                       className="w-full px-4 py-3 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent transition-all"
                       required
                     />
-                    </div>
+                  </div>
                 </div>
 
                 {/* Email Address */}
@@ -242,8 +242,8 @@ const ApplyPage: React.FC<ApplyPageProps> = ({ isVisible }) => {
                     <option value="">Select Degree</option>
                     <option value="certificate">Certificate Program</option>
                     <option value="diploma">Diploma</option>
-                    <option value="bachelors">Bachelor's Degree</option>
-                    <option value="masters">Master's Degree</option>
+                    <option value="bachelors">Bachelor&apos;s Degree</option>
+                    <option value="masters">Master&apos;s Degree</option>
                     <option value="doctorate">Doctorate</option>
                   </select>
                 </div>
