@@ -61,6 +61,8 @@ const NotFound = () => {
                 src="/page-not-found.svg"
                 alt="Page not found illustration"
                 className="w-full h-auto max-w-md mx-auto"
+                width={1000}
+                height={1000}
               />
             </div>
 

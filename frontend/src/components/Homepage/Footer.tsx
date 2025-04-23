@@ -8,7 +8,7 @@ const Footer = () => {
           <div>
             <div className="mb-4">
               <span className="text-lg font-medium text-gray-900">
-                EduCares
+                Word Impact Network
               </span>
             </div>
             <p className="text-gray-600 text-sm">
@@ -16,7 +16,7 @@ const Footer = () => {
             </p>
           </div>
           <div>
-            <h3 className="text-sm font-medium text-gray-900 mb-4">Programs</h3>
+            <h3 className="text-sm font-medium text-gray-900 mb-4">Courses</h3>
             <ul className="space-y-2">
               <li>
                 <a
@@ -71,14 +71,14 @@ const Footer = () => {
                   Careers
                 </a>
               </li>
-              <li>
+              {/* <li>
                 <a
                   href="#"
                   className="text-gray-600 hover:text-black transition-colors text-sm"
                 >
                   Blog
                 </a>
-              </li>
+              </li> */}
               <li>
                 <a
                   href="#"
@@ -108,14 +108,14 @@ const Footer = () => {
                   Terms
                 </a>
               </li>
-              <li>
-                <a
-                  href="#"
-                  className="text-gray-600 hover:text-black transition-colors text-sm"
-                >
-                  Accessibility
-                </a>
-              </li>
+                {/* <li>
+                  <a
+                    href="#"
+                    className="text-gray-600 hover:text-black transition-colors text-sm"
+                  >
+                    Accessibility
+                  </a>
+                </li> */}
             </ul>
           </div>
         </div>

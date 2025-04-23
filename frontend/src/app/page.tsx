@@ -31,21 +31,21 @@ const Index = () => {
   const testimonials = [
     {
       text: "The program has transformed my understanding of leadership and technology. The flexible online learning platform made it possible for me to study while continuing my work.",
-      author: "John Smith",
-      location: "New York",
+      author: "Sandesh Shrestha",
+      location: "Siliguri",
       image:
         "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&q=80&w=100&h=100",
     },
     {
       text: "The quality of education and mentorship I received here is unparalleled. The program equipped me with practical tools for effective work in our industry.",
-      author: "Sarah Chen",
-      location: "Singapore",
+      author: "Gaurav",
+      location: "Bagdora Chhetri",
       image:
         "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&q=80&w=100&h=100",
     },
     {
       text: "This academy provides exactly what modern professionals need - a perfect blend of theoretical education and practical training.",
-      author: "David Kumar",
+      author: "Irfan Ansari",
       location: "India",
       image:
         "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=100&h=100",
@@ -54,7 +54,7 @@ const Index = () => {
 
   const stats = [
     { number: "1000+", label: "Students Enrolled" },
-    { number: "50+", label: "Countries Reached" },
+    // { number: "50+", label: "Countries Reached" },
     { number: "95%", label: "Completion Rate" },
     { number: "100+", label: "Expert Mentors" },
   ];
@@ -94,7 +94,7 @@ const Index = () => {
         <Programs />
         <Testimonials testimonials={testimonials} />
         <CTA />
-      </main> 
+      </main>
       <Footer />
       <ScrollTop showScrollTop={showScrollTop} scrollToTop={scrollToTop} />
     </div>

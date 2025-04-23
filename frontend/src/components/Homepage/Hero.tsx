@@ -50,6 +50,8 @@ const Hero: React.FC<HeroProps> = ({ isVisible }) => {
                 src="/education-vector.svg"
                 alt="Education illustration"
                 className="w-full h-auto max-w-lg mx-auto"
+                width={1000}
+                height={1000}
               />
             </div>
 

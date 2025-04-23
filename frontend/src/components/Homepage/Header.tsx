@@ -136,7 +136,7 @@ const Header = () => {
           <div className="flex-shrink-0">
             <Link href="/" className="flex items-center group">
               <span className="text-xl font-medium text-gray-900">
-                EduCares
+                Word Impact Network
               </span>
             </Link>
           </div>
@@ -144,7 +144,7 @@ const Header = () => {
           {/* Center nav */}
           <nav className="hidden md:flex items-center justify-center space-x-8 flex-1">
             <div className="flex items-center justify-center space-x-8">
-              <DropdownNavItem
+              {/* <DropdownNavItem
                 label="Programs"
                 columns={programsData}
                 isOpen={activeDropdown === "programs"}
@@ -171,7 +171,7 @@ const Header = () => {
                 isOpen={activeDropdown === "contact"}
                 onOpen={() => handleOpenDropdown("contact")}
                 onClose={handleCloseDropdown}
-              />
+              /> */}
             </div>
           </nav>
 
