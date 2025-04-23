@@ -3,6 +3,7 @@ import { ZodError } from 'zod';
 import { applicationSchema, loginSchema } from '../validators/user.validator';
 import { createApplication } from '../services/user.service';
 import { authenticate } from '../services/auth.service';
+import { sendApplicationSubmissionEmail } from '../services/email.service';
 
 /**
  * Handle user application submission
@@ -16,6 +17,9 @@ export const applyController = async (req: Request, res: Response): Promise<void
 
     // Create application
     const application = await createApplication(validatedData);
+
+    // Send application submission confirmation email
+    await sendApplicationSubmissionEmail(application);
 
     res.status(201).json({
       success: true,
