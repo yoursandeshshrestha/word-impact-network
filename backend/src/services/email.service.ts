@@ -1,5 +1,24 @@
 import nodemailer from 'nodemailer';
 import { Application, ApplicationStatus } from '@prisma/client';
+import dotenv from 'dotenv';
+
+// Load environment variables
+dotenv.config();
+
+// Validate required environment variables
+const requiredEnvVars = [
+  'SMTP_HOST',
+  'SMTP_PORT',
+  'SMTP_USER',
+  'SMTP_PASS',
+  'VERIFIED_SENDER_EMAIL',
+];
+const missingEnvVars = requiredEnvVars.filter((envVar) => !process.env[envVar]);
+
+if (missingEnvVars.length > 0) {
+  console.error('Missing required environment variables:', missingEnvVars);
+  throw new Error('Missing required email configuration environment variables');
+}
 
 // Create a transporter with SendGrid
 const transporter = nodemailer.createTransport({
