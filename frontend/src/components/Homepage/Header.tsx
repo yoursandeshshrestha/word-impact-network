@@ -1,92 +1,92 @@
 import React, { useState, useEffect } from "react";
 import { Menu, X } from "lucide-react";
-import DropdownNavItem from "@/common/components/DropdownNavItem";
+// import DropdownNavItem from "@/common/components/DropdownNavItem";
 import Link from "next/link";
 
 // Sample data for dropdowns
-const programsData = [
-  {
-    title: "Academic Programs",
-    items: [
-      { label: "Diploma in Technology", href: "#diploma" },
-      { label: "Bachelor's Degree", href: "#bachelors" },
-      { label: "Certificate Programs", href: "#certificate" },
-      { label: "Master's Programs", href: "#masters" },
-    ],
-  },
-  {
-    title: "Featured Subjects",
-    items: [
-      { label: "Data Science", href: "#data-science" },
-      { label: "Web Development", href: "#web-dev" },
-      { label: "Business Analytics", href: "#business" },
-      { label: "Digital Marketing", href: "#marketing" },
-    ],
-  },
-];
+// const programsData = [
+//   {
+//     title: "Academic Programs",
+//     items: [
+//       { label: "Diploma in Technology", href: "#diploma" },
+//       { label: "Bachelor's Degree", href: "#bachelors" },
+//       { label: "Certificate Programs", href: "#certificate" },
+//       { label: "Master's Programs", href: "#masters" },
+//     ],
+//   },
+//   {
+//     title: "Featured Subjects",
+//     items: [
+//       { label: "Data Science", href: "#data-science" },
+//       { label: "Web Development", href: "#web-dev" },
+//       { label: "Business Analytics", href: "#business" },
+//       { label: "Digital Marketing", href: "#marketing" },
+//     ],
+//   },
+// ];
 
-const aboutData = [
-  {
-    title: "About Us",
-    items: [
-      { label: "Our Story", href: "#story" },
-      { label: "Mission & Vision", href: "#mission" },
-      { label: "Leadership Team", href: "#leadership" },
-      { label: "Careers", href: "#careers" },
-    ],
-  },
-  {
-    title: "Community",
-    items: [
-      { label: "Student Success Stories", href: "#success" },
-      { label: "Partners & Sponsors", href: "#partners" },
-      { label: "Global Impact", href: "#impact" },
-      { label: "News & Events", href: "#news" },
-    ],
-  },
-];
+// const aboutData = [
+//   {
+//     title: "About Us",
+//     items: [
+//       { label: "Our Story", href: "#story" },
+//       { label: "Mission & Vision", href: "#mission" },
+//       { label: "Leadership Team", href: "#leadership" },
+//       { label: "Careers", href: "#careers" },
+//     ],
+//   },
+//   {
+//     title: "Community",
+//     items: [
+//       { label: "Student Success Stories", href: "#success" },
+//       { label: "Partners & Sponsors", href: "#partners" },
+//       { label: "Global Impact", href: "#impact" },
+//       { label: "News & Events", href: "#news" },
+//     ],
+//   },
+// ];
 
-const resourcesData = [
-  {
-    title: "Learning Resources",
-    items: [
-      { label: "Online Library", href: "#library" },
-      { label: "Research Papers", href: "#research" },
-      { label: "Video Tutorials", href: "#tutorials" },
-      { label: "Practice Exercises", href: "#exercises" },
-    ],
-  },
-  {
-    title: "Student Support",
-    items: [
-      { label: "Academic Advisors", href: "#advisors" },
-      { label: "Technical Support", href: "#support" },
-      { label: "Career Services", href: "#career" },
-      { label: "Financial Aid", href: "#financial" },
-    ],
-  },
-];
+// const resourcesData = [
+//   {
+//     title: "Learning Resources",
+//     items: [
+//       { label: "Online Library", href: "#library" },
+//       { label: "Research Papers", href: "#research" },
+//       { label: "Video Tutorials", href: "#tutorials" },
+//       { label: "Practice Exercises", href: "#exercises" },
+//     ],
+//   },
+//   {
+//     title: "Student Support",
+//     items: [
+//       { label: "Academic Advisors", href: "#advisors" },
+//       { label: "Technical Support", href: "#support" },
+//       { label: "Career Services", href: "#career" },
+//       { label: "Financial Aid", href: "#financial" },
+//     ],
+//   },
+// ];
 
-const contactData = [
-  {
-    title: "Get in Touch",
-    items: [
-      { label: "Contact Information", href: "#contact-info" },
-      { label: "Campus Locations", href: "#locations" },
-      { label: "Schedule a Visit", href: "#visit" },
-      { label: "Request Information", href: "#request" },
-    ],
-  },
-  {
-    title: "Admission Process",
-    items: [
-      { label: "Application Steps", href: "#application" },
-      { label: "Deadlines & Dates", href: "#deadlines" },
-      { label: "Required Documents", href: "#documents" },
-      { label: "International Students", href: "#international" },
-    ],
-  },
-];
+// const contactData = [
+//   {
+//     title: "Get in Touch",
+//     items: [
+//       { label: "Contact Information", href: "#contact-info" },
+//       { label: "Campus Locations", href: "#locations" },
+//       { label: "Schedule a Visit", href: "#visit" },
+//       { label: "Request Information", href: "#request" },
+//     ],
+//   },
+//   {
+//     title: "Admission Process",
+//     items: [
+//       { label: "Application Steps", href: "#application" },
+//       { label: "Deadlines & Dates", href: "#deadlines" },
+//       { label: "Required Documents", href: "#documents" },
+//       { label: "International Students", href: "#international" },
+//     ],
+//   },
+// ];
 
 const Header = () => {
   const [scrolled, setScrolled] = useState(false);
@@ -118,13 +118,13 @@ const Header = () => {
     };
   }, [scrolled, activeDropdown]);
 
-  const handleOpenDropdown = (dropdown: string) => {
-    setActiveDropdown(dropdown);
-  };
+  // const handleOpenDropdown = (dropdown: string) => {
+  //   setActiveDropdown(dropdown);
+  // };
 
-  const handleCloseDropdown = () => {
-    setActiveDropdown(null);
-  };
+  // const handleCloseDropdown = () => {
+  //   setActiveDropdown(null);
+  // };
 
   return (
     <header
