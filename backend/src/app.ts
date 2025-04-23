@@ -2,21 +2,28 @@ import express, { Application, Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
-
 import compression from 'compression';
 import config from './types';
 import { connectDB } from './config/database';
 import { connectRedis } from './config/redis';
+import routes from './routes';
 
 const app: Application = express();
 
-app.use(cors());
+// Configure middleware
+app.use(
+  cors({
+    origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
+    credentials: true,
+  }),
+);
 app.use(cookieParser());
 app.use(helmet());
 app.use(compression());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Initialize database and Redis connections
 const initServices = async () => {
   try {
     await connectDB();
@@ -42,7 +49,8 @@ app.get('/', (_req: Request, res: Response) => {
   });
 });
 
-// API Routes
+// Register API routes
+app.use(routes);
 
 // 404 handler
 app.use((req: Request, res: Response, _next: NextFunction) => {
