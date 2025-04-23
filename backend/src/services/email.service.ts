@@ -3,18 +3,17 @@ import { Application, ApplicationStatus } from '@prisma/client';
 
 // Create a transporter with SendGrid
 const transporter = nodemailer.createTransport({
-  host: 'smtp.sendgrid.net',
-  port: 587,
-  secure: false, // true for 465, false for other ports
+  host: process.env.SMTP_HOST,
+  port: Number(process.env.SMTP_PORT),
+  secure: process.env.SMTP_SECURE === 'true',
   auth: {
-    user: 'apikey', // SendGrid uses 'apikey' as the username
-    pass: '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',
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASS,
   },
 });
 
 // The verified email that you registered with SendGrid
-// You MUST change this to an email that you've verified with SendGrid
-const VERIFIED_SENDER = 'yoursandeshshrestha@gmail.com';
+const VERIFIED_SENDER = process.env.VERIFIED_SENDER_EMAIL;
 
 /**
  * Send application status notification email
@@ -113,4 +112,35 @@ export const generateTemporaryPassword = (): string => {
   }
 
   return password;
+};
+
+/**
+ * Send application submission confirmation email
+ * @param application Application data
+ */
+export const sendApplicationSubmissionEmail = async (application: Application): Promise<void> => {
+  const { email, fullName } = application;
+
+  const subject = 'Application Received - Thank You!';
+  const content = `
+    <h1>Thank you for your application, ${fullName}!</h1>
+    <p>We have received your application and will review it shortly.</p>
+    <p>You will be notified via email once we have made a decision regarding your application.</p>
+    <p>If you have any questions in the meantime, please don't hesitate to reach out to us.</p>
+    <p>Best regards,<br>The Learning Platform Team</p>
+  `;
+
+  try {
+    await transporter.sendMail({
+      from: VERIFIED_SENDER,
+      to: email,
+      subject,
+      html: content,
+    });
+
+    console.log(`Application submission confirmation email sent to ${email}`);
+  } catch (error) {
+    console.error('Error sending application submission email:', error);
+    // Don't throw the error to prevent blocking the application flow
+  }
 };
