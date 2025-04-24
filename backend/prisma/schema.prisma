@@ -3,19 +3,13 @@ generator client {
 }
 
 datasource db {
-  provider = "postgres"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
-enum UserRole {
-  ADMIN
-  STUDENT
-}
-
-enum ApplicationStatus {
-  PENDING
-  APPROVED
-  REJECTED
+enum Language {
+  ENGLISH
+  BENGALI
 }
 
 enum Gender {
@@ -24,182 +18,265 @@ enum Gender {
   OTHER
 }
 
-enum Degree {
-  BACHELORS
-  MASTERS
-  PHD
-  DIPLOMA
-  CERTIFICATE
+enum ApplicationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  PAYLATER
+}
+
+enum UserRole {
+  ADMIN
+  STUDENT
 }
 
 model User {
-  id                String            @id @default(uuid())
-  email             String            @unique
+  id                String           @id @default(uuid())
+  email             String           @unique
   password          String
   role              UserRole
+  language          Language         @default(ENGLISH)
+  student           Student?
+  admin             Admin?
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+  messages          Message[]
+  receivedMessages  Message[]        @relation("MessageRecipient")
+
+  @@map("users")
+}
+
+model Student {
+  id                    String            @id @default(uuid())
+  fullName              String
+  gender                Gender
+  dateOfBirth           DateTime
+  phoneNumber           String
+  country               String
+  academicQualification String
+  desiredDegree         String
+  certificateUrl        String?
+  recommendationLetterUrl String?
+  referredBy            String?
+  referrerContact       String?
+  agreesToTerms         Boolean           @default(false)
+  user                  User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId                String            @unique
+  applicationStatus     ApplicationStatus @default(PENDING)
+  paymentStatus         PaymentStatus     @default(PENDING)
+  enrolledCourseId      String?
+  enrolledCourse        Course?           @relation(fields: [enrolledCourseId], references: [id])
+  courseEnrollmentDate  DateTime?
+  chapterProgresses     ChapterProgress[]
+  examAttempts          ExamAttempt[]
+  yearCertifications    YearCertification[]
+  createdAt             DateTime          @default(now())
+  updatedAt             DateTime          @updatedAt
+
+  @@map("students")
+}
+
+model Admin {
+  id                String           @id @default(uuid())
   fullName          String
-  createdAt         DateTime          @default(now())
-  updatedAt         DateTime          @updatedAt
-  studentProfile    StudentProfile?
-  adminProfile      AdminProfile?
-  chatMessagesFrom  Message[]         @relation("MessageFrom")
-  chatMessagesTo    Message[]         @relation("MessageTo")
-  courseEnrollments CourseEnrollment[]
-  applications      Application[]
-}
+  user              User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId            String           @unique
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+  createdCourses    Course[]
+  createdChapters   Chapter[]
+  createdExams      Exam[]
 
-model StudentProfile {
-  id                     String   @id @default(uuid())
-  gender                 Gender
-  dateOfBirth            DateTime
-  phoneNumber            String
-  country                String
-  academicQualification  String
-  user                   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId                 String   @unique
-  chapterProgress        ChapterProgress[]
-  examResults            ExamResult[]
-}
-
-model AdminProfile {
-  id        String   @id @default(uuid())
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId    String   @unique
-}
-
-model Application {
-  id                     String            @id @default(uuid())
-  fullName               String
-  gender                 Gender
-  dateOfBirth            DateTime
-  email                  String            @unique
-  phoneNumber            String
-  country                String
-  academicQualification  String
-  desiredDegree          Degree
-  certificateUrl         String
-  recommendationLetterUrl String
-  wasReferred            Boolean
-  referrerName           String?
-  referrerContact        String?
-  status                 ApplicationStatus @default(PENDING)
-  createdAt              DateTime          @default(now())
-  updatedAt              DateTime          @updatedAt
-  user                   User?             @relation(fields: [userId], references: [id])
-  userId                 String?
+  @@map("admins")
 }
 
 model Course {
-  id               String            @id @default(uuid())
-  title            String
-  description      String
-  price            Float
-  isActive         Boolean           @default(true)
-  createdAt        DateTime          @default(now())
-  updatedAt        DateTime          @updatedAt
-  chapters         Chapter[]
-  enrollments      CourseEnrollment[]
-}
+  id                String           @id @default(uuid())
+  title             String
+  description       String           @db.Text
+  durationYears     Int
+  price             Decimal          @db.Decimal(10, 2)
+  coverImageUrl     String?
+  isActive          Boolean          @default(true)
+  createdBy         Admin            @relation(fields: [adminId], references: [id])
+  adminId           String
+  chapters          Chapter[]
+  students          Student[]
+  yearCertifications YearCertification[]
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
 
-model CourseEnrollment {
-  id          String    @id @default(uuid())
-  course      Course    @relation(fields: [courseId], references: [id])
-  courseId    String
-  student     User      @relation(fields: [studentId], references: [id])
-  studentId   String
-  enrolledAt  DateTime  @default(now())
-  
-  @@unique([courseId, studentId])
+  @@map("courses")
 }
 
 model Chapter {
-  id               String            @id @default(uuid())
-  title            String
-  description      String
-  orderIndex       Int
-  course           Course            @relation(fields: [courseId], references: [id], onDelete: Cascade)
-  courseId         String
-  videos           Video[]
-  exam             Exam?
-  chapterProgress  ChapterProgress[]
-  createdAt        DateTime          @default(now())
-  updatedAt        DateTime          @updatedAt
+  id                String           @id @default(uuid())
+  title             String
+  description       String           @db.Text
+  orderIndex        Int              // For ordering chapters
+  courseYear        Int              // Which year of the course this chapter belongs to
+  course            Course           @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  courseId          String
+  videos            Video[]
+  exam              Exam?
+  createdBy         Admin            @relation(fields: [adminId], references: [id])
+  adminId           String
+  chapterProgresses ChapterProgress[]
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
 
   @@unique([courseId, orderIndex])
+  @@map("chapters")
 }
 
 model Video {
-  id          String    @id @default(uuid())
-  title       String
-  description String
-  url         String    // URL to Backblaze
-  orderIndex  Int
-  duration    Int       // in seconds
-  chapter     Chapter   @relation(fields: [chapterId], references: [id], onDelete: Cascade)
-  chapterId   String
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  id                String           @id @default(uuid())
+  title             String
+  description       String?          @db.Text
+  backblazeUrl      String
+  duration          Int              // Duration in seconds
+  orderIndex        Int              // For ordering videos within a chapter
+  chapter           Chapter          @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+  chapterId         String
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
 
   @@unique([chapterId, orderIndex])
-}
-
-model ChapterProgress {
-  id            String    @id @default(uuid())
-  chapter       Chapter   @relation(fields: [chapterId], references: [id], onDelete: Cascade)
-  chapterId     String
-  student       StudentProfile @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  studentId     String
-  isCompleted   Boolean   @default(false)
-  lastAccessed  DateTime  @default(now())
-
-  @@unique([chapterId, studentId])
+  @@map("videos")
 }
 
 model Exam {
-  id          String      @id @default(uuid())
-  title       String
-  description String
-  passingScore Int
-  chapter     Chapter     @relation(fields: [chapterId], references: [id], onDelete: Cascade)
-  chapterId   String      @unique
-  questions   Question[]
-  examResults ExamResult[]
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
+  id                String           @id @default(uuid())
+  title             String
+  description       String?          @db.Text
+  passingScore      Int              // Minimum score required to pass
+  timeLimit         Int?             // Time limit in minutes (null for unlimited)
+  chapter           Chapter          @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+  chapterId         String           @unique
+  questions         Question[]
+  examAttempts      ExamAttempt[]
+  createdBy         Admin            @relation(fields: [adminId], references: [id])
+  adminId           String
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@map("exams")
 }
 
 model Question {
-  id            String   @id @default(uuid())
-  text          String
-  options       String[] // JSON array of options
-  correctOption Int      // Index of the correct option
-  exam          Exam     @relation(fields: [examId], references: [id], onDelete: Cascade)
-  examId        String
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id                String           @id @default(uuid())
+  text              String           @db.Text
+  questionType      String           // "multiple_choice", "true_false", "essay", etc.
+  options           Json?            // For multiple choice questions - array of options
+  correctAnswer     String?          // For objective questions
+  points            Int              @default(1)
+  exam              Exam             @relation(fields: [examId], references: [id], onDelete: Cascade)
+  examId            String
+  answers           Answer[]
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@map("questions")
 }
 
-model ExamResult {
-  id            String   @id @default(uuid())
-  exam          Exam     @relation(fields: [examId], references: [id], onDelete: Cascade)
-  examId        String
-  student       StudentProfile @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  studentId     String
-  score         Int
-  passed        Boolean
-  answers       Json     // Store student answers
-  attemptedAt   DateTime @default(now())
+model ExamAttempt {
+  id                String           @id @default(uuid())
+  student           Student          @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  studentId         String
+  exam              Exam             @relation(fields: [examId], references: [id], onDelete: Cascade)
+  examId            String
+  startTime         DateTime         @default(now())
+  endTime           DateTime?
+  score             Int?
+  isPassed          Boolean          @default(false)
+  answers           Answer[]
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
 
-  @@unique([examId, studentId, attemptedAt])
+  @@map("exam_attempts")
+}
+
+model Answer {
+  id                String           @id @default(uuid())
+  studentAnswer     String           @db.Text
+  isCorrect         Boolean?
+  points            Int?
+  question          Question         @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  questionId        String
+  examAttempt       ExamAttempt      @relation(fields: [examAttemptId], references: [id], onDelete: Cascade)
+  examAttemptId     String
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@map("answers")
+}
+
+model ChapterProgress {
+  id                String           @id @default(uuid())
+  student           Student          @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  studentId         String
+  chapter           Chapter          @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+  chapterId         String
+  isCompleted       Boolean          @default(false)
+  lastVideoWatched  Int?             // orderIndex of the last video watched
+  completedAt       DateTime?
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@unique([studentId, chapterId])
+  @@map("chapter_progresses")
+}
+
+model YearCertification {
+  id                String           @id @default(uuid())
+  student           Student          @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  studentId         String
+  course            Course           @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  courseId          String
+  year              Int
+  certificateUrl    String?
+  issuedAt          DateTime         @default(now())
+  
+  @@unique([studentId, courseId, year])
+  @@map("year_certifications")
 }
 
 model Message {
-  id          String   @id @default(uuid())
-  content     String
-  fromUser    User     @relation("MessageFrom", fields: [fromUserId], references: [id])
-  fromUserId  String
-  toUser      User     @relation("MessageTo", fields: [toUserId], references: [id])
-  toUserId    String
-  isRead      Boolean  @default(false)
-  createdAt   DateTime @default(now())
+  id                String           @id @default(uuid())
+  content           String           @db.Text
+  sender            User             @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  senderId          String
+  recipient         User             @relation("MessageRecipient", fields: [recipientId], references: [id], onDelete: Cascade)
+  recipientId       String
+  isRead            Boolean          @default(false)
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@map("messages")
+}
+
+model EmailLog {
+  id                String           @id @default(uuid())
+  to                String
+  subject           String
+  content           String           @db.Text
+  status            String           // "sent", "failed", etc.
+  errorMessage      String?          @db.Text
+  createdAt         DateTime         @default(now())
+
+  @@map("email_logs")
+}
+
+model SystemSettings {
+  id                String           @id @default(uuid())
+  key               String           @unique
+  value             String           @db.Text
+  updatedAt         DateTime         @updatedAt
+
+  @@map("system_settings")
 }
