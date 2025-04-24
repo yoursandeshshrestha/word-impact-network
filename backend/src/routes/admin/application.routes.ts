@@ -4,6 +4,7 @@ import {
   getAllApplicationsController,
   getApplicationController,
   updateApplicationStatusController,
+  deleteApplicationController,
 } from '../../controllers/admin/application.controller';
 
 const router: Router = Router();
@@ -17,5 +18,6 @@ router.patch(
   requireAdmin as any,
   updateApplicationStatusController,
 );
+router.delete('/:id', authenticate as any, requireAdmin as any, deleteApplicationController);
 
 export default router;
