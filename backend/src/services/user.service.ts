@@ -160,3 +160,14 @@ export const verifyPassword = async (
 ): Promise<boolean> => {
   return bcrypt.compare(plainPassword, hashedPassword);
 };
+
+/**
+ * Delete application by ID
+ * @param id Application ID
+ * @returns The deleted application
+ */
+export const deleteApplication = async (id: string): Promise<Application> => {
+  return prisma.application.delete({
+    where: { id },
+  });
+};
