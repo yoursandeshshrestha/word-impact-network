@@ -7,11 +7,6 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum Language {
-  ENGLISH
-  BENGALI
-}
-
 enum Gender {
   MALE
   FEMALE
@@ -30,6 +25,11 @@ enum PaymentStatus {
   PAYLATER
 }
 
+enum PaymentMethod {
+  RAZORPAY
+  PAYLATER
+}
+
 enum UserRole {
   ADMIN
   STUDENT
@@ -40,13 +40,13 @@ model User {
   email             String           @unique
   password          String
   role              UserRole
-  language          Language         @default(ENGLISH)
   student           Student?
   admin             Admin?
   createdAt         DateTime         @default(now())
   updatedAt         DateTime         @updatedAt
   messages          Message[]
   receivedMessages  Message[]        @relation("MessageRecipient")
+  notifications     Notification[]
 
   @@map("users")
 }
@@ -69,12 +69,13 @@ model Student {
   userId                String            @unique
   applicationStatus     ApplicationStatus @default(PENDING)
   paymentStatus         PaymentStatus     @default(PENDING)
-  enrolledCourseId      String?
-  enrolledCourse        Course?           @relation(fields: [enrolledCourseId], references: [id])
-  courseEnrollmentDate  DateTime?
+  courseEnrollments     CourseEnrollment[]
   chapterProgresses     ChapterProgress[]
   examAttempts          ExamAttempt[]
   yearCertifications    YearCertification[]
+  payments              Payment[]
+  application           Application?
+  videoProgresses       VideoProgress[]
   createdAt             DateTime          @default(now())
   updatedAt             DateTime          @updatedAt
 
@@ -91,8 +92,58 @@ model Admin {
   createdCourses    Course[]
   createdChapters   Chapter[]
   createdExams      Exam[]
+  reviewedApplications Application[]
 
   @@map("admins")
+}
+
+model Application {
+  id                String            @id @default(uuid())
+  student           Student           @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  studentId         String            @unique
+  status            ApplicationStatus @default(PENDING)
+  appliedAt         DateTime          @default(now())
+  reviewedBy        Admin?            @relation(fields: [adminId], references: [id])
+  adminId           String?
+  reviewedAt        DateTime?
+  rejectionReason   String?           @db.Text
+  payment           Payment?
+  
+  @@map("applications")
+}
+
+model Payment {
+  id                String           @id @default(uuid())
+  amount            Decimal          @db.Decimal(10, 2)
+  currency          String           @default("USD")
+  status            PaymentStatus    @default(PENDING)
+  paymentMethod     PaymentMethod
+  transactionId     String?
+  student           Student          @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  studentId         String
+  application       Application?     @relation(fields: [applicationId], references: [id])
+  applicationId     String?          @unique
+  paidAt            DateTime?
+  paymentDueDate    DateTime?
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@map("payments")
+}
+
+model CourseEnrollment {
+  id                String           @id @default(uuid())
+  student           Student          @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  studentId         String
+  course            Course           @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  courseId          String
+  enrollmentDate    DateTime         @default(now())
+  isActive          Boolean          @default(true)
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@unique([studentId, courseId])
+  @@map("course_enrollments")
 }
 
 model Course {
@@ -100,13 +151,12 @@ model Course {
   title             String
   description       String           @db.Text
   durationYears     Int
-  price             Decimal          @db.Decimal(10, 2)
   coverImageUrl     String?
   isActive          Boolean          @default(true)
   createdBy         Admin            @relation(fields: [adminId], references: [id])
   adminId           String
   chapters          Chapter[]
-  students          Student[]
+  enrollments       CourseEnrollment[]
   yearCertifications YearCertification[]
   createdAt         DateTime         @default(now())
   updatedAt         DateTime         @updatedAt
@@ -143,11 +193,25 @@ model Video {
   orderIndex        Int              // For ordering videos within a chapter
   chapter           Chapter          @relation(fields: [chapterId], references: [id], onDelete: Cascade)
   chapterId         String
+  watchedBy         VideoProgress[]
   createdAt         DateTime         @default(now())
   updatedAt         DateTime         @updatedAt
 
   @@unique([chapterId, orderIndex])
   @@map("videos")
+}
+
+model VideoProgress {
+  id                String           @id @default(uuid())
+  student           Student          @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  studentId         String
+  video             Video            @relation(fields: [videoId], references: [id], onDelete: Cascade)
+  videoId           String
+  watchedPercent    Int              @default(0) // 0-100
+  lastWatchedAt     DateTime         @default(now())
+  
+  @@unique([studentId, videoId])
+  @@map("video_progresses")
 }
 
 model Exam {
@@ -258,6 +322,18 @@ model Message {
   updatedAt         DateTime         @updatedAt
 
   @@map("messages")
+}
+
+model Notification {
+  id                String           @id @default(uuid())
+  title             String
+  content           String           @db.Text
+  isRead            Boolean          @default(false)
+  user              User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId            String
+  createdAt         DateTime         @default(now())
+
+  @@map("notifications")
 }
 
 model EmailLog {
