@@ -6,7 +6,6 @@ import compression from 'compression';
 import config from './types';
 import { connectDB } from './config/database';
 import { connectRedis } from './config/redis';
-import routes from './routes';
 
 const app: Application = express();
 
@@ -48,9 +47,6 @@ app.get('/', (_req: Request, res: Response) => {
     documentation: `${config.apiPrefix}/docs`,
   });
 });
-
-// Register API routes
-app.use(routes);
 
 // 404 handler
 app.use((req: Request, res: Response, _next: NextFunction) => {
