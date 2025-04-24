@@ -5,6 +5,7 @@ import {
   getApplicationById,
   updateApplicationStatus,
   createUserFromApplication,
+  deleteApplication,
 } from '../../services/user.service';
 import {
   sendApplicationStatusEmail,
@@ -127,7 +128,10 @@ export const updateApplicationStatusController = async (
     }
 
     // Update application status
-    const updatedApplication = await updateApplicationStatus(id, validatedData.status as ApplicationStatus);
+    const updatedApplication = await updateApplicationStatus(
+      id,
+      validatedData.status as ApplicationStatus,
+    );
 
     // Send email notification
     await sendApplicationStatusEmail(updatedApplication);
@@ -168,6 +172,42 @@ export const updateApplicationStatusController = async (
     res.status(500).json({
       success: false,
       message: 'Failed to update application status',
+    });
+  }
+};
+
+/**
+ * Delete application by ID
+ * @param req Express request
+ * @param res Express response
+ */
+export const deleteApplicationController = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+
+    // Check if application exists
+    const application = await getApplicationById(id);
+
+    if (!application) {
+      res.status(404).json({
+        success: false,
+        message: 'Application not found',
+      });
+      return;
+    }
+
+    // Delete the application
+    await deleteApplication(id);
+
+    res.status(200).json({
+      success: true,
+      message: 'Application deleted successfully',
+    });
+  } catch (error) {
+    console.error('Delete application error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to delete application',
     });
   }
 };
