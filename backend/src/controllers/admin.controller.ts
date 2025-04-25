@@ -1,15 +1,10 @@
-import { Request, Response, NextFunction } from 'express';
+import { Request, Response } from 'express';
 import { createAdmin, loginAdmin } from '../services/admin.service';
 import { generateToken } from '../utils/jwt';
 import { sendSuccess } from '../utils/responseHandler';
+import { catchAsync } from '../utils/catchAsync';
 
-// Simple wrapper to eliminate try/catch blocks
-const catchAsync = (fn: Function) => {
-  return (req: Request, res: Response, next: NextFunction) => {
-    Promise.resolve(fn(req, res, next)).catch(next);
-  };
-};
-
+// Register a new admin
 export const registerAdmin = catchAsync(async (req: Request, res: Response) => {
   const { email, password, fullName, adminCreationSecret } = req.body;
 
@@ -23,6 +18,7 @@ export const registerAdmin = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+// Login an admin
 export const loginAdminController = catchAsync(async (req: Request, res: Response) => {
   const { email, password } = req.body;
 
