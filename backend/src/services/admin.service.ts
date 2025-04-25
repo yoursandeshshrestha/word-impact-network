@@ -1,7 +1,8 @@
 import { PrismaClient, UserRole } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import { sendAdminWelcomeEmail } from './email.service';
-import { AppError } from '../utils/appError';
+import { AppError, ErrorTypes } from '../utils/appError';
+import { logger } from '../utils/logger';
 
 const prisma = new PrismaClient();
 
@@ -12,9 +13,12 @@ export async function createAdmin(
   adminCreationSecret: string,
 ) {
   try {
+    logger.info('Starting admin creation process', { email, fullName });
+
     // Verify admin creation secret
     if (adminCreationSecret !== process.env.ADMIN_CREATION_SECRET) {
-      throw new AppError('Invalid admin creation secret', 401);
+      logger.warn('Invalid admin creation secret attempt', { email });
+      throw new AppError('Invalid admin creation secret', 401, ErrorTypes.AUTHENTICATION);
     }
 
     // Check if admin already exists
@@ -23,13 +27,15 @@ export async function createAdmin(
     });
 
     if (existingUser) {
-      throw new AppError('Admin with this email already exists', 400);
+      logger.warn('Admin creation failed - email already exists', { email });
+      throw new AppError('Admin with this email already exists', 400, ErrorTypes.DUPLICATE);
     }
 
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
     // Create user and admin in a transaction
+    logger.info('Creating admin in database transaction', { email });
     const { user, admin } = await prisma.$transaction(async (tx) => {
       const user = await tx.user.create({
         data: {
@@ -51,13 +57,16 @@ export async function createAdmin(
       return { user, admin };
     });
 
-    // Send welcome email
-    try {
-      await sendAdminWelcomeEmail(email, fullName);
-    } catch (emailError) {
-      console.error('Failed to send welcome email:', emailError);
-      // Don't throw error here, just log it
-    }
+    logger.info('Admin created successfully', { adminId: admin.id, email });
+
+    // Send welcome email without blocking the admin creation process
+    sendAdminWelcomeEmail(email, fullName).catch((emailError) => {
+      logger.error('Failed to send admin welcome email', {
+        adminId: admin.id,
+        email,
+        error: emailError instanceof Error ? emailError.message : String(emailError),
+      });
+    });
 
     return {
       id: admin.id,
@@ -66,26 +75,35 @@ export async function createAdmin(
       role: user.role,
     };
   } catch (error) {
-    console.error('Error in createAdmin:', error);
+    logger.error('Error in createAdmin', {
+      email,
+      error: error instanceof Error ? error.message : String(error),
+    });
     throw error;
   }
 }
 
 export async function loginAdmin(email: string, password: string) {
   try {
+    logger.info('Admin login attempt', { email });
+
     const user = await prisma.user.findUnique({
       where: { email },
       include: { admin: true },
     });
 
     if (!user || user.role !== UserRole.ADMIN || !user.admin?.id) {
-      throw new AppError('Invalid credentials', 401);
+      logger.warn('Admin login failed - invalid credentials', { email });
+      throw new AppError('Invalid credentials', 401, ErrorTypes.AUTHENTICATION);
     }
 
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
-      throw new AppError('Invalid credentials', 401);
+      logger.warn('Admin login failed - invalid password', { email });
+      throw new AppError('Invalid credentials', 401, ErrorTypes.AUTHENTICATION);
     }
+
+    logger.info('Admin login successful', { adminId: user.admin.id, email });
 
     return {
       id: user.admin.id,
@@ -94,7 +112,10 @@ export async function loginAdmin(email: string, password: string) {
       role: user.role,
     };
   } catch (error) {
-    console.error('Error in loginAdmin:', error);
+    logger.error('Error in loginAdmin', {
+      email,
+      error: error instanceof Error ? error.message : String(error),
+    });
     throw error;
   }
 }
