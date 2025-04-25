@@ -9,12 +9,18 @@ services:
     ports:
       - '${PORT}:${PORT}'
     depends_on:
-      - postgres
-      - redis
+      postgres:
+        condition: service_healthy
     env_file:
       - .env.prod
     restart: always
-    command: npm start
+    command: >
+      sh -c "
+        echo 'Waiting for Postgres to be ready...' &&
+        sleep 10 &&
+        npx prisma migrate deploy &&
+        node dist/server.js
+      "
 
   postgres:
     image: postgres:15-alpine
@@ -29,6 +35,11 @@ services:
     restart: always
     env_file:
       - .env.prod
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres']
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   redis:
     image: redis:alpine
@@ -40,6 +51,11 @@ services:
     restart: always
     env_file:
       - .env.prod
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   pgadmin:
     image: dpage/pgadmin4
@@ -51,7 +67,8 @@ services:
     volumes:
       - pgadmin_prod_data:/var/lib/pgadmin
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
     restart: always
 
 volumes:
