@@ -1,3 +1,4 @@
+// src/app.ts
 import express, { Application, Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
@@ -6,67 +7,60 @@ import compression from 'compression';
 import config from './types';
 import { connectDB } from './config/database';
 import { connectRedis } from './config/redis';
+import routes from './routes';
+import corsOptions from './config/cors';
+import { errorHandler, notFoundHandler } from './middlewares/error.middleware';
+import { sendSuccess } from './utils/responseHandler';
 
 const app: Application = express();
 
 // Configure middleware
-app.use(
-  cors({
-    origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
-    credentials: true,
-  }),
-);
+app.use(cors(corsOptions));
 app.use(cookieParser());
 app.use(helmet());
 app.use(compression());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(
+  express.json({
+    limit: '10kb', // Limit request body size
+  }),
+);
+app.use(express.urlencoded({ extended: true, limit: '10kb' }));
 
 // Initialize database and Redis connections
 const initServices = async () => {
   try {
     await connectDB();
+    console.log('Database connected successfully');
   } catch (error) {
-    console.error('Database connection failed:', error);
+    console.error('❌ Database connection failed:', error);
   }
 
   try {
     await connectRedis();
+    console.log('Redis connected successfully');
   } catch (error) {
-    console.error('Redis connection failed:', error);
+    console.error('❌ Redis connection failed:', error);
   }
 };
 
 initServices();
 
+// API Routes
+app.use(`${config.apiPrefix}`, routes);
+
 // Root route for base URL
 app.get('/', (_req: Request, res: Response) => {
-  res.status(200).json({
-    status: 'OK',
-    message: 'Server is running',
+  sendSuccess(res, 200, 'Server is running', {
+    name: 'Word Impact Network API',
+    version: '1.0.0',
     documentation: `${config.apiPrefix}/docs`,
   });
 });
 
-// 404 handler
-app.use((req: Request, res: Response, _next: NextFunction) => {
-  res.status(404).json({
-    status: 'error',
-    message: `Route not found: ${req.originalUrl}`,
-    availableRoutes: {
-      root: '/',
-      documentation: `${config.apiPrefix}/docs`,
-    },
-  });
-});
+// 404 handler - Use the new notFoundHandler middleware
+app.use(notFoundHandler);
 
-// Error handling middleware
-app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
-  console.error(err.stack);
-  res.status(500).json({
-    status: 'error',
-    message: 'Internal Server Error',
-  });
-});
+// Global error handler - Use the new errorHandler middleware
+app.use(errorHandler);
 
 export default app;
