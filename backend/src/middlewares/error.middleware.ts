@@ -1,10 +1,10 @@
-// src/middlewares/error.middleware.ts
 import { Request, Response, NextFunction, ErrorRequestHandler } from 'express';
 import { AppError, ErrorTypes } from '../utils/appError';
 import {
   PrismaClientKnownRequestError,
   PrismaClientValidationError,
 } from '@prisma/client/runtime/library';
+import { logger } from '../utils/logger';
 
 // Middleware to handle 404 routes
 export const notFoundHandler = (req: Request, res: Response, next: NextFunction) => {
@@ -59,18 +59,24 @@ const handleJoiErrors = (err: any) => {
   return err;
 };
 
-// Global error handler middleware - with correct Express typing
+// Global error handler middleware
 export const errorHandler = (err: Error, req: Request, res: Response, next: NextFunction): void => {
-  console.error('ERROR 💥:', err);
-
   // Transform known error types into AppError format
   let error = err;
   error = handlePrismaErrors(error);
   error = handleJWTErrors(error);
   error = handleJoiErrors(error);
 
-  // If the error is now an AppError, handle it accordingly
+  // Log the error with our structured logger
   if (error instanceof AppError) {
+    logger.error(error.message, {
+      statusCode: error.statusCode,
+      path: req.path,
+      method: req.method,
+      errorType: error.errorType,
+      ...(error.errors && error.errors.length > 0 && { errors: error.errors }),
+    });
+
     // For operational errors, send the error message to the client
     const response: any = {
       status: error.status,
@@ -92,6 +98,12 @@ export const errorHandler = (err: Error, req: Request, res: Response, next: Next
     return;
   }
 
+  // For unknown errors, log with our structured logger
+  logger.error(`Unhandled error: ${error.message}`, {
+    path: req.path,
+    method: req.method,
+  });
+
   // For unknown errors, send a generic message in production
   const statusCode = 500;
   const response: any = {
@@ -99,17 +111,13 @@ export const errorHandler = (err: Error, req: Request, res: Response, next: Next
     message:
       process.env.NODE_ENV === 'production'
         ? 'Something went wrong'
-        : err.message || 'Something went wrong',
+        : error.message || 'Something went wrong',
   };
 
   // Include stack trace in development
   if (process.env.NODE_ENV === 'development') {
-    response.stack = err.stack;
+    response.stack = error.stack;
   }
-
-  // Log the error for monitoring purposes
-  console.error(`Unhandled error: ${err.message}`);
-  console.error(err.stack);
 
   res.status(statusCode).json(response);
 };
