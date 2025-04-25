@@ -1,6 +1,9 @@
+// src/middlewares/auth.middleware.ts
 import { Request, Response, NextFunction } from 'express';
 import { UserRole } from '@prisma/client';
 import { extractTokenFromHeader, verifyToken } from '../utils/jwt';
+import { AppError } from '../utils/appError';
+import { sendError } from '../utils/responseHandler';
 
 // Extend Express Request type to include user information
 declare global {
@@ -23,14 +26,14 @@ export const authenticate = (req: Request, res: Response, next: NextFunction): v
     const token = extractTokenFromHeader(req.headers.authorization);
 
     if (!token) {
-      res.status(401).json({ message: 'Authentication required' });
+      sendError(res, 401, 'Authentication required');
       return;
     }
 
     const decoded = verifyToken(token);
 
     if (!decoded) {
-      res.status(401).json({ message: 'Invalid or expired token' });
+      sendError(res, 401, 'Invalid or expired token');
       return;
     }
 
@@ -43,7 +46,7 @@ export const authenticate = (req: Request, res: Response, next: NextFunction): v
 
     next();
   } catch (error) {
-    res.status(401).json({ message: 'Authentication failed' });
+    sendError(res, 401, 'Authentication failed');
     return;
   }
 };
@@ -53,12 +56,12 @@ export const authenticate = (req: Request, res: Response, next: NextFunction): v
  */
 export const requireAdmin = (req: Request, res: Response, next: NextFunction): void => {
   if (!req.user) {
-    res.status(401).json({ message: 'Authentication required' });
+    sendError(res, 401, 'Authentication required');
     return;
   }
 
   if (req.user.role !== UserRole.ADMIN) {
-    res.status(403).json({ message: 'Admin access required' });
+    sendError(res, 403, 'Admin access required');
     return;
   }
 
@@ -70,16 +73,36 @@ export const requireAdmin = (req: Request, res: Response, next: NextFunction): v
  */
 export const requireStudent = (req: Request, res: Response, next: NextFunction): void => {
   if (!req.user) {
-    res.status(401).json({ message: 'Authentication required' });
+    sendError(res, 401, 'Authentication required');
     return;
   }
 
   if (req.user.role !== UserRole.STUDENT) {
-    res.status(403).json({ message: 'Student access required' });
+    sendError(res, 403, 'Student access required');
     return;
   }
 
   next();
+};
+
+/**
+ * Role-based access control middleware
+ * @param roles - Array of roles allowed to access the route
+ */
+export const restrictTo = (...roles: UserRole[]) => {
+  return (req: Request, res: Response, next: NextFunction): void => {
+    if (!req.user) {
+      sendError(res, 401, 'Authentication required');
+      return;
+    }
+
+    if (!roles.includes(req.user.role)) {
+      sendError(res, 403, 'You do not have permission to perform this action');
+      return;
+    }
+
+    next();
+  };
 };
 
 /**
@@ -94,32 +117,74 @@ export const requireOwnership = (
   return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       if (!req.user) {
-        res.status(401).json({ message: 'Authentication required' });
+        sendError(res, 401, 'Authentication required');
         return;
       }
 
       const resourceId = req.params[paramName];
 
       if (!resourceId) {
-        res.status(400).json({ message: `${paramName} parameter is required` });
+        sendError(res, 400, `${paramName} parameter is required`);
         return;
       }
 
       const resource = await findResource(resourceId);
 
       if (!resource) {
-        res.status(404).json({ message: 'Resource not found' });
+        sendError(res, 404, 'Resource not found');
         return;
       }
 
       if (resource.userId !== req.user.userId && req.user.role !== UserRole.ADMIN) {
-        res.status(403).json({ message: 'Access denied' });
+        sendError(res, 403, 'Access denied');
         return;
       }
 
       next();
     } catch (error) {
-      res.status(500).json({ message: 'Server error' });
+      sendError(res, 500, 'Server error');
+      return;
+    }
+  };
+};
+
+/**
+ * Middleware factory to check resource ownership without admin override
+ */
+export const requireStrictOwnership = (
+  paramName: string,
+  findResource: (id: string) => Promise<{ userId: string } | null>,
+) => {
+  return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      if (!req.user) {
+        sendError(res, 401, 'Authentication required');
+        return;
+      }
+
+      const resourceId = req.params[paramName];
+
+      if (!resourceId) {
+        sendError(res, 400, `${paramName} parameter is required`);
+        return;
+      }
+
+      const resource = await findResource(resourceId);
+
+      if (!resource) {
+        sendError(res, 404, 'Resource not found');
+        return;
+      }
+
+      // Strictly check ownership without admin override
+      if (resource.userId !== req.user.userId) {
+        sendError(res, 403, 'Access denied - you must be the owner of this resource');
+        return;
+      }
+
+      next();
+    } catch (error) {
+      sendError(res, 500, 'Server error');
       return;
     }
   };
