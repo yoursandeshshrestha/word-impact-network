@@ -1,4 +1,5 @@
 import express, { Application, Request, Response, NextFunction } from 'express';
+import dotenv from 'dotenv';
 import cors from 'cors';
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
@@ -10,8 +11,12 @@ import routes from './routes';
 import corsOptions from './config/cors';
 import { errorHandler, notFoundHandler } from './middlewares/error.middleware';
 import { sendSuccess } from './utils/responseHandler';
+import { log } from 'node:console';
 
 const app: Application = express();
+dotenv.config();
+
+log(process.env.BACKBLAZE_KEY_ID);
 
 // Configure middleware
 app.use(cors(corsOptions));
