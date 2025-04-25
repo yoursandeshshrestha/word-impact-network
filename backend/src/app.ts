@@ -1,4 +1,3 @@
-// src/app.ts
 import express, { Application, Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
@@ -21,7 +20,7 @@ app.use(helmet());
 app.use(compression());
 app.use(
   express.json({
-    limit: '10kb', // Limit request body size
+    limit: '10kb',
   }),
 );
 app.use(express.urlencoded({ extended: true, limit: '10kb' }));
@@ -57,10 +56,10 @@ app.get('/', (_req: Request, res: Response) => {
   });
 });
 
-// 404 handler - Use the new notFoundHandler middleware
+// 404 handler
 app.use(notFoundHandler);
 
-// Global error handler - Use the new errorHandler middleware
+// Global error handler
 app.use(errorHandler);
 
 export default app;
