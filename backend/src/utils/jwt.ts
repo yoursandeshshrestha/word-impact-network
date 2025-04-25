@@ -17,8 +17,12 @@ interface TokenPayload {
  * @returns JWT token string
  */
 export const generateToken = (payload: TokenPayload): string => {
-  return jwt.sign(payload, JWT_SECRET, {
-    expiresIn: JWT_EXPIRES_IN as jwt.SignOptions['expiresIn'],
+  if (!process.env.JWT_SECRET) {
+    throw new Error('JWT_SECRET is not defined');
+  }
+
+  return jwt.sign(payload, process.env.JWT_SECRET, {
+    expiresIn: '1d',
   });
 };
 
@@ -28,8 +32,12 @@ export const generateToken = (payload: TokenPayload): string => {
  * @returns Decoded token payload or null if invalid
  */
 export const verifyToken = (token: string): TokenPayload | null => {
+  if (!process.env.JWT_SECRET) {
+    throw new Error('JWT_SECRET is not defined');
+  }
+
   try {
-    return jwt.verify(token, JWT_SECRET) as TokenPayload;
+    return jwt.verify(token, process.env.JWT_SECRET) as TokenPayload;
   } catch (error) {
     return null;
   }
