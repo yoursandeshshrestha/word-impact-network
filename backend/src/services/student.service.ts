@@ -26,140 +26,63 @@ export async function registerStudent(
   agreesToTerms: boolean = false,
 ) {
   try {
-    // Convert email to lowercase
     const normalizedEmail = email.toLowerCase();
-    logger.info('Starting student registration process', { email: normalizedEmail, fullName });
+    logger.info('Application registration attempt', { email: normalizedEmail });
 
-    // Check if user already exists
-    const existingUser = await prisma.user.findUnique({
+    // Check if application already exists
+    const existingApplication = await prisma.application.findUnique({
       where: { email: normalizedEmail },
     });
 
-    if (existingUser) {
-      logger.warn('Student registration failed - email already exists', { email: normalizedEmail });
-      throw new AppError('User with this email already exists', 400, ErrorTypes.DUPLICATE);
+    if (existingApplication) {
+      logger.warn('Application registration failed - email already exists', {
+        email: normalizedEmail,
+      });
+      throw new AppError('Email already registered', 400, ErrorTypes.VALIDATION);
     }
 
-    // Upload files to Cloudinary if provided
+    // Upload files if provided
     let certificateUrl: string | undefined;
     let recommendationLetterUrl: string | undefined;
 
     if (certificateFile) {
-      try {
-        const randomId = Math.random().toString(36).substring(2, 8);
-        const fileExtension = certificateFile.originalname?.split('.').pop() || 'pdf';
-        const fileName = `${fullName.toLowerCase().replace(/\s+/g, '-')}-certificate-${randomId}.${fileExtension}`;
-        certificateUrl = await uploadToCloudinary(
-          certificateFile.buffer,
-          'win/students/certificates',
-          fileName,
-        );
-        logger.info('Certificate uploaded successfully', { email: normalizedEmail });
-      } catch (uploadError) {
-        logger.error('Failed to upload certificate', {
-          email: normalizedEmail,
-          error: uploadError instanceof Error ? uploadError.message : String(uploadError),
-        });
-      }
+      certificateUrl = await uploadToCloudinary(certificateFile.buffer);
     }
 
     if (recommendationLetterFile) {
-      try {
-        const randomId = Math.random().toString(36).substring(2, 8);
-        const fileExtension = recommendationLetterFile.originalname?.split('.').pop() || 'pdf';
-        const fileName = `${fullName.toLowerCase().replace(/\s+/g, '-')}-recommendation-letter-${randomId}.${fileExtension}`;
-        recommendationLetterUrl = await uploadToCloudinary(
-          recommendationLetterFile.buffer,
-          'win/students/recommendation_letters',
-          fileName,
-        );
-        logger.info('Recommendation letter uploaded successfully', { email: normalizedEmail });
-      } catch (uploadError) {
-        logger.error('Failed to upload recommendation letter', {
-          email: normalizedEmail,
-          error: uploadError instanceof Error ? uploadError.message : String(uploadError),
-        });
-      }
+      recommendationLetterUrl = await uploadToCloudinary(recommendationLetterFile.buffer);
     }
 
-    let user;
-    let student;
-    let application;
-
-    // Create user, student, and application in a transaction
-    try {
-      const result = await prisma.$transaction(async (prismaClient) => {
-        // Create user with a placeholder password (will be set after approval)
-        // Using a random string as a placeholder password
-        const tempPassword = Math.random().toString(36).slice(-10);
-        const newUser = await prismaClient.user.create({
-          data: {
-            email: normalizedEmail,
-            password: tempPassword, // This will be updated after admin approval
-            role: UserRole.STUDENT,
-          },
-        });
-
-        // Create student
-        const newStudent = await prismaClient.student.create({
-          data: {
-            fullName,
-            gender,
-            dateOfBirth,
-            phoneNumber,
-            country,
-            academicQualification,
-            desiredDegree,
-            certificateUrl,
-            recommendationLetterUrl,
-            referredBy,
-            referrerContact,
-            agreesToTerms,
-            user: {
-              connect: { id: newUser.id },
-            },
-          },
-        });
-
-        // Create application
-        const newApplication = await prismaClient.application.create({
-          data: {
-            student: {
-              connect: { id: newStudent.id },
-            },
-            status: ApplicationStatus.PENDING,
-          },
-        });
-
-        return {
-          user: newUser,
-          student: newStudent,
-          application: newApplication,
-        };
-      });
-
-      user = result.user;
-      student = result.student;
-      application = result.application;
-    } catch (txError) {
-      logger.error('Transaction failed during student registration', {
+    // Create application
+    const application = await prisma.application.create({
+      data: {
         email: normalizedEmail,
-        error: txError instanceof Error ? txError.message : String(txError),
-      });
-      throw new AppError('Failed to register student', 500, ErrorTypes.SERVER);
-    }
+        fullName,
+        gender,
+        dateOfBirth,
+        phoneNumber,
+        country,
+        academicQualification,
+        desiredDegree,
+        certificateUrl,
+        recommendationLetterUrl,
+        referredBy,
+        referrerContact,
+        agreesToTerms,
+        status: ApplicationStatus.PENDING,
+      },
+    });
 
-    logger.info('Student registered successfully', {
-      studentId: student.id,
+    logger.info('Application created successfully', {
       applicationId: application.id,
       email: normalizedEmail,
     });
 
-    // Send confirmation email without blocking the registration process
+    // Send confirmation email
     sendApplicationConfirmationEmail(normalizedEmail, fullName, application.id).catch(
       (emailError) => {
         logger.error('Failed to send application confirmation email', {
-          studentId: student.id,
+          applicationId: application.id,
           email: normalizedEmail,
           error: emailError instanceof Error ? emailError.message : String(emailError),
         });
@@ -167,10 +90,9 @@ export async function registerStudent(
     );
 
     return {
-      id: student.id,
-      email: user.email,
-      fullName: student.fullName,
-      applicationId: application.id,
+      id: application.id,
+      email: normalizedEmail,
+      fullName,
       applicationStatus: application.status,
     };
   } catch (error) {
@@ -237,7 +159,7 @@ export async function updateApplicationStatus(
     logger.info('Application status updated successfully', {
       applicationId,
       status,
-      studentId: updatedApplication.student.id,
+      studentId: updatedApplication.student?.id,
     });
 
     return updatedApplication;
