@@ -16,8 +16,6 @@ import { log } from 'node:console';
 const app: Application = express();
 dotenv.config();
 
-log(process.env.BACKBLAZE_KEY_ID);
-
 // Configure middleware
 app.use(cors(corsOptions));
 app.use(cookieParser());
