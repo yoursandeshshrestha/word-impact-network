@@ -1,4 +1,3 @@
-// src/validations/student.validation.ts
 import { Request, Response, NextFunction } from 'express';
 import Joi from 'joi';
 import { Gender } from '@prisma/client';
@@ -23,6 +22,12 @@ const studentRegistrationSchema = Joi.object({
   }),
 });
 
+// Login validation schema
+const loginSchema = Joi.object({
+  email: Joi.string().email().required(),
+  password: Joi.string().required(),
+});
+
 // Validation middleware for student registration
 export const validateStudentRegistration = (req: Request, res: Response, next: NextFunction) => {
   // Convert string 'true'/'false' to boolean
@@ -40,6 +45,23 @@ export const validateStudentRegistration = (req: Request, res: Response, next: N
   if (error) {
     const errorMessage = error.details.map((detail) => detail.message).join(', ');
     return next(new AppError(errorMessage, 400, ErrorTypes.VALIDATION));
+  }
+
+  req.body = value;
+  next();
+};
+
+// Validation middleware for student login
+export const validateStudentLogin = (req: Request, res: Response, next: NextFunction) => {
+  const { error, value } = loginSchema.validate(req.body, {
+    abortEarly: false,
+    stripUnknown: true,
+  });
+
+  if (error) {
+    const errorMessage = error.details.map((detail) => detail.message).join(', ');
+
+    return next(new AppError(errorMessage, 400));
   }
 
   req.body = value;
