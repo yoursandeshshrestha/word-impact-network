@@ -1,9 +1,12 @@
-// src/controllers/student.controller.ts
 import { Request, Response } from 'express';
-import { registerStudent as registerStudentService } from '../services/student.service';
+import {
+  loginStudent,
+  registerStudent as registerStudentService,
+} from '../services/student.service';
 import { sendSuccess } from '../utils/responseHandler';
 import { catchAsync } from '../utils/catchAsync';
 import { Gender } from '@prisma/client';
+import { generateToken } from '@/utils/jwt';
 
 // Register a new student
 export const registerStudent = catchAsync(async (req: Request, res: Response) => {
@@ -54,5 +57,30 @@ export const registerStudent = catchAsync(async (req: Request, res: Response) =>
     fullName: student.fullName,
     applicationId: student.applicationId,
     applicationStatus: student.applicationStatus,
+  });
+});
+
+// Login a student
+export const loginStudentController = catchAsync(async (req: Request, res: Response) => {
+  const { email, password } = req.body;
+
+  const student = await loginStudent(email, password);
+
+  // Generate JWT token
+  const token = generateToken({
+    userId: student.userId,
+    email: student.email,
+    role: student.role,
+  });
+
+  sendSuccess(res, 200, 'Login successful', {
+    student: {
+      id: student.id,
+      email: student.email,
+      fullName: student.fullName,
+      role: student.role,
+      applicationStatus: student.applicationStatus,
+    },
+    token,
   });
 });
