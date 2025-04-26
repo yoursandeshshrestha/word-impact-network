@@ -1,7 +1,10 @@
 import express, { Router } from 'express';
 import multer from 'multer';
-import { registerStudent } from '../controllers/student.controller';
-import { validateStudentRegistration } from '../validations/student.validation';
+import { loginStudentController, registerStudent } from '../controllers/student.controller';
+import {
+  validateStudentLogin,
+  validateStudentRegistration,
+} from '../validations/student.validation';
 
 const router: Router = express.Router();
 
@@ -23,5 +26,7 @@ router.post(
   validateStudentRegistration,
   registerStudent,
 );
+
+router.post('/login', validateStudentLogin, loginStudentController);
 
 export default router;
