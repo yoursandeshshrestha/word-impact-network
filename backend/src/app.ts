@@ -15,7 +15,7 @@ import { sendSuccess } from './utils/responseHandler';
 const app: Application = express();
 dotenv.config();
 
-// Configure middleware
+// middleware
 app.use(cors(corsOptions));
 app.use(cookieParser());
 app.use(helmet());
