@@ -39,3 +39,5 @@ export const loginAdminController = catchAsync(async (req: Request, res: Respons
     token,
   });
 });
+
+
