@@ -98,16 +98,29 @@ model Admin {
 }
 
 model Application {
-  id                String            @id @default(uuid())
-  student           Student           @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  studentId         String            @unique
-  status            ApplicationStatus @default(PENDING)
-  appliedAt         DateTime          @default(now())
-  reviewedBy        Admin?            @relation(fields: [adminId], references: [id])
-  adminId           String?
-  reviewedAt        DateTime?
-  rejectionReason   String?           @db.Text
-  payment           Payment?
+  id                    String            @id @default(uuid())
+  email                 String            @unique
+  fullName              String
+  gender                Gender
+  dateOfBirth           DateTime
+  phoneNumber           String
+  country               String
+  academicQualification String
+  desiredDegree         String
+  certificateUrl        String?
+  recommendationLetterUrl String?
+  referredBy            String?
+  referrerContact       String?
+  agreesToTerms         Boolean           @default(false)
+  status                ApplicationStatus @default(PENDING)
+  appliedAt             DateTime          @default(now())
+  reviewedBy            Admin?            @relation(fields: [adminId], references: [id])
+  adminId               String?
+  reviewedAt            DateTime?
+  rejectionReason       String?           @db.Text
+  student               Student?          @relation(fields: [studentId], references: [id])
+  studentId             String?           @unique
+  payment               Payment?
   
   @@map("applications")
 }
