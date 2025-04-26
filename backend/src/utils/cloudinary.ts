@@ -13,21 +13,27 @@ cloudinary.config({
  * Upload a file to Cloudinary
  * @param file The file buffer to upload
  * @param folder The folder to upload to
+ * @param fileName The filename to use for the uploaded file
  * @returns The Cloudinary upload response
  */
 export const uploadToCloudinary = async (
   file: Buffer,
   folder: string = 'win/documents',
+  fileName?: string,
 ): Promise<string> => {
   try {
-    logger.info('Uploading file to Cloudinary', { folder });
+    logger.info('Uploading file to Cloudinary', { folder, fileName });
 
     // Convert buffer to base64
     const base64File = `data:application/octet-stream;base64,${file.toString('base64')}`;
 
     const result = await cloudinary.uploader.upload(base64File, {
       folder,
-      resource_type: 'auto',
+      resource_type: 'raw',
+      access_mode: 'public',
+      overwrite: true,
+      public_id: fileName ? `${folder}/${fileName}` : undefined,
+      type: 'upload',
     });
 
     logger.info('File uploaded successfully to Cloudinary', {
