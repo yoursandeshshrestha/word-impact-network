@@ -11,7 +11,6 @@ import routes from './routes';
 import corsOptions from './config/cors';
 import { errorHandler, notFoundHandler } from './middlewares/error.middleware';
 import { sendSuccess } from './utils/responseHandler';
-import { log } from 'node:console';
 
 const app: Application = express();
 dotenv.config();
