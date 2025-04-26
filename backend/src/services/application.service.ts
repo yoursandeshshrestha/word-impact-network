@@ -1,5 +1,5 @@
 // src/services/application.service.ts
-import { PrismaClient, ApplicationStatus } from '@prisma/client';
+import { PrismaClient, ApplicationStatus, UserRole } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import { AppError, ErrorTypes } from '../utils/appError';
 import { logger } from '../utils/logger';
@@ -62,26 +62,26 @@ export async function getAllApplications(
     const totalCount = await prisma.application.count({ where });
 
     const formattedApplications = applications.map((app) => ({
-      applicationId: app.id, // Rename 'id' to 'applicationId' for clarity
+      applicationId: app.id,
+      email: app.email,
+      fullName: app.fullName,
+      gender: app.gender,
+      dateOfBirth: app.dateOfBirth,
+      phoneNumber: app.phoneNumber,
+      country: app.country,
+      academicQualification: app.academicQualification,
+      desiredDegree: app.desiredDegree,
+      certificateUrl: app.certificateUrl,
+      recommendationLetterUrl: app.recommendationLetterUrl,
+      referredBy: app.referredBy,
+      referrerContact: app.referrerContact,
+      agreesToTerms: app.agreesToTerms,
       status: app.status,
       appliedAt: app.appliedAt,
       reviewedAt: app.reviewedAt,
       rejectionReason: app.rejectionReason,
       studentId: app.studentId,
       adminId: app.adminId,
-      student: {
-        fullName: app.student.fullName,
-        phoneNumber: app.student.phoneNumber,
-        country: app.student.country,
-        academicQualification: app.student.academicQualification,
-        desiredDegree: app.student.desiredDegree,
-        certificateUrl: app.student.certificateUrl,
-        recommendationLetterUrl: app.student.recommendationLetterUrl,
-        applicationStatus: app.student.applicationStatus,
-        user: {
-          email: app.student.user.email,
-        },
-      },
       reviewedBy: app.reviewedBy,
     }));
 
@@ -189,11 +189,8 @@ export async function updateApplicationStatus(
     const application = await prisma.application.findUnique({
       where: { id: applicationId },
       include: {
-        student: {
-          include: {
-            user: true,
-          },
-        },
+        student: true,
+        reviewedBy: true,
       },
     });
 
@@ -204,26 +201,13 @@ export async function updateApplicationStatus(
       throw new AppError('Application not found', 404, ErrorTypes.NOT_FOUND);
     }
 
-    // Check if status is already set to the requested status
-    if (application.status === status) {
-      logger.info('Application status already set to requested status', {
-        applicationId,
-        status,
-      });
-      throw new AppError(
-        `Application is already ${status.toLowerCase()}`,
-        400,
-        ErrorTypes.VALIDATION,
-      );
-    }
-
     // If rejecting, ensure a reason is provided
     if (status === ApplicationStatus.REJECTED && !rejectionReason) {
       logger.warn('Rejection reason not provided', { applicationId });
       throw new AppError('Rejection reason is required', 400, ErrorTypes.VALIDATION);
     }
 
-    // Update application status
+    // Update application status and create user/student if approved
     const updatedApplication = await prisma.$transaction(async (tx) => {
       // Update application
       const updatedApp = await tx.application.update({
@@ -236,63 +220,104 @@ export async function updateApplicationStatus(
           reviewedAt: new Date(),
           rejectionReason: status === ApplicationStatus.REJECTED ? rejectionReason : null,
         },
-        include: {
-          student: {
-            include: {
-              user: true,
-            },
-          },
+        select: {
+          id: true,
+          email: true,
+          fullName: true,
+          gender: true,
+          dateOfBirth: true,
+          phoneNumber: true,
+          country: true,
+          academicQualification: true,
+          desiredDegree: true,
+          certificateUrl: true,
+          recommendationLetterUrl: true,
+          referredBy: true,
+          referrerContact: true,
+          agreesToTerms: true,
+          status: true,
+          reviewedAt: true,
+          rejectionReason: true,
+          student: true,
+          reviewedBy: true,
         },
       });
 
-      // Update student application status
-      await tx.student.update({
-        where: { id: application.studentId },
-        data: {
-          applicationStatus: status,
-        },
-      });
-
-      // If approved, create a temporary password for the student
-      if (status === ApplicationStatus.APPROVED) {
+      // If approved and no student exists, create user and student
+      if (status === ApplicationStatus.APPROVED && !application.student) {
         const tempPassword = generateRandomPassword();
         const hashedPassword = await bcrypt.hash(tempPassword, 10);
 
-        // Update user password
-        await tx.user.update({
-          where: { id: application.student.user.id },
+        // Create user
+        const user = await tx.user.create({
           data: {
+            email: updatedApp.email,
             password: hashedPassword,
+            role: UserRole.STUDENT,
           },
         });
 
-        // Send approval email with temporary password
-        sendApplicationApprovedEmail(
-          application.student.user.email,
-          application.student.fullName,
+        // Create student
+        const student = await tx.student.create({
+          data: {
+            userId: user.id,
+            fullName: updatedApp.fullName,
+            gender: updatedApp.gender,
+            dateOfBirth: updatedApp.dateOfBirth,
+            phoneNumber: updatedApp.phoneNumber,
+            country: updatedApp.country,
+            academicQualification: updatedApp.academicQualification,
+            desiredDegree: updatedApp.desiredDegree,
+            certificateUrl: updatedApp.certificateUrl,
+            recommendationLetterUrl: updatedApp.recommendationLetterUrl,
+            referredBy: updatedApp.referredBy,
+            referrerContact: updatedApp.referrerContact,
+            agreesToTerms: updatedApp.agreesToTerms,
+            applicationStatus: status, // Set initial application status
+          },
+        });
+
+        // Link student to application
+        await tx.application.update({
+          where: { id: applicationId },
+          data: {
+            student: {
+              connect: { id: student.id },
+            },
+          },
+        });
+
+        // Send approval email
+        await sendApplicationApprovedEmail(
+          updatedApp.email,
+          updatedApp.fullName,
           tempPassword,
         ).catch((emailError) => {
           logger.error('Failed to send application approval email', {
             applicationId,
-            studentId: application.studentId,
-            email: application.student.user.email,
+            email: updatedApp.email,
             error: emailError instanceof Error ? emailError.message : String(emailError),
           });
+        });
+      } else if (application.student) {
+        // Update existing student's application status
+        await tx.student.update({
+          where: { id: application.student.id },
+          data: {
+            applicationStatus: status,
+          },
         });
       } else if (status === ApplicationStatus.REJECTED && rejectionReason) {
         // Send rejection email
-        sendApplicationRejectedEmail(
-          application.student.user.email,
-          application.student.fullName,
-          rejectionReason,
-        ).catch((emailError) => {
-          logger.error('Failed to send application rejection email', {
-            applicationId,
-            studentId: application.studentId,
-            email: application.student.user.email,
-            error: emailError instanceof Error ? emailError.message : String(emailError),
-          });
-        });
+        sendApplicationRejectedEmail(updatedApp.email, updatedApp.fullName, rejectionReason).catch(
+          (emailError) => {
+            logger.error('Failed to send application rejection email', {
+              applicationId,
+              email: updatedApp.email,
+              error: emailError instanceof Error ? emailError.message : String(emailError),
+            });
+          },
+        );
       }
 
       return updatedApp;
@@ -301,15 +326,13 @@ export async function updateApplicationStatus(
     logger.info('Application status updated successfully', {
       applicationId,
       status,
-      studentId: updatedApplication.studentId,
     });
 
     return {
       id: updatedApplication.id,
       status: updatedApplication.status,
-      studentId: updatedApplication.studentId,
-      studentName: updatedApplication.student.fullName,
-      studentEmail: updatedApplication.student.user.email,
+      email: updatedApplication.email,
+      fullName: updatedApplication.fullName,
       reviewedAt: updatedApplication.reviewedAt,
       rejectionReason: updatedApplication.rejectionReason,
     };
