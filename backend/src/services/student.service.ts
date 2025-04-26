@@ -4,7 +4,7 @@ import { AppError, ErrorTypes } from '../utils/appError';
 import { logger } from '../utils/logger';
 import { uploadToCloudinary } from '../utils/cloudinary';
 import { sendApplicationConfirmationEmail } from './email.service';
-
+import bcrypt from 'bcryptjs';
 const prisma = new PrismaClient();
 
 /**
@@ -26,15 +26,17 @@ export async function registerStudent(
   agreesToTerms: boolean = false,
 ) {
   try {
-    logger.info('Starting student registration process', { email, fullName });
+    // Convert email to lowercase
+    const normalizedEmail = email.toLowerCase();
+    logger.info('Starting student registration process', { email: normalizedEmail, fullName });
 
     // Check if user already exists
     const existingUser = await prisma.user.findUnique({
-      where: { email },
+      where: { email: normalizedEmail },
     });
 
     if (existingUser) {
-      logger.warn('Student registration failed - email already exists', { email });
+      logger.warn('Student registration failed - email already exists', { email: normalizedEmail });
       throw new AppError('User with this email already exists', 400, ErrorTypes.DUPLICATE);
     }
 
@@ -52,10 +54,10 @@ export async function registerStudent(
           'win/students/certificates',
           fileName,
         );
-        logger.info('Certificate uploaded successfully', { email });
+        logger.info('Certificate uploaded successfully', { email: normalizedEmail });
       } catch (uploadError) {
         logger.error('Failed to upload certificate', {
-          email,
+          email: normalizedEmail,
           error: uploadError instanceof Error ? uploadError.message : String(uploadError),
         });
       }
@@ -71,10 +73,10 @@ export async function registerStudent(
           'win/students/recommendation_letters',
           fileName,
         );
-        logger.info('Recommendation letter uploaded successfully', { email });
+        logger.info('Recommendation letter uploaded successfully', { email: normalizedEmail });
       } catch (uploadError) {
         logger.error('Failed to upload recommendation letter', {
-          email,
+          email: normalizedEmail,
           error: uploadError instanceof Error ? uploadError.message : String(uploadError),
         });
       }
@@ -92,7 +94,7 @@ export async function registerStudent(
         const tempPassword = Math.random().toString(36).slice(-10);
         const newUser = await prismaClient.user.create({
           data: {
-            email,
+            email: normalizedEmail,
             password: tempPassword, // This will be updated after admin approval
             role: UserRole.STUDENT,
           },
@@ -141,7 +143,7 @@ export async function registerStudent(
       application = result.application;
     } catch (txError) {
       logger.error('Transaction failed during student registration', {
-        email,
+        email: normalizedEmail,
         error: txError instanceof Error ? txError.message : String(txError),
       });
       throw new AppError('Failed to register student', 500, ErrorTypes.SERVER);
@@ -150,17 +152,19 @@ export async function registerStudent(
     logger.info('Student registered successfully', {
       studentId: student.id,
       applicationId: application.id,
-      email,
+      email: normalizedEmail,
     });
 
     // Send confirmation email without blocking the registration process
-    sendApplicationConfirmationEmail(email, fullName, application.id).catch((emailError) => {
-      logger.error('Failed to send application confirmation email', {
-        studentId: student.id,
-        email,
-        error: emailError instanceof Error ? emailError.message : String(emailError),
-      });
-    });
+    sendApplicationConfirmationEmail(normalizedEmail, fullName, application.id).catch(
+      (emailError) => {
+        logger.error('Failed to send application confirmation email', {
+          studentId: student.id,
+          email: normalizedEmail,
+          error: emailError instanceof Error ? emailError.message : String(emailError),
+        });
+      },
+    );
 
     return {
       id: student.id,
@@ -171,6 +175,153 @@ export async function registerStudent(
     };
   } catch (error) {
     logger.error('Error in registerStudent', {
+      email,
+      error: error instanceof Error ? error.message : String(error),
+    });
+    throw error;
+  }
+}
+
+export async function updateApplicationStatus(
+  applicationId: string,
+  adminId: string,
+  status: ApplicationStatus,
+  rejectionReason?: string,
+) {
+  try {
+    logger.info('Updating application status', { applicationId, status });
+
+    // Check if admin exists
+    const admin = await prisma.admin.findUnique({
+      where: { id: adminId },
+    });
+
+    if (!admin) {
+      throw new AppError('Admin not found', 404, ErrorTypes.NOT_FOUND);
+    }
+
+    const application = await prisma.application.findUnique({
+      where: { id: applicationId },
+      include: {
+        student: {
+          include: {
+            user: true,
+          },
+        },
+      },
+    });
+
+    if (!application) {
+      throw new AppError('Application not found', 404, ErrorTypes.NOT_FOUND);
+    }
+
+    const updatedApplication = await prisma.application.update({
+      where: { id: applicationId },
+      data: {
+        status,
+        reviewedBy: {
+          connect: { id: adminId },
+        },
+        reviewedAt: new Date(),
+        rejectionReason: status === ApplicationStatus.REJECTED ? rejectionReason : null,
+      },
+      include: {
+        student: {
+          include: {
+            user: true,
+          },
+        },
+      },
+    });
+
+    logger.info('Application status updated successfully', {
+      applicationId,
+      status,
+      studentId: updatedApplication.student.id,
+    });
+
+    return updatedApplication;
+  } catch (error) {
+    logger.error('Error updating application status', {
+      applicationId,
+      error: error instanceof Error ? error.message : String(error),
+    });
+    throw error;
+  }
+}
+
+/**
+ * Login a student
+ */
+export async function loginStudent(email: string, password: string) {
+  try {
+    // Convert email to lowercase
+    const normalizedEmail = email.toLowerCase();
+    logger.info('Student login attempt', { email: normalizedEmail });
+
+    // Find user by email
+    const user = await prisma.user.findUnique({
+      where: { email: normalizedEmail },
+      include: {
+        student: {
+          include: {
+            application: true,
+          },
+        },
+      },
+    });
+
+    // Check if user exists and is a student
+    if (!user || user.role !== UserRole.STUDENT || !user.student) {
+      logger.warn('Student login failed - invalid credentials', { email });
+      throw new AppError('Invalid email or password', 401);
+    }
+
+    // Verify password
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) {
+      logger.warn('Student login failed - invalid password', { email });
+      throw new AppError('Invalid email or password', 401);
+    }
+
+    // Check if student's application is approved
+    if (user.student.applicationStatus !== ApplicationStatus.APPROVED) {
+      logger.warn('Student login failed - application not approved', {
+        email,
+        applicationStatus: user.student.applicationStatus,
+      });
+
+      // Different message based on application status
+      if (user.student.applicationStatus === ApplicationStatus.PENDING) {
+        throw new AppError(
+          'Your application is still pending approval. Please wait for admin review.',
+          403,
+        );
+      } else if (user.student.applicationStatus === ApplicationStatus.REJECTED) {
+        throw new AppError(
+          'Your application has been rejected. Please check your email for details.',
+          403,
+        );
+      } else {
+        throw new AppError('Your account is not active. Please contact support.', 403);
+      }
+    }
+
+    logger.info('Student login successful', {
+      studentId: user.student.id,
+      email: user.email,
+    });
+
+    return {
+      id: user.student.id,
+      userId: user.id,
+      email: user.email,
+      fullName: user.student.fullName,
+      role: user.role,
+      applicationStatus: user.student.applicationStatus,
+    };
+  } catch (error) {
+    logger.error('Error in loginStudent', {
       email,
       error: error instanceof Error ? error.message : String(error),
     });
