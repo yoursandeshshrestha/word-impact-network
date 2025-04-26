@@ -55,7 +55,6 @@ export const registerStudent = catchAsync(async (req: Request, res: Response) =>
     id: student.id,
     email: student.email,
     fullName: student.fullName,
-    applicationId: student.applicationId,
     applicationStatus: student.applicationStatus,
   });
 });
