@@ -63,12 +63,25 @@ CREATE TABLE "admins" (
 -- CreateTable
 CREATE TABLE "applications" (
     "id" TEXT NOT NULL,
-    "studentId" TEXT NOT NULL,
+    "email" TEXT NOT NULL,
+    "fullName" TEXT NOT NULL,
+    "gender" "Gender" NOT NULL,
+    "dateOfBirth" TIMESTAMP(3) NOT NULL,
+    "phoneNumber" TEXT NOT NULL,
+    "country" TEXT NOT NULL,
+    "academicQualification" TEXT NOT NULL,
+    "desiredDegree" TEXT NOT NULL,
+    "certificateUrl" TEXT,
+    "recommendationLetterUrl" TEXT,
+    "referredBy" TEXT,
+    "referrerContact" TEXT,
+    "agreesToTerms" BOOLEAN NOT NULL DEFAULT false,
     "status" "ApplicationStatus" NOT NULL DEFAULT 'PENDING',
     "appliedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "adminId" TEXT,
     "reviewedAt" TIMESTAMP(3),
     "rejectionReason" TEXT,
+    "studentId" TEXT,
 
     CONSTRAINT "applications_pkey" PRIMARY KEY ("id")
 );
@@ -303,6 +316,9 @@ CREATE UNIQUE INDEX "students_userId_key" ON "students"("userId");
 CREATE UNIQUE INDEX "admins_userId_key" ON "admins"("userId");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "applications_email_key" ON "applications"("email");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "applications_studentId_key" ON "applications"("studentId");
 
 -- CreateIndex
@@ -339,10 +355,10 @@ ALTER TABLE "students" ADD CONSTRAINT "students_userId_fkey" FOREIGN KEY ("userI
 ALTER TABLE "admins" ADD CONSTRAINT "admins_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "applications" ADD CONSTRAINT "applications_studentId_fkey" FOREIGN KEY ("studentId") REFERENCES "students"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "applications" ADD CONSTRAINT "applications_adminId_fkey" FOREIGN KEY ("adminId") REFERENCES "admins"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "applications" ADD CONSTRAINT "applications_adminId_fkey" FOREIGN KEY ("adminId") REFERENCES "admins"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "applications" ADD CONSTRAINT "applications_studentId_fkey" FOREIGN KEY ("studentId") REFERENCES "students"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "payments" ADD CONSTRAINT "payments_studentId_fkey" FOREIGN KEY ("studentId") REFERENCES "students"("id") ON DELETE CASCADE ON UPDATE CASCADE;
