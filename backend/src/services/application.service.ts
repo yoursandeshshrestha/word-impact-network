@@ -1,15 +1,13 @@
-// src/services/application.service.ts
 import { PrismaClient, ApplicationStatus, UserRole } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import { AppError, ErrorTypes } from '../utils/appError';
 import { logger } from '../utils/logger';
 import { sendApplicationApprovedEmail, sendApplicationRejectedEmail } from './email.service';
+import generateRandomPassword from '@/utils/generateRandomPassword';
 
 const prisma = new PrismaClient();
 
-/**
- * Get all applications with pagination and filtering
- */
+// Get all applications with pagination and filtering
 export async function getAllApplications(
   status?: ApplicationStatus,
   page: number = 1,
@@ -102,9 +100,7 @@ export async function getAllApplications(
   }
 }
 
-/**
- * Get application by ID
- */
+// Get application by ID
 export async function getApplicationById(id: string) {
   try {
     const application = await prisma.application.findUnique({
@@ -154,24 +150,7 @@ export async function getApplicationById(id: string) {
   }
 }
 
-/**
- * Generate a random password
- */
-function generateRandomPassword(length = 10): string {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()';
-  let password = '';
-
-  for (let i = 0; i < length; i++) {
-    const randomIndex = Math.floor(Math.random() * chars.length);
-    password += chars[randomIndex];
-  }
-
-  return password;
-}
-
-/**
- * Update application status (admin action)
- */
+// Update application status
 export async function updateApplicationStatus(
   applicationId: string,
   adminId: string,
@@ -347,9 +326,7 @@ export async function updateApplicationStatus(
   }
 }
 
-/**
- * Delete application by ID
- */
+// Delete application by ID
 export async function deleteApplication(id: string) {
   try {
     logger.info('Deleting application', { id });

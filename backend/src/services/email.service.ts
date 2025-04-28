@@ -1,25 +1,9 @@
 import nodemailer from 'nodemailer';
+import { createTransporter } from '../config/email';
 import { PrismaClient } from '@prisma/client';
 import { logger } from '../utils/logger';
 
 const prisma = new PrismaClient();
-
-const createTransporter = () => {
-  if (!process.env.SENDGRID_API_KEY) {
-    logger.error('SENDGRID_API_KEY is not defined in environment variables');
-    throw new Error('SENDGRID_API_KEY is not defined in environment variables');
-  }
-
-  return nodemailer.createTransport({
-    host: 'smtp.sendgrid.net',
-    port: 587,
-    secure: false,
-    auth: {
-      user: 'apikey',
-      pass: process.env.SENDGRID_API_KEY,
-    },
-  });
-};
 
 // Base email sending function with logging
 export async function sendEmail(to: string, subject: string, html: string) {

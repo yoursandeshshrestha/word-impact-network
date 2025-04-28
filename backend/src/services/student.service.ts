@@ -1,4 +1,3 @@
-// src/services/student.service.ts
 import { PrismaClient, Gender, ApplicationStatus, UserRole } from '@prisma/client';
 import { AppError, ErrorTypes } from '../utils/appError';
 import { logger } from '../utils/logger';
@@ -7,9 +6,7 @@ import { sendApplicationConfirmationEmail } from './email.service';
 import bcrypt from 'bcryptjs';
 const prisma = new PrismaClient();
 
-/**
- * Register a new student
- */
+// Register a new student
 export async function registerStudent(
   email: string,
   fullName: string,
@@ -104,6 +101,7 @@ export async function registerStudent(
   }
 }
 
+// Update application status
 export async function updateApplicationStatus(
   applicationId: string,
   adminId: string,
@@ -172,9 +170,7 @@ export async function updateApplicationStatus(
   }
 }
 
-/**
- * Login a student
- */
+// Login a student
 export async function loginStudent(email: string, password: string) {
   try {
     // Convert email to lowercase
