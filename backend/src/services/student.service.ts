@@ -101,75 +101,6 @@ export async function registerStudent(
   }
 }
 
-// Update application status
-export async function updateApplicationStatus(
-  applicationId: string,
-  adminId: string,
-  status: ApplicationStatus,
-  rejectionReason?: string,
-) {
-  try {
-    logger.info('Updating application status', { applicationId, status });
-
-    // Check if admin exists
-    const admin = await prisma.admin.findUnique({
-      where: { id: adminId },
-    });
-
-    if (!admin) {
-      throw new AppError('Admin not found', 404, ErrorTypes.NOT_FOUND);
-    }
-
-    const application = await prisma.application.findUnique({
-      where: { id: applicationId },
-      include: {
-        student: {
-          include: {
-            user: true,
-          },
-        },
-      },
-    });
-
-    if (!application) {
-      throw new AppError('Application not found', 404, ErrorTypes.NOT_FOUND);
-    }
-
-    const updatedApplication = await prisma.application.update({
-      where: { id: applicationId },
-      data: {
-        status,
-        reviewedBy: {
-          connect: { id: adminId },
-        },
-        reviewedAt: new Date(),
-        rejectionReason: status === ApplicationStatus.REJECTED ? rejectionReason : null,
-      },
-      include: {
-        student: {
-          include: {
-            user: true,
-          },
-        },
-      },
-    });
-
-    logger.info('Application status updated successfully', {
-      applicationId,
-      status,
-      studentId: updatedApplication.student?.id,
-    });
-
-    return updatedApplication;
-  } catch (error) {
-    logger.error('Error updating application status', {
-      applicationId,
-      error: error instanceof Error ? error.message : String(error),
-    });
-    throw error;
-  }
-}
-
 // Login a student
 export async function loginStudent(email: string, password: string) {
   try {
@@ -241,6 +172,211 @@ export async function loginStudent(email: string, password: string) {
   } catch (error) {
     logger.error('Error in loginStudent', {
       email,
+      error: error instanceof Error ? error.message : String(error),
+    });
+    throw error;
+  }
+}
+
+// Get student profile by user ID
+export async function getStudentProfileByUserId(userId: string) {
+  try {
+    logger.info('Fetching student profile', { userId });
+
+    // Find the student based on the user ID
+    const student = await prisma.student.findFirst({
+      where: { userId: userId },
+      include: {
+        user: true,
+      },
+    });
+
+    if (!student) {
+      logger.warn('Student profile fetch failed - student not found', { userId });
+      throw new AppError('Student not found', 404, ErrorTypes.NOT_FOUND);
+    }
+
+    // Get course enrollments with progress
+    const courseEnrollments = await prisma.courseEnrollment.findMany({
+      where: { studentId: student.id },
+      include: {
+        course: true,
+      },
+      orderBy: {
+        enrollmentDate: 'desc',
+      },
+    });
+
+    // Calculate progress for each course
+    const enrollmentsWithProgress = await Promise.all(
+      courseEnrollments.map(async (enrollment) => {
+        // Find all chapters for this course
+        const totalChapters = await prisma.chapter.count({
+          where: { courseId: enrollment.courseId },
+        });
+
+        // Find completed chapters for this student in this course
+        const completedChapters = await prisma.chapterProgress.count({
+          where: {
+            studentId: student.id,
+            chapter: {
+              courseId: enrollment.courseId,
+            },
+            isCompleted: true,
+          },
+        });
+
+        const percentComplete =
+          totalChapters > 0 ? Math.round((completedChapters / totalChapters) * 100) : 0;
+
+        return {
+          id: enrollment.course.id,
+          title: enrollment.course.title,
+          description: enrollment.course.description,
+          durationYears: enrollment.course.durationYears,
+          enrollmentDate: enrollment.enrollmentDate,
+          isActive: enrollment.isActive,
+          progress: {
+            completedChapters,
+            totalChapters,
+            percentComplete,
+          },
+        };
+      }),
+    );
+
+    // Get exam attempts
+    const examAttempts = await prisma.examAttempt.findMany({
+      where: { studentId: student.id },
+      include: {
+        exam: {
+          include: {
+            chapter: true,
+          },
+        },
+      },
+      orderBy: {
+        startTime: 'desc',
+      },
+      take: 5, // Limit to 5 most recent attempts
+    });
+
+    const formattedExamAttempts = examAttempts.map((attempt) => ({
+      id: attempt.id,
+      examTitle: attempt.exam.title,
+      chapterTitle: attempt.exam.chapter.title,
+      score: attempt.score || 0,
+      isPassed: attempt.isPassed,
+      attemptDate: attempt.startTime,
+    }));
+
+    // Get certifications
+    const certifications = await prisma.yearCertification.findMany({
+      where: { studentId: student.id },
+      include: {
+        course: true,
+      },
+      orderBy: {
+        issuedAt: 'desc',
+      },
+    });
+
+    const formattedCertifications = certifications.map((cert) => ({
+      id: cert.id,
+      courseName: cert.course.title,
+      year: cert.year,
+      certificateUrl: cert.certificateUrl,
+      issuedAt: cert.issuedAt,
+    }));
+
+    // Get video progress
+    const videoProgress = await prisma.videoProgress.findMany({
+      where: { studentId: student.id },
+      include: {
+        video: {
+          include: {
+            chapter: true,
+          },
+        },
+      },
+      orderBy: {
+        lastWatchedAt: 'desc',
+      },
+      take: 5, // Limit to 5 most recently watched
+    });
+
+    const formattedVideoProgress = videoProgress.map((progress) => ({
+      id: progress.video.id,
+      title: progress.video.title,
+      chapterTitle: progress.video.chapter.title,
+      watchedPercent: progress.watchedPercent,
+      lastWatchedAt: progress.lastWatchedAt,
+    }));
+
+    // Count total videos watched (100%)
+    const totalWatchedVideos = await prisma.videoProgress.count({
+      where: {
+        studentId: student.id,
+        watchedPercent: 100,
+      },
+    });
+
+    // Count videos in progress (1-99%)
+    const inProgressVideos = await prisma.videoProgress.count({
+      where: {
+        studentId: student.id,
+        watchedPercent: {
+          gt: 0,
+          lt: 100,
+        },
+      },
+    });
+
+    logger.info('Student profile retrieved successfully', { studentId: student.id });
+
+    // Construct comprehensive profile response
+    return {
+      profile: {
+        id: student.id,
+        email: student.user.email,
+        fullName: student.fullName,
+        gender: student.gender,
+        dateOfBirth: student.dateOfBirth,
+        phoneNumber: student.phoneNumber,
+        country: student.country,
+        academicQualification: student.academicQualification,
+        desiredDegree: student.desiredDegree,
+        createdAt: student.createdAt,
+        updatedAt: student.updatedAt,
+      },
+      enrollments: {
+        total: courseEnrollments.length,
+        active: courseEnrollments.filter((e) => e.isActive).length,
+        courses: enrollmentsWithProgress,
+      },
+      examAttempts: {
+        total: await prisma.examAttempt.count({ where: { studentId: student.id } }),
+        passed: await prisma.examAttempt.count({
+          where: {
+            studentId: student.id,
+            isPassed: true,
+          },
+        }),
+        recent: formattedExamAttempts,
+      },
+      certifications: {
+        total: certifications.length,
+        certificates: formattedCertifications,
+      },
+      videoProgress: {
+        totalWatched: totalWatchedVideos,
+        inProgress: inProgressVideos,
+        recentlyWatched: formattedVideoProgress,
+      },
+    };
+  } catch (error) {
+    logger.error('Error in getStudentProfileByUserId', {
+      userId,
       error: error instanceof Error ? error.message : String(error),
     });
     throw error;
