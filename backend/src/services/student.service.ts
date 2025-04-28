@@ -4,6 +4,7 @@ import { logger } from '../utils/logger';
 import { uploadToCloudinary } from '../utils/cloudinary';
 import { sendApplicationConfirmationEmail } from './email.service';
 import bcrypt from 'bcryptjs';
+import { StudentProfileUpdateData } from '@/types/types';
 const prisma = new PrismaClient();
 
 // Register a new student
@@ -341,7 +342,7 @@ export async function getStudentProfileByUserId(userId: string) {
         email: student.user.email,
         fullName: student.fullName,
         gender: student.gender,
-        dateOfBirth: student.dateOfBirth,
+        dateOfBirth: student.dateOfBirth.toISOString().split('T')[0],
         phoneNumber: student.phoneNumber,
         country: student.country,
         academicQualification: student.academicQualification,
@@ -376,6 +377,103 @@ export async function getStudentProfileByUserId(userId: string) {
     };
   } catch (error) {
     logger.error('Error in getStudentProfileByUserId', {
+      userId,
+      error: error instanceof Error ? error.message : String(error),
+    });
+    throw error;
+  }
+}
+
+// Update student profile by user ID
+export async function updateStudentProfileByUserId(
+  userId: string,
+  updateData: StudentProfileUpdateData,
+) {
+  try {
+    logger.info('Updating student profile', { userId });
+
+    // Find the student based on the user ID
+    const student = await prisma.student.findFirst({
+      where: { userId: userId },
+      include: {
+        user: true,
+      },
+    });
+
+    if (!student) {
+      logger.warn('Student profile update failed - student not found', { userId });
+      throw new AppError('Student not found', 404, ErrorTypes.NOT_FOUND);
+    }
+
+    // Prepare update data
+    const updateFields: any = {};
+
+    // Only include fields that are provided and different from current values
+    if (updateData.fullName !== undefined && updateData.fullName !== student.fullName) {
+      updateFields.fullName = updateData.fullName;
+    }
+
+    if (updateData.phoneNumber !== undefined && updateData.phoneNumber !== student.phoneNumber) {
+      updateFields.phoneNumber = updateData.phoneNumber;
+    }
+
+    if (updateData.country !== undefined && updateData.country !== student.country) {
+      updateFields.country = updateData.country;
+    }
+
+    if (
+      updateData.dateOfBirth !== undefined &&
+      updateData.dateOfBirth.toISOString() !== student.dateOfBirth.toISOString()
+    ) {
+      updateFields.dateOfBirth = updateData.dateOfBirth;
+    }
+
+    if (updateData.gender !== undefined && updateData.gender !== student.gender) {
+      updateFields.gender = updateData.gender;
+    }
+
+    // If no updates were provided
+    if (Object.keys(updateFields).length === 0) {
+      logger.info('No changes detected for student profile update', { studentId: student.id });
+      return {
+        message: 'No changes were made to the profile',
+        profile: {
+          id: student.id,
+          email: student.user.email,
+          fullName: student.fullName,
+          phoneNumber: student.phoneNumber,
+          country: student.country,
+          gender: student.gender,
+          dateOfBirth: student.dateOfBirth.toISOString().split('T')[0],
+        },
+      };
+    }
+
+    // Update the student record
+    const updatedStudent = await prisma.student.update({
+      where: { id: student.id },
+      data: updateFields,
+    });
+
+    logger.info('Student profile updated successfully', {
+      studentId: student.id,
+      updatedFields: Object.keys(updateFields).join(', '),
+    });
+
+    return {
+      message: 'Profile updated successfully',
+      profile: {
+        id: updatedStudent.id,
+        email: student.user.email,
+        fullName: updatedStudent.fullName,
+        phoneNumber: updatedStudent.phoneNumber,
+        country: updatedStudent.country,
+        gender: updatedStudent.gender,
+        dateOfBirth: updatedStudent.dateOfBirth.toISOString().split('T')[0],
+      },
+    };
+  } catch (error) {
+    logger.error('Error in updateStudentProfileByUserId', {
       userId,
       error: error instanceof Error ? error.message : String(error),
     });
