@@ -1,5 +1,11 @@
 import { Request, Response } from 'express';
-import { createAdmin, getAdminProfileById, loginAdmin } from '../services/admin.service';
+import {
+  completePasswordReset,
+  createAdmin,
+  getAdminProfileById,
+  initiatePasswordReset,
+  loginAdmin,
+} from '../services/admin.service';
 import { generateToken } from '../utils/jwt';
 import { sendSuccess } from '../utils/responseHandler';
 import { catchAsync } from '../utils/catchAsync';
@@ -52,4 +58,52 @@ export const getAdminProfile = catchAsync(async (req: Request, res: Response) =>
   const adminProfile = await getAdminProfileById(userId);
 
   sendSuccess(res, 200, 'Admin profile retrieved successfully', adminProfile);
+});
+
+// Request password reset
+export const requestPasswordReset = catchAsync(async (req: Request, res: Response) => {
+  const userId = req.user?.userId;
+  const { oldPassword, newPassword } = req.body;
+
+  if (!userId) {
+    throw new AppError('User ID is required', 400, ErrorTypes.VALIDATION);
+  }
+
+  // Validate password requirements
+  if (newPassword.length < 8) {
+    throw new AppError(
+      'New password must be at least 8 characters long',
+      400,
+      ErrorTypes.VALIDATION,
+    );
+  }
+
+  // Request the password reset and send email with secret code
+  const resetData = await initiatePasswordReset(userId, oldPassword, newPassword);
+
+  sendSuccess(res, 200, 'Password reset verification code sent to your email', {
+    message: 'Please check your email for the verification code',
+    resetId: resetData.resetId,
+  });
+});
+
+// Verify password reset
+export const verifyPasswordReset = catchAsync(async (req: Request, res: Response) => {
+  const userId = req.user?.userId;
+  const { resetId, verificationCode } = req.body;
+
+  if (!userId) {
+    throw new AppError('User ID is required', 400, ErrorTypes.VALIDATION);
+  }
+
+  if (!resetId || !verificationCode) {
+    throw new AppError('Reset ID and verification code are required', 400, ErrorTypes.VALIDATION);
+  }
+
+  // Complete the password reset
+  await completePasswordReset(userId, resetId, verificationCode);
+
+  sendSuccess(res, 200, 'Password reset successful', {
+    message: 'Your password has been updated successfully',
+  });
 });
