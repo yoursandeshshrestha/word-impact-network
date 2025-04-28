@@ -5,6 +5,8 @@ import {
   validateStudentLogin,
   validateStudentRegistration,
 } from '../validations/student.validation';
+import { authenticate } from '../middlewares/auth.middleware';
+import { getStudentProfile } from '../controllers/student.controller';
 
 const router: Router = express.Router();
 
@@ -29,5 +31,8 @@ router.post(
 
 // Student login route
 router.post('/login', validateStudentLogin, loginStudentController);
+
+// Student profile route
+router.get('/profile', authenticate, getStudentProfile);
 
 export default router;
