@@ -1,8 +1,11 @@
 import { PrismaClient, UserRole } from '@prisma/client';
 import bcrypt from 'bcryptjs';
-import { sendAdminWelcomeEmail } from './email.service';
+import { sendAdminPasswordResetVerificationEmail, sendAdminWelcomeEmail } from './email.service';
 import { AppError, ErrorTypes } from '../utils/appError';
 import { logger } from '../utils/logger';
+import redisClient from '@/config/redis';
+import generateVerificationCode from '@/utils/generateVerificationCode';
+import crypto from 'crypto';
 
 const prisma = new PrismaClient();
 
@@ -24,10 +27,11 @@ export async function createAdmin(
     // Check if admin already exists
     const existingUser = await prisma.user.findUnique({
       where: { email },
+      include: { admin: true },
     });
 
-    if (existingUser) {
-      logger.warn('Admin creation failed - email already exists', { email });
+    if (existingUser?.admin) {
+      logger.warn('Admin creation failed - email already exists as admin', { email });
       throw new AppError('Admin with this email already exists', 400, ErrorTypes.DUPLICATE);
     }
 
@@ -121,7 +125,6 @@ export async function loginAdmin(email: string, password: string) {
   }
 }
 
-// Add this function to your existing admin.service.ts file
 export async function getAdminProfileById(userId: string) {
   try {
     logger.info('Fetching admin profile', { userId });
@@ -174,6 +177,142 @@ export async function getAdminProfileById(userId: string) {
   } catch (error) {
     logger.error('Error in getAdminProfileById', {
       userId,
+      error: error instanceof Error ? error.message : String(error),
+    });
+    throw error;
+  }
+}
+
+export async function initiatePasswordReset(
+  userId: string,
+  oldPassword: string,
+  newPassword: string,
+) {
+  try {
+    logger.info('Initiating password reset process', { userId });
+
+    // Find the admin by userId
+    const admin = await prisma.admin.findFirst({
+      where: { userId },
+      include: {
+        user: true,
+      },
+    });
+
+    if (!admin || admin.user.role !== UserRole.ADMIN) {
+      logger.warn('Password reset failed - admin not found', { userId });
+      throw new AppError('Admin not found', 404, ErrorTypes.NOT_FOUND);
+    }
+
+    // Verify the old password
+    const isOldPasswordValid = await bcrypt.compare(oldPassword, admin.user.password);
+    if (!isOldPasswordValid) {
+      logger.warn('Password reset failed - invalid old password', { userId });
+      throw new AppError('Invalid old password', 401, ErrorTypes.AUTHENTICATION);
+    }
+
+    // Hash the new password
+    const newPasswordHash = await bcrypt.hash(newPassword, 10);
+
+    // Generate a verification code
+    const verificationCode = generateVerificationCode(8);
+
+    // Generate a unique reset ID
+    const resetId = crypto.randomUUID();
+
+    // Store the reset request in Redis (with 30 minute expiration)
+    const resetData = {
+      userId,
+      newPasswordHash,
+      verificationCode,
+      expiresAt: new Date(Date.now() + 30 * 60 * 1000).toISOString(),
+    };
+
+    await redisClient.set(
+      `password_reset:${resetId}`,
+      JSON.stringify(resetData),
+      { EX: 1800 }, // 30 minutes in seconds
+    );
+
+    // Send verification code via email
+    await sendAdminPasswordResetVerificationEmail(
+      admin.user.email,
+      admin.fullName,
+      verificationCode,
+    );
+
+    logger.info('Password reset initiated successfully', { userId, resetId });
+
+    return { resetId };
+  } catch (error) {
+    logger.error('Error in initiatePasswordReset', {
+      userId,
+      error: error instanceof Error ? error.message : String(error),
+    });
+    throw error;
+  }
+}
+
+export async function completePasswordReset(
+  userId: string,
+  resetId: string,
+  verificationCode: string,
+) {
+  try {
+    logger.info('Completing password reset', { userId, resetId });
+
+    // Get reset data from Redis
+    const resetDataJson = await redisClient.get(`password_reset:${resetId}`);
+
+    if (!resetDataJson) {
+      logger.warn('Password reset completion failed - invalid or expired reset ID', {
+        userId,
+        resetId,
+      });
+      throw new AppError('Invalid or expired reset request', 400, ErrorTypes.VALIDATION);
+    }
+
+    const resetData = JSON.parse(resetDataJson);
+
+    // Verify this reset belongs to the current user
+    if (resetData.userId !== userId) {
+      logger.warn('Password reset completion failed - user ID mismatch', { userId, resetId });
+      throw new AppError('Invalid reset request', 400, ErrorTypes.VALIDATION);
+    }
+
+    // Check if reset request has expired (additional check even though Redis handles expiration)
+    if (new Date() > new Date(resetData.expiresAt)) {
+      // Clean up expired request
+      await redisClient.del(`password_reset:${resetId}`);
+      logger.warn('Password reset completion failed - request expired', { userId, resetId });
+      throw new AppError('Reset request has expired', 400, ErrorTypes.VALIDATION);
+    }
+
+    // Verify the verification code
+    if (resetData.verificationCode !== verificationCode) {
+      logger.warn('Password reset completion failed - invalid verification code', {
+        userId,
+        resetId,
+      });
+      throw new AppError('Invalid verification code', 400, ErrorTypes.VALIDATION);
+    }
+
+    // Update the password in the database
+    await prisma.user.update({
+      where: { id: userId },
+      data: { password: resetData.newPasswordHash },
+    });
+
+    // Clean up the reset request from Redis
+    await redisClient.del(`password_reset:${resetId}`);
+
+    logger.info('Password reset completed successfully', { userId });
+
+    return { success: true };
+  } catch (error) {
+    logger.error('Error in completePasswordReset', {
+      userId,
+      resetId,
       error: error instanceof Error ? error.message : String(error),
     });
     throw error;
