@@ -107,6 +107,7 @@ export async function loginAdmin(email: string, password: string) {
 
     return {
       id: user.admin.id,
+      userId: user.id,
       email: user.email,
       fullName: user.admin.fullName,
       role: user.role,
@@ -114,6 +115,65 @@ export async function loginAdmin(email: string, password: string) {
   } catch (error) {
     logger.error('Error in loginAdmin', {
       email,
+      error: error instanceof Error ? error.message : String(error),
+    });
+    throw error;
+  }
+}
+
+// Add this function to your existing admin.service.ts file
+export async function getAdminProfileById(userId: string) {
+  try {
+    logger.info('Fetching admin profile', { userId });
+
+    // Find the admin record that corresponds to this user ID
+    const admin = await prisma.admin.findFirst({
+      where: { userId: userId },
+      include: {
+        user: true,
+      },
+    });
+
+    if (!admin || admin.user.role !== UserRole.ADMIN) {
+      logger.warn('Admin profile fetch failed - admin not found', { userId });
+      throw new AppError('Admin not found', 404, ErrorTypes.NOT_FOUND);
+    }
+
+    // Get admin statistics
+    const coursesCreated = await prisma.course.count({
+      where: { adminId: admin.id },
+    });
+
+    const chaptersCreated = await prisma.chapter.count({
+      where: { adminId: admin.id },
+    });
+
+    const examsCreated = await prisma.exam.count({
+      where: { adminId: admin.id },
+    });
+
+    const applicationsReviewed = await prisma.application.count({
+      where: { adminId: admin.id },
+    });
+
+    logger.info('Admin profile retrieved successfully', { adminId: admin.id });
+
+    return {
+      id: admin.id,
+      email: admin.user.email,
+      fullName: admin.fullName,
+      role: admin.user.role,
+      createdAt: admin.createdAt,
+      statistics: {
+        coursesCreated,
+        chaptersCreated,
+        examsCreated,
+        applicationsReviewed,
+      },
+    };
+  } catch (error) {
+    logger.error('Error in getAdminProfileById', {
+      userId,
       error: error instanceof Error ? error.message : String(error),
     });
     throw error;
