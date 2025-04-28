@@ -27,6 +27,7 @@ router.post(
   registerStudent,
 );
 
+// Student login route
 router.post('/login', validateStudentLogin, loginStudentController);
 
 export default router;

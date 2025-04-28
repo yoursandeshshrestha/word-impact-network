@@ -9,6 +9,7 @@ import crypto from 'crypto';
 
 const prisma = new PrismaClient();
 
+// Create a new admin
 export async function createAdmin(
   email: string,
   password: string,
@@ -87,6 +88,7 @@ export async function createAdmin(
   }
 }
 
+// Login an admin
 export async function loginAdmin(email: string, password: string) {
   try {
     logger.info('Admin login attempt', { email });
@@ -125,6 +127,7 @@ export async function loginAdmin(email: string, password: string) {
   }
 }
 
+// Get admin profile by user ID
 export async function getAdminProfileById(userId: string) {
   try {
     logger.info('Fetching admin profile', { userId });
@@ -183,6 +186,7 @@ export async function getAdminProfileById(userId: string) {
   }
 }
 
+// Initiate password reset
 export async function initiatePasswordReset(
   userId: string,
   oldPassword: string,
@@ -253,6 +257,7 @@ export async function initiatePasswordReset(
   }
 }
 
+// Complete password reset
 export async function completePasswordReset(
   userId: string,
   resetId: string,
