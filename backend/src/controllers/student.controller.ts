@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import {
+  getStudentProfileByUserId,
   loginStudent,
   registerStudent as registerStudentService,
 } from '../services/student.service';
@@ -7,6 +8,9 @@ import { sendSuccess } from '../utils/responseHandler';
 import { catchAsync } from '../utils/catchAsync';
 import { Gender } from '@prisma/client';
 import { generateToken } from '@/utils/jwt';
+import { ErrorTypes } from '@/utils/appError';
+import { AppError } from '@/utils/appError';
+import { logger } from '@/utils/logger';
 
 // Register a new student
 export const registerStudent = catchAsync(async (req: Request, res: Response) => {
@@ -82,4 +86,18 @@ export const loginStudentController = catchAsync(async (req: Request, res: Respo
     },
     token,
   });
+});
+
+// Get student profile
+export const getStudentProfile = catchAsync(async (req: Request, res: Response) => {
+  const userId = req.user?.userId;
+
+  if (!userId) {
+    logger.error('User ID is required');
+    throw new AppError('User ID is required', 400, ErrorTypes.VALIDATION);
+  }
+
+  const studentProfile = await getStudentProfileByUserId(userId);
+
+  sendSuccess(res, 200, 'Student profile retrieved successfully', studentProfile);
 });
