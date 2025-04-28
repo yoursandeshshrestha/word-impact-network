@@ -3,6 +3,7 @@ import {
   getStudentProfileByUserId,
   loginStudent,
   registerStudent as registerStudentService,
+  updateStudentProfileByUserId,
 } from '../services/student.service';
 import { sendSuccess } from '../utils/responseHandler';
 import { catchAsync } from '../utils/catchAsync';
@@ -100,4 +101,37 @@ export const getStudentProfile = catchAsync(async (req: Request, res: Response) 
   const studentProfile = await getStudentProfileByUserId(userId);
 
   sendSuccess(res, 200, 'Student profile retrieved successfully', studentProfile);
+});
+
+// Update student profile
+export const updateStudentProfile = catchAsync(async (req: Request, res: Response) => {
+  const userId = req.user?.userId;
+
+  if (!userId) {
+    throw new AppError('User ID is required', 400, ErrorTypes.VALIDATION);
+  }
+
+  const { fullName, phoneNumber, country, dateOfBirth, gender } = req.body;
+
+  // Parse dateOfBirth if provided
+  let parsedDateOfBirth: Date | undefined = undefined;
+  if (dateOfBirth) {
+    parsedDateOfBirth = new Date(dateOfBirth);
+
+    // Check if date is valid
+    if (isNaN(parsedDateOfBirth.getTime())) {
+      throw new AppError('Invalid date format for date of birth', 400, ErrorTypes.VALIDATION);
+    }
+  }
+
+  // Update the profile with only the allowed fields
+  const updatedProfile = await updateStudentProfileByUserId(userId, {
+    fullName,
+    phoneNumber,
+    country,
+    dateOfBirth: parsedDateOfBirth,
+    gender,
+  });
+
+  sendSuccess(res, 200, 'Student profile updated successfully', updatedProfile);
 });
