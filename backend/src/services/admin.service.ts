@@ -1,4 +1,4 @@
-import { PrismaClient, UserRole } from '@prisma/client';
+import { PrismaClient, UserRole, ApplicationStatus } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import { sendAdminPasswordResetVerificationEmail, sendAdminWelcomeEmail } from './email.service';
 import { AppError, ErrorTypes } from '../utils/appError';
@@ -318,6 +318,75 @@ export async function completePasswordReset(
     logger.error('Error in completePasswordReset', {
       userId,
       resetId,
+      error: error instanceof Error ? error.message : String(error),
+    });
+    throw error;
+  }
+}
+
+// Update application status
+export async function updateApplicationStatus(
+  applicationId: string,
+  adminId: string,
+  status: ApplicationStatus,
+  rejectionReason?: string,
+) {
+  try {
+    logger.info('Updating application status', { applicationId, status });
+
+    // Check if admin exists
+    const admin = await prisma.admin.findUnique({
+      where: { id: adminId },
+    });
+
+    if (!admin) {
+      throw new AppError('Admin not found', 404, ErrorTypes.NOT_FOUND);
+    }
+
+    const application = await prisma.application.findUnique({
+      where: { id: applicationId },
+      include: {
+        student: {
+          include: {
+            user: true,
+          },
+        },
+      },
+    });
+
+    if (!application) {
+      throw new AppError('Application not found', 404, ErrorTypes.NOT_FOUND);
+    }
+
+    const updatedApplication = await prisma.application.update({
+      where: { id: applicationId },
+      data: {
+        status,
+        reviewedBy: {
+          connect: { id: adminId },
+        },
+        reviewedAt: new Date(),
+        rejectionReason: status === ApplicationStatus.REJECTED ? rejectionReason : null,
+      },
+      include: {
+        student: {
+          include: {
+            user: true,
+          },
+        },
+      },
+    });
+
+    logger.info('Application status updated successfully', {
+      applicationId,
+      status,
+      studentId: updatedApplication.student?.id,
+    });
+
+    return updatedApplication;
+  } catch (error) {
+    logger.error('Error updating application status', {
+      applicationId,
       error: error instanceof Error ? error.message : String(error),
     });
     throw error;
