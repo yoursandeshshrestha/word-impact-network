@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import Joi from 'joi';
 import { Gender } from '@prisma/client';
 import { AppError, ErrorTypes } from '../utils/appError';
+import { logger } from '@/utils/logger';
 
 // Student registration validation schema (no password required)
 const studentRegistrationSchema = Joi.object({
@@ -26,6 +27,26 @@ const studentRegistrationSchema = Joi.object({
 const loginSchema = Joi.object({
   email: Joi.string().email().required(),
   password: Joi.string().required(),
+});
+
+const studentProfileUpdateSchema = Joi.object({
+  fullName: Joi.string().trim().optional().min(3).max(25),
+  phoneNumber: Joi.string()
+    .pattern(/^[0-9]{10}$/)
+    .optional()
+    .min(10)
+    .max(10)
+    .messages({
+      'string.pattern.base': 'Phone number must contain exactly 10 digits (numbers only)',
+      'string.length': 'Phone number must contain exactly 10 digits (numbers only)',
+    }),
+  country: Joi.string().trim().optional(),
+  dateOfBirth: Joi.date().optional(),
+  gender: Joi.string().valid('MALE', 'FEMALE', 'OTHER').optional(),
+}).messages({
+  'string.empty': '{{#label}} cannot be empty',
+  'date.base': '{{#label}} must be a valid date',
+  'any.only': '{{#label}} must be one of [MALE, FEMALE, OTHER]',
 });
 
 // Validation middleware for student registration
@@ -66,4 +87,21 @@ export const validateStudentLogin = (req: Request, res: Response, next: NextFunc
 
   req.body = value;
   next();
+};
+
+// Validate student profile update
+export const validateStudentProfileUpdate = (req: Request, _res: Response, next: NextFunction) => {
+  try {
+    const { error } = studentProfileUpdateSchema.validate(req.body, { abortEarly: false });
+
+    if (error) {
+      const errorMessage = error.details.map((detail) => detail.message).join(', ');
+      logger.warn('Student profile update validation failed', { errors: errorMessage });
+      throw new AppError(errorMessage, 400, ErrorTypes.VALIDATION);
+    }
+
+    next();
+  } catch (error) {
+    next(error);
+  }
 };
