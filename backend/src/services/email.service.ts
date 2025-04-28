@@ -585,3 +585,58 @@ export async function sendAccountActivationEmail(
 
   return sendEmail(email, subject, html);
 }
+
+export async function sendAdminPasswordResetVerificationEmail(
+  email: string,
+  name: string,
+  verificationCode: string,
+) {
+  const subject = 'Your Word Impact Network Password Reset Verification Code';
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background-color: #4a6fdc; color: white; padding: 10px 20px; }
+        .content { padding: 20px; border: 1px solid #ddd; }
+        .verification-code { 
+          background-color: #f5f5f5; 
+          padding: 15px; 
+          margin: 15px 0; 
+          font-size: 24px; 
+          font-family: monospace;
+          letter-spacing: 2px;
+          text-align: center;
+          border-left: 4px solid #4a6fdc;
+        }
+        .warning { color: #d83737; font-size: 14px; }
+        .footer { font-size: 12px; color: #777; margin-top: 20px; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <h1>Password Reset Verification</h1>
+        </div>
+        <div class="content">
+          <h2>Password Reset Code</h2>
+          <p>Hello ${name},</p>
+          <p>You requested to reset your password for your admin account. Please use the following verification code to complete the process:</p>
+          <div class="verification-code">${verificationCode}</div>
+          <p class="warning">This code will expire in 30 minutes.</p>
+          <p class="warning">If you did not request this password reset, please ignore this email and contact support immediately.</p>
+          <p>Best regards,<br>Word Impact Network Team</p>
+        </div>
+        <div class="footer">
+          <p>This is an automated message. Please do not reply to this email.</p>
+          <p>&copy; ${new Date().getFullYear()} Word Impact Network. All rights reserved.</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+
+  return sendEmail(email, subject, html);
+}
