@@ -1,8 +1,10 @@
 import { Request, Response } from 'express';
-import { createAdmin, loginAdmin } from '../services/admin.service';
+import { createAdmin, getAdminProfileById, loginAdmin } from '../services/admin.service';
 import { generateToken } from '../utils/jwt';
 import { sendSuccess } from '../utils/responseHandler';
 import { catchAsync } from '../utils/catchAsync';
+import { ErrorTypes } from '@/utils/appError';
+import { AppError } from '@/utils/appError';
 
 // Register a new admin
 export const registerAdmin = catchAsync(async (req: Request, res: Response) => {
@@ -24,7 +26,7 @@ export const loginAdminController = catchAsync(async (req: Request, res: Respons
 
   const admin = await loginAdmin(email, password);
   const token = generateToken({
-    userId: admin.id,
+    userId: admin.userId,
     email: admin.email,
     role: admin.role,
   });
@@ -40,4 +42,14 @@ export const loginAdminController = catchAsync(async (req: Request, res: Respons
   });
 });
 
+// Get admin profile
+export const getAdminProfile = catchAsync(async (req: Request, res: Response) => {
+  if (!req.user) {
+    throw new AppError('Authentication required', 401, ErrorTypes.AUTHENTICATION);
+  }
 
+  const userId = req.user.userId;
+  const adminProfile = await getAdminProfileById(userId);
+
+  sendSuccess(res, 200, 'Admin profile retrieved successfully', adminProfile);
+});
