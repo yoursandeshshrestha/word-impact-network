@@ -1,12 +1,16 @@
 import express, { Router } from 'express';
 import multer from 'multer';
-import { loginStudentController, registerStudent } from '../controllers/student.controller';
+import {
+  loginStudentController,
+  registerStudent,
+  updateStudentProfile,
+} from '../controllers/student.controller';
 import {
   validateStudentLogin,
+  validateStudentProfileUpdate,
   validateStudentRegistration,
 } from '../validations/student.validation';
 import { authenticate } from '../middlewares/auth.middleware';
-import { getStudentProfile } from '../controllers/student.controller';
 
 const router: Router = express.Router();
 
@@ -33,6 +37,6 @@ router.post(
 router.post('/login', validateStudentLogin, loginStudentController);
 
 // Student profile route
-router.get('/profile', authenticate, getStudentProfile);
+router.put('/profile', authenticate, validateStudentProfileUpdate, updateStudentProfile);
 
 export default router;
