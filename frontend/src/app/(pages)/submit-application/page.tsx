@@ -1,5 +1,5 @@
 "use client";
-import ApplyPage from "@/components/Auth/ApplyPage";
+import ApplyPage from "@/src/components/Auth/ApplyPage";
 import React, { useState, useEffect } from "react";
 
 function Page() {
