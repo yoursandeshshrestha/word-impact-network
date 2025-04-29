@@ -75,7 +75,7 @@ export const updateCourse = catchAsync(async (req: Request, res: Response) => {
   }
 
   const { id } = req.params;
-  const { title, description, durationYears } = req.body;
+  const { title, description, durationYears, isActive } = req.body;
   // Get the coverImage from the file upload if available
   const coverImageFile = req.file;
 
@@ -87,7 +87,14 @@ export const updateCourse = catchAsync(async (req: Request, res: Response) => {
     }
   }
 
-  const course = await updateCourseById(id, title, description, durationYearsNum, coverImageFile);
+  const course = await updateCourseById(
+    id,
+    title,
+    description,
+    durationYearsNum,
+    coverImageFile,
+    isActive,
+  );
 
   sendSuccess(res, 200, 'Course updated successfully', course);
 });
