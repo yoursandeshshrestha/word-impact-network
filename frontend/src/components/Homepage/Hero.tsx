@@ -1,63 +1,46 @@
 import React from "react";
-import { ArrowRight } from "lucide-react";
+import Link from "next/link";
 import Image from "next/image";
+import { ArrowRight, Play } from "lucide-react";
 
-interface HeroProps {
-  isVisible: boolean;
-}
+import heroBg from "@/public/graduation-cap-image.jpg";
 
-const Hero: React.FC<HeroProps> = ({ isVisible }) => {
+const Hero: React.FC = () => {
   return (
-    <section className="pt-32 pb-20 md:pt-40 md:pb-32 h-[90vh] flex justify-center items-center bg-white">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 md:gap-16 items-center">
-          <div
-            className={`transition-all duration-1000 ${
-              isVisible
-                ? "opacity-100 translate-y-0"
-                : "opacity-0 translate-y-10"
-            }`}
-          >
-            <h1 className="text-4xl sm:text-5xl md:text-6xl font-light text-gray-900 mb-6 leading-tight">
-              Transform Your Future Through{" "}
-              <span className="font-semibold">Excellence</span>
-            </h1>
-            <p className="text-lg md:text-xl text-gray-600 mb-10 max-w-xl">
-              Join our innovative learning platform designed to equip the next
-              generation of leaders with world-class education and practical
-              skills.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4">
-              <button className="bg-black hover:bg-gray-800 text-white px-8 py-3 rounded-md text-base font-medium flex items-center justify-center group transition-all">
-                Begin Your Journey
-                <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
-              </button>
-              <button className="border border-gray-300 text-gray-800 hover:border-gray-500 px-8 py-3 rounded-md text-base font-medium transition-all">
-                Explore Programs
-              </button>
-            </div>
-          </div>
+    <section className="relative h-[90vh] min-h-[600px]">
+      {/* Hero Background Image with Overlay */}
+      <div className="absolute inset-0 z-0">
+        <Image
+          src={heroBg}
+          alt="Hero background"
+          fill
+          className="object-cover"
+          priority
+        />
+        {/* Gradient Overlay */}
+        <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/60 to-black/80"></div>
+      </div>
 
-          <div
-            className={`relative transition-all duration-1000 delay-300 ${
-              isVisible
-                ? "opacity-100 translate-y-0"
-                : "opacity-0 translate-y-10"
-            }`}
-          >
-            <div className="relative z-10">
-              <Image
-                src="/education-vector.svg"
-                alt="Education illustration"
-                className="w-full h-auto max-w-lg mx-auto"
-                width={1000}
-                height={1000}
-              />
-            </div>
+      {/* Content */}
+      <div className="container mx-auto px-4 h-full flex items-center justify-center relative z-10">
+        <div className="max-w-4xl mx-auto text-center text-white">
+          {/* Main Heading */}
+          <h1 className="text-4xl md:text-6xl font-bold mb-4 leading-tight tracking-tight">
+            World Impact Network
+          </h1>
 
-            {/* Subtle gradient background */}
-            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-4/5 h-4/5 rounded-full bg-gradient-to-r from-purple-50 to-blue-50 blur-3xl -z-10 opacity-70"></div>
-          </div>
+          {/* Description */}
+          <p className="text-xl md:text-2xl max-w-3xl mx-auto text-gray-200 leading-relaxed">
+            Equipping Bengali speaking Christian leaders for the great
+            commission through quality education and spiritual formation.
+          </p>
+        </div>
+      </div>
+
+      {/* Scroll Indicator */}
+      <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-10">
+        <div className="w-6 h-10 border-2 border-white/30 rounded-full flex justify-center p-1">
+          <div className="w-1 h-2 bg-white rounded-full animate-bounce"></div>
         </div>
       </div>
     </section>
