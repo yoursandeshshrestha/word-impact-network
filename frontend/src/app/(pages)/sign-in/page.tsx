@@ -1,5 +1,5 @@
 "use client";
-import SignInPage from "@/components/Auth/SignInPage";
+import SignInPage from "@/src/components/Auth/SignInPage";
 import React, { useState, useEffect } from "react";
 
 function Page() {
