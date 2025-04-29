@@ -190,7 +190,7 @@ const Header: React.FC = () => {
                       href="/presidents-council"
                       className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                     >
-                      President's Council
+                      President&apos;s Council
                     </Link>
                     <Link
                       href="/academic-leadership"
