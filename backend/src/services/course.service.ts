@@ -143,6 +143,7 @@ export async function updateCourseById(
   description?: string,
   durationYears?: number,
   coverImageFile?: Express.Multer.File,
+  isActive?: boolean,
 ) {
   try {
     logger.info('Updating course', { courseId: id });
@@ -167,6 +168,7 @@ export async function updateCourseById(
     if (durationYears !== undefined && durationYears !== null)
       updateData.durationYears = durationYears;
     if (coverImageUrl) updateData.coverImageUrl = coverImageUrl;
+    if (isActive !== undefined) updateData.isActive = isActive;
 
     // If no fields to update, return the current course
     if (Object.keys(updateData).length === 0) {
