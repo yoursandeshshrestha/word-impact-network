@@ -27,7 +27,7 @@ const NotFound = () => {
                 : "opacity-0 translate-y-10"
             }`}
           >
-            <h1 className="text-4xl sm:text-5xl md:text-6xl font-light text-gray-900 mb-6 leading-tight">
+            <h1 className="text-4xl sm:text-5xl md:text-6xl font-light text-gray-800 mb-6 leading-tight">
               Oops! Page <span className="font-semibold">Not Found</span>
             </h1>
             <p className="text-lg md:text-xl text-gray-600 mb-10 max-w-xl">
@@ -38,12 +38,12 @@ const NotFound = () => {
             <div className="flex flex-col sm:flex-row gap-4">
               <Link
                 href="/"
-                className="bg-black hover:bg-gray-800 text-white px-8 py-3 rounded-md text-base font-medium flex items-center justify-center group transition-all"
+                className="bg-gray-800 hover:bg-gray-700 text-white px-8 py-3 rounded-md text-base font-medium flex items-center justify-center group transition-all"
               >
                 <ArrowLeft className="mr-2 h-5 w-5 group-hover:-translate-x-1 transition-transform" />
                 Return Home
               </Link>
-              <button className="border border-gray-300 text-gray-800 hover:border-gray-500 px-8 py-3 rounded-md text-base font-medium transition-all">
+              <button className="border border-gray-300 text-gray-800 hover:border-gray-400 hover:bg-gray-50 px-8 py-3 rounded-md text-base font-medium transition-all">
                 Contact Support
               </button>
             </div>
@@ -66,8 +66,8 @@ const NotFound = () => {
               />
             </div>
 
-            {/* Subtle gradient background - same style as the hero */}
-            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-4/5 h-4/5 rounded-full bg-gradient-to-r from-red-50 to-orange-50 blur-3xl -z-10 opacity-70"></div>
+            {/* Subtle gradient background */}
+            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-4/5 h-4/5 rounded-full bg-gradient-to-r from-gray-50 to-gray-100 blur-3xl -z-10 opacity-70"></div>
           </div>
         </div>
       </div>
