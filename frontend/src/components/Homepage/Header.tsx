@@ -1,283 +1,282 @@
 import React, { useState, useEffect } from "react";
-import { Menu, X } from "lucide-react";
-// import DropdownNavItem from "@/common/components/DropdownNavItem";
 import Link from "next/link";
+import Image from "next/image";
+import logo from "@/public/logo-one.png";
 
-// Sample data for dropdowns
-// const programsData = [
-//   {
-//     title: "Academic Programs",
-//     items: [
-//       { label: "Diploma in Technology", href: "#diploma" },
-//       { label: "Bachelor's Degree", href: "#bachelors" },
-//       { label: "Certificate Programs", href: "#certificate" },
-//       { label: "Master's Programs", href: "#masters" },
-//     ],
-//   },
-//   {
-//     title: "Featured Subjects",
-//     items: [
-//       { label: "Data Science", href: "#data-science" },
-//       { label: "Web Development", href: "#web-dev" },
-//       { label: "Business Analytics", href: "#business" },
-//       { label: "Digital Marketing", href: "#marketing" },
-//     ],
-//   },
-// ];
+const Header: React.FC = () => {
+  const [isScrolled, setIsScrolled] = useState(false);
 
-// const aboutData = [
-//   {
-//     title: "About Us",
-//     items: [
-//       { label: "Our Story", href: "#story" },
-//       { label: "Mission & Vision", href: "#mission" },
-//       { label: "Leadership Team", href: "#leadership" },
-//       { label: "Careers", href: "#careers" },
-//     ],
-//   },
-//   {
-//     title: "Community",
-//     items: [
-//       { label: "Student Success Stories", href: "#success" },
-//       { label: "Partners & Sponsors", href: "#partners" },
-//       { label: "Global Impact", href: "#impact" },
-//       { label: "News & Events", href: "#news" },
-//     ],
-//   },
-// ];
-
-// const resourcesData = [
-//   {
-//     title: "Learning Resources",
-//     items: [
-//       { label: "Online Library", href: "#library" },
-//       { label: "Research Papers", href: "#research" },
-//       { label: "Video Tutorials", href: "#tutorials" },
-//       { label: "Practice Exercises", href: "#exercises" },
-//     ],
-//   },
-//   {
-//     title: "Student Support",
-//     items: [
-//       { label: "Academic Advisors", href: "#advisors" },
-//       { label: "Technical Support", href: "#support" },
-//       { label: "Career Services", href: "#career" },
-//       { label: "Financial Aid", href: "#financial" },
-//     ],
-//   },
-// ];
-
-// const contactData = [
-//   {
-//     title: "Get in Touch",
-//     items: [
-//       { label: "Contact Information", href: "#contact-info" },
-//       { label: "Campus Locations", href: "#locations" },
-//       { label: "Schedule a Visit", href: "#visit" },
-//       { label: "Request Information", href: "#request" },
-//     ],
-//   },
-//   {
-//     title: "Admission Process",
-//     items: [
-//       { label: "Application Steps", href: "#application" },
-//       { label: "Deadlines & Dates", href: "#deadlines" },
-//       { label: "Required Documents", href: "#documents" },
-//       { label: "International Students", href: "#international" },
-//     ],
-//   },
-// ];
-
-const Header = () => {
-  const [scrolled, setScrolled] = useState(false);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
-
+  // Add scroll effect
   useEffect(() => {
     const handleScroll = () => {
-      const isScrolled = window.scrollY > 10;
-      if (isScrolled !== scrolled) {
-        setScrolled(isScrolled);
-      }
+      setIsScrolled(window.scrollY > 50);
     };
-
-    const handleClickOutside = (event: MouseEvent) => {
-      // Close dropdown if clicking outside the nav area
-      const target = event.target as HTMLElement;
-      if (!target.closest("nav") && activeDropdown) {
-        setActiveDropdown(null);
-      }
-    };
-
     window.addEventListener("scroll", handleScroll);
-    document.addEventListener("mousedown", handleClickOutside);
-
-    return () => {
-      window.removeEventListener("scroll", handleScroll);
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [scrolled, activeDropdown]);
-
-  // const handleOpenDropdown = (dropdown: string) => {
-  //   setActiveDropdown(dropdown);
-  // };
-
-  // const handleCloseDropdown = () => {
-  //   setActiveDropdown(null);
-  // };
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   return (
     <header
-      className={`fixed w-full z-50 transition-all duration-300 py-6 bg-white`}
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+        isScrolled ? "bg-white shadow-md py-2" : "bg-white py-4"
+      }`}
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between">
-          {/* Logo */}
-          <div className="flex-shrink-0">
-            <Link href="/" className="flex items-center group">
-              <span className="text-xl font-medium text-gray-900">
-                Word Impact Network
-              </span>
+      <div className="container mx-auto px-4">
+        {/* Restructured layout to 3 sections: logo, centered nav, auth buttons */}
+        <div className="flex justify-between items-center">
+          {/* Logo Section */}
+          <div className="logo flex-shrink-0">
+            <Link href="/" className="block">
+              <Image
+                src={logo}
+                alt="Himalayan Diaspora Academy Logo"
+                width={200}
+                height={200}
+                className="h-24 w-auto"
+              />
             </Link>
           </div>
 
-          {/* Center nav */}
-          <nav className="hidden md:flex items-center justify-center space-x-8 flex-1">
-            <div className="flex items-center justify-center space-x-8">
-              {/* <DropdownNavItem
-                label="Programs"
-                columns={programsData}
-                isOpen={activeDropdown === "programs"}
-                onOpen={() => handleOpenDropdown("programs")}
-                onClose={handleCloseDropdown}
-              />
-              <DropdownNavItem
-                label="About"
-                columns={aboutData}
-                isOpen={activeDropdown === "about"}
-                onOpen={() => handleOpenDropdown("about")}
-                onClose={handleCloseDropdown}
-              />
-              <DropdownNavItem
-                label="Resources"
-                columns={resourcesData}
-                isOpen={activeDropdown === "resources"}
-                onOpen={() => handleOpenDropdown("resources")}
-                onClose={handleCloseDropdown}
-              />
-              <DropdownNavItem
-                label="Contact"
-                columns={contactData}
-                isOpen={activeDropdown === "contact"}
-                onOpen={() => handleOpenDropdown("contact")}
-                onClose={handleCloseDropdown}
-              /> */}
-            </div>
+          {/* Centered Navigation */}
+          <nav className="hidden md:block flex-grow">
+            <ul className="flex justify-center space-x-10 text-base font-medium tracking-wide">
+              <li>
+                <Link
+                  href="/"
+                  className="text-gray-800 hover:text-indigo-700 transition-colors font-semibold"
+                >
+                  HOME
+                </Link>
+              </li>
+              <li className="relative group">
+                <Link
+                  href="/academics"
+                  className="text-gray-800 hover:text-indigo-700 transition-colors flex items-center font-semibold"
+                >
+                  ACADEMICS
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-4 w-4 ml-1"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 9l-7 7-7-7"
+                    />
+                  </svg>
+                </Link>
+                <div className="absolute left-1/2 transform -translate-x-1/2 mt-2 w-56 bg-white shadow-lg rounded-md hidden group-hover:block z-10 transition-all duration-300 opacity-0 group-hover:opacity-100">
+                  <div className="absolute -top-4 left-0 right-0 h-4"></div>
+                  <div className="py-2">
+                    <Link
+                      href="/bachelor-degree"
+                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    >
+                      Bachelor Degree
+                    </Link>
+                    <Link
+                      href="/diploma-degree"
+                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    >
+                      Diploma Degree
+                    </Link>
+                    <Link
+                      href="/3b-study-program"
+                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    >
+                      3B Study Program
+                    </Link>
+                    <Link
+                      href="/academic-calendar"
+                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    >
+                      Academic Calendar
+                    </Link>
+                    <Link
+                      href="/tuition-fees"
+                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    >
+                      Tuition & Fees
+                    </Link>
+                  </div>
+                </div>
+              </li>
+              <li className="relative group">
+                <Link
+                  href="/about"
+                  className="text-gray-800 hover:text-indigo-700 transition-colors flex items-center font-semibold"
+                >
+                  ABOUT
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-4 w-4 ml-1"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 9l-7 7-7-7"
+                    />
+                  </svg>
+                </Link>
+                <div className="absolute left-1/2 transform -translate-x-1/2 mt-2 w-56 bg-white shadow-lg rounded-md hidden group-hover:block z-10 transition-all duration-300 opacity-0 group-hover:opacity-100">
+                  <div className="absolute -top-4 left-0 right-0 h-4"></div>
+                  <div className="py-2">
+                    <Link
+                      href="/about-win"
+                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    >
+                      About WIN
+                    </Link>
+                    <Link
+                      href="/history-timeline"
+                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    >
+                      History & Timeline
+                    </Link>
+                    <Link
+                      href="/newsletters"
+                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    >
+                      Newsletters
+                    </Link>
+                  </div>
+                </div>
+              </li>
+              <li className="relative group">
+                <Link
+                  href="/leadership"
+                  className="text-gray-800 hover:text-indigo-700 transition-colors flex items-center font-semibold"
+                >
+                  LEADERSHIP
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-4 w-4 ml-1"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 9l-7 7-7-7"
+                    />
+                  </svg>
+                </Link>
+                <div className="absolute left-1/2 transform -translate-x-1/2 mt-2 w-56 bg-white shadow-lg rounded-md hidden group-hover:block z-10 transition-all duration-300 opacity-0 group-hover:opacity-100">
+                  <div className="absolute -top-4 left-0 right-0 h-4"></div>
+                  <div className="py-2">
+                    <Link
+                      href="/office-of-the-president"
+                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    >
+                      Office Of The President
+                    </Link>
+                    <Link
+                      href="/board-of-directors"
+                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    >
+                      Board of Directors
+                    </Link>
+                    <Link
+                      href="/presidents-council"
+                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    >
+                      President's Council
+                    </Link>
+                    <Link
+                      href="/academic-leadership"
+                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    >
+                      Academic Leadership
+                    </Link>
+                    <Link
+                      href="/ambassadors"
+                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    >
+                      Ambassadors
+                    </Link>
+                    <Link
+                      href="/staff"
+                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    >
+                      Staff
+                    </Link>
+                  </div>
+                </div>
+              </li>
+              <li>
+                <Link
+                  href="/faq"
+                  className="text-gray-800 hover:text-indigo-700 transition-colors font-semibold"
+                >
+                  FAQ
+                </Link>
+              </li>
+            </ul>
           </nav>
 
-          {/* Right side buttons */}
-          <div className="hidden md:flex items-center space-x-6">
+          {/* Authentication Links */}
+          <div className="flex items-center space-x-4 flex-shrink-0">
             <Link
-              href="/sign-in"
-              className="text-gray-600 hover:text-black transition-colors text-sm font-medium"
+              href="/login"
+              className="flex items-center text-gray-700 hover:text-indigo-700 transition-colors"
             >
-              Sign In
+              <div className="flex items-center justify-center w-8 h-8 rounded-full bg-gray-100">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="w-5 h-5"
+                >
+                  <circle cx="12" cy="12" r="10" />
+                  <circle cx="12" cy="10" r="3" />
+                  <path d="M7 20.662V19c0-1.657 2.239-3 5-3s5 1.343 5 3v1.662" />
+                </svg>
+              </div>
+              <span className="ml-2 hidden md:inline font-medium">Login</span>
             </Link>
             <Link
-              className="bg-black hover:bg-gray-800 text-white rounded-md px-5 py-2 text-sm font-medium transition-colors"
-              href="/submit-application"
+              href="/apply"
+              className="bg-gray-800 hover:bg-gray-700 text-white px-6 py-2.5 rounded-md text-sm font-semibold transition-colors"
             >
-              Apply Now
+              Apply
             </Link>
           </div>
 
           {/* Mobile menu button */}
-          <button
-            className="md:hidden text-gray-900 p-1 focus:outline-none"
-            aria-label={mobileMenuOpen ? "Close Menu" : "Open Menu"}
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          >
-            {mobileMenuOpen ? (
-              <X className="h-6 w-6" />
-            ) : (
-              <Menu className="h-6 w-6" />
-            )}
+          <button className="md:hidden ml-4">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-6 w-6"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M4 6h16M4 12h16M4 18h16"
+              />
+            </svg>
           </button>
         </div>
       </div>
-
-      {/* Mobile menu */}
-      {mobileMenuOpen && (
-        <div className="md:hidden absolute top-full left-0 w-full bg-white shadow-sm border-t border-gray-100">
-          <div className="px-4 py-6 space-y-4">
-            <div className="space-y-3">
-              <p className="font-medium text-gray-900">Programs</p>
-              <a
-                href="#diploma"
-                className="block py-2 text-gray-600 hover:text-black text-sm"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Diploma in Technology
-              </a>
-              <a
-                href="#bachelors"
-                className="block py-2 text-gray-600 hover:text-black text-sm"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Bachelor&apos;s Degree
-              </a>
-              <a
-                href="#certificate"
-                className="block py-2 text-gray-600 hover:text-black text-sm"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Certificate Programs
-              </a>
-            </div>
-
-            <div className="space-y-3">
-              <p className="font-medium text-gray-900">About</p>
-              <a
-                href="#story"
-                className="block py-2 text-gray-600 hover:text-black text-sm"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Our Story
-              </a>
-              <a
-                href="#mission"
-                className="block py-2 text-gray-600 hover:text-black text-sm"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Mission & Vision
-              </a>
-              <a
-                href="#leadership"
-                className="block py-2 text-gray-600 hover:text-black text-sm"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Leadership Team
-              </a>
-            </div>
-
-            <div className="pt-4 mt-4 border-t border-gray-100">
-              <a
-                href="#signin"
-                className="block py-2 text-gray-600 hover:text-black text-sm font-medium"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Sign In
-              </a>
-              <button
-                className="mt-4 w-full bg-black hover:bg-gray-800 text-white rounded-md px-4 py-2 text-sm font-medium transition-colors"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Apply Now
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </header>
   );
 };
