@@ -1,128 +1,136 @@
 import React from "react";
+import Link from "next/link";
+import { Mail } from "lucide-react";
 
 const Footer = () => {
   return (
-    <footer className="bg-white py-16 border-t border-gray-100">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-10">
+    <footer className="bg-white">
+      {/* Main Footer */}
+      <div className="container mx-auto px-4 py-12">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+          {/* Contact Column */}
           <div>
-            <div className="mb-4">
-              <span className="text-lg font-medium text-gray-900">
-                Word Impact Network
-              </span>
+            <h3 className="text-gray-800 font-bold text-lg mb-4">CONTACT</h3>
+            <div className="text-gray-700">
+              <p className="mb-2">Word Impact Network</p>
+              <p className="mb-2">+1 443 255 3599</p>
+              <p className="mb-2">9876 Belair Rd Perry Hall, MD 21128</p>
+              <Link
+                href="mailto:info@hida.education"
+                className="flex items-center text-gray-600 hover:text-gray-800"
+              >
+                <Mail className="h-4 w-4 mr-2" />
+                info@wordimpactnetwork.org
+              </Link>
             </div>
-            <p className="text-gray-600 text-sm">
-              Transforming education for the digital age
-            </p>
           </div>
+
+          {/* Quick Links Column */}
           <div>
-            <h3 className="text-sm font-medium text-gray-900 mb-4">Courses</h3>
+            <h3 className="text-gray-800 font-bold text-lg mb-4">
+              QUICK LINKS
+            </h3>
             <ul className="space-y-2">
               <li>
-                <a
-                  href="#"
-                  className="text-gray-600 hover:text-black transition-colors text-sm"
+                <Link
+                  href="/faqs"
+                  className="text-gray-700 hover:text-gray-800"
                 >
-                  Data Science
-                </a>
+                  FAQs
+                </Link>
               </li>
               <li>
-                <a
-                  href="#"
-                  className="text-gray-600 hover:text-black transition-colors text-sm"
+                <Link
+                  href="/academic-calendar"
+                  className="text-gray-700 hover:text-gray-800"
                 >
-                  Web Development
-                </a>
+                  Academic Calendar
+                </Link>
               </li>
               <li>
-                <a
-                  href="#"
-                  className="text-gray-600 hover:text-black transition-colors text-sm"
+                <Link
+                  href="/apply"
+                  className="text-gray-700 hover:text-gray-800"
                 >
-                  Design
-                </a>
-              </li>
-              <li>
-                <a
-                  href="#"
-                  className="text-gray-600 hover:text-black transition-colors text-sm"
-                >
-                  Business
-                </a>
+                  Apply Now
+                </Link>
               </li>
             </ul>
           </div>
+
+          {/* Ministry Resources Column */}
           <div>
-            <h3 className="text-sm font-medium text-gray-900 mb-4">Company</h3>
+            <h3 className="text-gray-800 font-bold text-lg mb-4">
+              MINISTRY RESOURCES
+            </h3>
             <ul className="space-y-2">
               <li>
-                <a
-                  href="#"
-                  className="text-gray-600 hover:text-black transition-colors text-sm"
+                <Link
+                  href="/video-library"
+                  className="text-gray-700 hover:text-gray-800"
                 >
-                  About
-                </a>
+                  Video Library
+                </Link>
               </li>
               <li>
-                <a
-                  href="#"
-                  className="text-gray-600 hover:text-black transition-colors text-sm"
+                <Link
+                  href="/leadership-training"
+                  className="text-gray-700 hover:text-gray-800"
                 >
-                  Careers
-                </a>
+                  Leadership Training
+                </Link>
               </li>
-              {/* <li>
-                <a
-                  href="#"
-                  className="text-gray-600 hover:text-black transition-colors text-sm"
-                >
-                  Blog
-                </a>
-              </li> */}
               <li>
-                <a
-                  href="#"
-                  className="text-gray-600 hover:text-black transition-colors text-sm"
+                <Link
+                  href="/bible-project"
+                  className="text-gray-700 hover:text-gray-800"
                 >
-                  Contact
-                </a>
+                  Bible Project
+                </Link>
               </li>
             </ul>
           </div>
+
+          {/* Social Media Column */}
           <div>
-            <h3 className="text-sm font-medium text-gray-900 mb-4">Legal</h3>
+            <h3 className="text-gray-800 font-bold text-lg mb-4">
+              SOCIAL MEDIA
+            </h3>
             <ul className="space-y-2">
               <li>
-                <a
-                  href="#"
-                  className="text-gray-600 hover:text-black transition-colors text-sm"
+                <Link
+                  href="https://facebook.com"
+                  className="text-gray-700 hover:text-gray-800"
                 >
-                  Privacy
-                </a>
+                  Facebook
+                </Link>
               </li>
               <li>
-                <a
-                  href="#"
-                  className="text-gray-600 hover:text-black transition-colors text-sm"
+                <Link
+                  href="https://youtube.com"
+                  className="text-gray-700 hover:text-gray-800"
                 >
-                  Terms
-                </a>
+                  Youtube
+                </Link>
               </li>
-                {/* <li>
-                  <a
-                    href="#"
-                    className="text-gray-600 hover:text-black transition-colors text-sm"
-                  >
-                    Accessibility
-                  </a>
-                </li> */}
+              <li>
+                <Link
+                  href="/student-portal"
+                  className="text-gray-700 hover:text-gray-800"
+                >
+                  Student Portal
+                </Link>
+              </li>
             </ul>
           </div>
         </div>
-        <div className="mt-12 pt-8 border-t border-gray-100">
-          <p className="text-gray-500 text-sm text-center">
-            &copy; 2025 EduCares. All rights reserved.
-          </p>
+      </div>
+
+      {/* Copyright Bar */}
+      <div className="bg-gray-100 py-4">
+        <div className="container mx-auto text-center text-gray-700 text-sm px-4">
+          © All rights Reserved | Word Impact Network | Website By Sandesh
+          Shrestha
         </div>
       </div>
     </footer>
