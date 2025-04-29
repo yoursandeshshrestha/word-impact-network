@@ -1,6 +1,6 @@
 import React from "react";
 import Link from "next/link";
-import { ArrowRight, Heart } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 
 const CTA = () => {
   return (
@@ -49,7 +49,7 @@ const CTA = () => {
             <div className="h-px bg-white/30 my-4"></div>
 
             <div className="text-sm italic">
-              "Alone we can do so little, together we can do so much."
+              &quot;Alone we can do so little, together we can do so much.&quot;
             </div>
           </div>
         </div>
