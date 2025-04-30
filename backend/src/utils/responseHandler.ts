@@ -27,7 +27,7 @@ export const sendResponse = (
   data?: any,
   errors?: string[],
   meta?: ApiResponse['meta'],
-): Response => {
+): void => {
   const responseBody: ApiResponse = {
     status,
     message,
@@ -37,7 +37,7 @@ export const sendResponse = (
   if (errors && errors.length > 0) responseBody.errors = errors;
   if (meta) responseBody.meta = meta;
 
-  return res.status(statusCode).json(responseBody);
+  res.status(statusCode).json(responseBody);
 };
 
 /*** Send success response ***/
@@ -47,8 +47,8 @@ export const sendSuccess = (
   message = 'Success',
   data?: any,
   meta?: ApiResponse['meta'],
-): Response => {
-  return sendResponse(res, statusCode, 'success', message, data, undefined, meta);
+): void => {
+  sendResponse(res, statusCode, 'success', message, data, undefined, meta);
 };
 
 /*** Send error response (server error) ***/
@@ -58,8 +58,8 @@ export const sendError = (
   message = 'Error',
   errors?: string[],
   meta?: ApiResponse['meta'],
-): Response => {
-  return sendResponse(res, statusCode, 'error', message, undefined, errors, meta);
+): void => {
+  sendResponse(res, statusCode, 'error', message, undefined, errors, meta);
 };
 
 /*** Send fail response (client error) ***/
@@ -69,6 +69,6 @@ export const sendFail = (
   message = 'Failed',
   errors?: string[],
   meta?: ApiResponse['meta'],
-): Response => {
-  return sendResponse(res, statusCode, 'fail', message, undefined, errors, meta);
+): void => {
+  sendResponse(res, statusCode, 'fail', message, undefined, errors, meta);
 };
