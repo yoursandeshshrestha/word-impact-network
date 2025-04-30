@@ -117,6 +117,52 @@ export async function fetchCourseById(id: string) {
             fullName: true,
           },
         },
+        chapters: {
+          orderBy: [{ courseYear: 'asc' }, { orderIndex: 'asc' }],
+          include: {
+            videos: {
+              orderBy: {
+                orderIndex: 'asc',
+              },
+              select: {
+                id: true,
+                title: true,
+                description: true,
+                backblazeUrl: true,
+                duration: true,
+                orderIndex: true,
+                createdAt: true,
+                updatedAt: true,
+              },
+            },
+            exam: {
+              select: {
+                id: true,
+                title: true,
+                description: true,
+                passingScore: true,
+                timeLimit: true,
+                createdAt: true,
+                updatedAt: true,
+                questions: {
+                  orderBy: {
+                    createdAt: 'asc',
+                  },
+                  select: {
+                    id: true,
+                    text: true,
+                    questionType: true,
+                    options: true,
+                    correctAnswer: true,
+                    points: true,
+                    createdAt: true,
+                    updatedAt: true,
+                  },
+                },
+              },
+            },
+          },
+        },
       },
     });
 
