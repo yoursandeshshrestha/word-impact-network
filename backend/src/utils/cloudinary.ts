@@ -2,6 +2,18 @@ import { v2 as cloudinary } from 'cloudinary';
 import { logger } from './logger';
 import { AppError, ErrorTypes } from './appError';
 
+// Validate required environment variables
+const requiredEnvVars = ['CLOUDINARY_CLOUD_NAME', 'CLOUDINARY_API_KEY', 'CLOUDINARY_API_SECRET'];
+const missingEnvVars = requiredEnvVars.filter((envVar) => !process.env[envVar]);
+
+if (missingEnvVars.length > 0) {
+  throw new AppError(
+    `Missing required Cloudinary environment variables: ${missingEnvVars.join(', ')}`,
+    500,
+    ErrorTypes.SERVER,
+  );
+}
+
 // Configure Cloudinary
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -29,11 +41,18 @@ export const uploadToCloudinary = async (
 
     const result = await cloudinary.uploader.upload(base64File, {
       folder,
-      resource_type: 'raw',
+      resource_type: 'video',
       access_mode: 'public',
       overwrite: true,
       public_id: fileName ? `${folder}/${fileName}` : undefined,
       type: 'upload',
+      chunk_size: 6000000,
+      eager: [
+        { width: 300, height: 300, crop: 'pad', audio_codec: 'none' },
+        { width: 160, height: 100, crop: 'crop', gravity: 'south', audio_codec: 'none' },
+      ],
+      eager_async: true,
+      eager_notification_url: process.env.CLOUDINARY_NOTIFICATION_URL,
     });
 
     logger.info('File uploaded successfully to Cloudinary', {
@@ -45,8 +64,15 @@ export const uploadToCloudinary = async (
   } catch (error) {
     logger.error('Error uploading file to Cloudinary', {
       error: error instanceof Error ? error.message : String(error),
+      details: error instanceof Error ? error.stack : JSON.stringify(error),
+      folder,
+      fileName,
     });
-    throw new AppError('Failed to upload file', 500, ErrorTypes.SERVER);
+    throw new AppError(
+      error instanceof Error ? error.message : 'Failed to upload file',
+      500,
+      ErrorTypes.SERVER,
+    );
   }
 };
 
