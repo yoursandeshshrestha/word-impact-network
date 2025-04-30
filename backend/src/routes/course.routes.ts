@@ -9,6 +9,8 @@ import {
   updateCourse,
   deleteCourse,
 } from '../controllers/course.controller';
+import { validateCreateChapter } from '@/validations/chapter.validation';
+import { createChapterController, getChaptersByCourseId } from '@/controllers/chapter.controller';
 
 const router: Router = express.Router();
 
@@ -19,7 +21,6 @@ const upload = multer({
   limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
 });
 
-// POST /api/v1/courses - Create Course (Admin only)
 router.post(
   '/',
   authenticate,
@@ -28,8 +29,6 @@ router.post(
   validateCreateCourse,
   createCourse,
 );
-
-// Other course routes
 router.get('/', getAllCourses);
 router.get('/:id', getCourseById);
 router.put(
@@ -41,5 +40,17 @@ router.put(
   updateCourse,
 );
 router.delete('/:id', authenticate, requireAdmin, deleteCourse);
+
+// chapter routes
+router.post(
+  '/:courseId/chapters',
+  authenticate,
+  requireAdmin,
+  validateCreateChapter,
+  createChapterController,
+);
+
+// GET /api/v1/courses/:courseId/chapters - Get All Chapters for Course
+router.get('/:courseId/chapters', getChaptersByCourseId);
 
 export default router;
