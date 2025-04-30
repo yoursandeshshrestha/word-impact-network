@@ -4,6 +4,7 @@ import studentRoutes from './student.routes';
 import applicationRoutes from './application.routes';
 import courseRoutes from './course.routes';
 import chapterRoutes from './chapter.routes';
+import videoRoutes from './video.routes';
 const router: Router = express.Router();
 
 // admin routes
@@ -16,9 +17,12 @@ router.use('/student', studentRoutes);
 router.use('/applications', applicationRoutes);
 
 // course routes
-router.use('/courses', courseRoutes);   
+router.use('/courses', courseRoutes);
 
 // chapter routes
 router.use('/chapters', chapterRoutes);
+
+// video routes
+router.use('/videos', videoRoutes);
 
 export default router;
