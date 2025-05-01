@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import {
   enrollStudentInCourse,
   getStudentEnrolledCourses,
+  getStudentLearningProgress,
   getStudentProfileByUserId,
   loginStudent,
   registerStudent as registerStudentService,
@@ -224,4 +225,43 @@ export const enrollInCourse = catchAsync(async (req: Request, res: Response) => 
     : 'Successfully reactivated your enrollment in the course';
 
   sendSuccess(res, 201, message, enrollmentResult.enrollment);
+});
+
+// Get student's overall learning progress
+export const getStudentProgress = catchAsync(async (req: Request, res: Response) => {
+  // Ensure user is authenticated and get userId
+  if (!req.user || !req.user.userId) {
+    throw new AppError('Authentication required', 401, ErrorTypes.AUTHENTICATION);
+  }
+
+  // First find the student ID from the user ID
+  const student = await prisma.student.findFirst({
+    where: { userId: req.user.userId },
+  });
+
+  if (!student) {
+    logger.warn('Student not found for user', { userId: req.user.userId });
+    throw new AppError('Student not found', 404, ErrorTypes.NOT_FOUND);
+  }
+
+  // Ensure student's application is approved
+  if (student.applicationStatus !== ApplicationStatus.APPROVED) {
+    logger.warn('Progress fetch failed - student application not approved', {
+      studentId: student.id,
+      applicationStatus: student.applicationStatus,
+    });
+
+    let errorMessage = 'Your application needs to be approved to access progress data';
+
+    if (student.applicationStatus === ApplicationStatus.REJECTED) {
+      errorMessage = 'Your application has been rejected. Please contact support.';
+    }
+
+    throw new AppError(errorMessage, 403, ErrorTypes.AUTHORIZATION);
+  }
+
+  // Get learning progress
+  const progressData = await getStudentLearningProgress(student.id);
+
+  sendSuccess(res, 200, 'Learning progress retrieved successfully', progressData);
 });
