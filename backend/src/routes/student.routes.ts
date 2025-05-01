@@ -1,6 +1,7 @@
 import express, { Router } from 'express';
 import multer from 'multer';
 import {
+  getCourses,
   getStudentProfile,
   loginStudentController,
   registerStudent,
@@ -42,5 +43,8 @@ router.get('/profile', authenticate, getStudentProfile);
 
 // Student profile route
 router.put('/profile', authenticate, validateStudentProfileUpdate, updateStudentProfile);
+
+// course routes
+router.get('/courses', authenticate, getCourses);
 
 export default router;
