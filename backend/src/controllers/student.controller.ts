@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import {
+  getStudentEnrolledCourses,
   getStudentProfileByUserId,
   loginStudent,
   registerStudent as registerStudentService,
@@ -12,6 +13,7 @@ import { generateToken } from '@/utils/jwt';
 import { ErrorTypes } from '@/utils/appError';
 import { AppError } from '@/utils/appError';
 import { logger } from '@/utils/logger';
+import prisma from '@/config/prisma';
 
 // Register a new student
 export const registerStudent = catchAsync(async (req: Request, res: Response) => {
@@ -134,4 +136,28 @@ export const updateStudentProfile = catchAsync(async (req: Request, res: Respons
   });
 
   sendSuccess(res, 200, 'Student profile updated successfully', updatedProfile);
+});
+
+// Get courses
+// Get student's enrolled courses
+export const getCourses = catchAsync(async (req: Request, res: Response) => {
+  // Ensure user is authenticated and get userId
+  if (!req.user || !req.user.userId) {
+    throw new AppError('Authentication required', 401, ErrorTypes.AUTHENTICATION);
+  }
+
+  // First find the student ID from the user ID
+  const student = await prisma.student.findFirst({
+    where: { userId: req.user.userId },
+  });
+
+  if (!student) {
+    logger.warn('Student not found for user', { userId: req.user.userId });
+    throw new AppError('Student not found', 404, ErrorTypes.NOT_FOUND);
+  }
+
+  // Get enrolled courses using the student ID
+  const coursesData = await getStudentEnrolledCourses(student.id);
+
+  sendSuccess(res, 200, 'Courses retrieved successfully', coursesData);
 });
