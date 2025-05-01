@@ -4,6 +4,7 @@ import {
   enrollInCourse,
   getCourses,
   getStudentProfile,
+  getStudentProgress,
   loginStudentController,
   registerStudent,
   updateStudentProfile,
@@ -48,5 +49,8 @@ router.put('/profile', authenticate, validateStudentProfileUpdate, updateStudent
 // course routes
 router.get('/courses', authenticate, getCourses);
 router.post('/courses/:courseId/enroll', authenticate, enrollInCourse);
+
+// Progress route
+router.get('/progress', authenticate, getStudentProgress);
 
 export default router;
