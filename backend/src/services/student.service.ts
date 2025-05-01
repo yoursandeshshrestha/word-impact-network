@@ -685,3 +685,153 @@ export async function getStudentEnrolledCourses(studentId: string) {
   }
 }
 
+// Enroll student in a course
+export async function enrollStudentInCourse(studentId: string, courseId: string) {
+  try {
+    logger.info('Enrolling student in course', { studentId, courseId });
+
+    // Check if student exists
+    const student = await prisma.student.findUnique({
+      where: { id: studentId },
+    });
+
+    if (!student) {
+      logger.warn('Enrollment failed - student not found', { studentId });
+      throw new AppError('Student not found', 404, ErrorTypes.NOT_FOUND);
+    }
+
+    // Check if course exists and is active
+    const course = await prisma.course.findUnique({
+      where: { 
+        id: courseId,
+        isActive: true
+      },
+      include: {
+        chapters: {
+          select: {
+            id: true
+          }
+        }
+      }
+    });
+
+    if (!course) {
+      logger.warn('Enrollment failed - course not found or inactive', { courseId });
+      throw new AppError('Course not found or inactive', 404, ErrorTypes.NOT_FOUND);
+    }
+
+    // Check if student is already enrolled in this course
+    const existingEnrollment = await prisma.courseEnrollment.findUnique({
+      where: {
+        studentId_courseId: {
+          studentId: studentId,
+          courseId: courseId
+        }
+      }
+    });
+
+    if (existingEnrollment) {
+      // If enrollment exists but is inactive, reactivate it
+      if (!existingEnrollment.isActive) {
+        const reactivatedEnrollment = await prisma.courseEnrollment.update({
+          where: {
+            id: existingEnrollment.id
+          },
+          data: {
+            isActive: true,
+            updatedAt: new Date()
+          },
+          include: {
+            course: true
+          }
+        });
+
+        logger.info('Course enrollment reactivated', { 
+          studentId, 
+          courseId, 
+          enrollmentId: reactivatedEnrollment.id 
+        });
+
+        return {
+          isNewEnrollment: false,
+          enrollment: {
+            id: reactivatedEnrollment.id,
+            enrollmentDate: reactivatedEnrollment.enrollmentDate,
+            isActive: reactivatedEnrollment.isActive,
+            course: {
+              id: reactivatedEnrollment.course.id,
+              title: reactivatedEnrollment.course.title,
+              description: reactivatedEnrollment.course.description,
+              durationYears: reactivatedEnrollment.course.durationYears
+            }
+          }
+        };
+      }
+
+      // If already active, return error
+      logger.warn('Enrollment failed - student already enrolled', { studentId, courseId });
+      throw new AppError('You are already enrolled in this course', 400, ErrorTypes.DUPLICATE);
+    }
+
+    // Create new enrollment
+    const enrollment = await prisma.courseEnrollment.create({
+      data: {
+        student: {
+          connect: { id: studentId }
+        },
+        course: {
+          connect: { id: courseId }
+        },
+        isActive: true
+      },
+      include: {
+        course: true
+      }
+    });
+
+    // Initialize chapter progress for all chapters in this course
+    const chapterProgressPromises = course.chapters.map(chapter => {
+      return prisma.chapterProgress.create({
+        data: {
+          student: {
+            connect: { id: studentId }
+          },
+          chapter: {
+            connect: { id: chapter.id }
+          },
+          isCompleted: false
+        }
+      });
+    });
+
+    await Promise.all(chapterProgressPromises);
+
+    logger.info('Student enrolled in course successfully', { 
+      studentId, 
+      courseId, 
+      enrollmentId: enrollment.id 
+    });
+
+    return {
+      isNewEnrollment: true,
+      enrollment: {
+        id: enrollment.id,
+        enrollmentDate: enrollment.enrollmentDate,
+        isActive: enrollment.isActive,
+        course: {
+          id: enrollment.course.id,
+          title: enrollment.course.title,
+          description: enrollment.course.description,
+          durationYears: enrollment.course.durationYears
+        }
+      }
+    };
+  } catch (error) {
+    logger.error('Error in enrollStudentInCourse', {
+      studentId,
+      courseId,
+      error: error instanceof Error ? error.message : String(error),
+    });
+    throw error;
+  }
+}
