@@ -480,3 +480,208 @@ export async function updateStudentProfileByUserId(
     throw error;
   }
 }
+
+// Get student's enrolled courses
+export async function getStudentEnrolledCourses(studentId: string) {
+  try {
+    logger.info('Fetching enrolled courses for student', { studentId });
+
+    // Find the student first to verify they exist
+    const student = await prisma.student.findUnique({
+      where: { id: studentId },
+    });
+
+    if (!student) {
+      logger.warn('Enrolled courses fetch failed - student not found', { studentId });
+      throw new AppError('Student not found', 404, ErrorTypes.NOT_FOUND);
+    }
+
+    // Get course enrollments with course details
+    const courseEnrollments = await prisma.courseEnrollment.findMany({
+      where: { 
+        studentId: studentId,
+        isActive: true 
+      },
+      include: {
+        course: {
+          include: {
+            chapters: {
+              select: {
+                id: true,
+                title: true,
+                description: true,
+                orderIndex: true,
+                courseYear: true,
+                _count: {
+                  select: {
+                    videos: true
+                  }
+                }
+              },
+              orderBy: {
+                orderIndex: 'asc'
+              }
+            },
+            _count: {
+              select: {
+                chapters: true
+              }
+            }
+          }
+        }
+      },
+      orderBy: {
+        enrollmentDate: 'desc',
+      },
+    });
+
+    // Calculate progress for each course
+    const coursesWithProgress = await Promise.all(
+      courseEnrollments.map(async (enrollment) => {
+        // Count total chapters in the course
+        const totalChapters = enrollment.course._count.chapters;
+
+        // Count completed chapters for this student in this course
+        const completedChapters = await prisma.chapterProgress.count({
+          where: {
+            studentId: studentId,
+            chapter: {
+              courseId: enrollment.course.id,
+            },
+            isCompleted: true,
+          },
+        });
+
+        // Calculate videos watched in this course
+        const totalVideosInCourse = await prisma.video.count({
+          where: {
+            chapter: {
+              courseId: enrollment.course.id
+            }
+          }
+        });
+
+        const watchedVideosInCourse = await prisma.videoProgress.count({
+          where: {
+            studentId: studentId,
+            video: {
+              chapter: {
+                courseId: enrollment.course.id
+              }
+            },
+            watchedPercent: 100
+          }
+        });
+
+        // Calculate progress percentages
+        const chapterProgressPercent = totalChapters > 0 
+          ? Math.round((completedChapters / totalChapters) * 100) 
+          : 0;
+          
+        const videoProgressPercent = totalVideosInCourse > 0 
+          ? Math.round((watchedVideosInCourse / totalVideosInCourse) * 100) 
+          : 0;
+
+        // Calculate overall progress as average of chapter and video progress
+        const overallProgress = Math.round((chapterProgressPercent + videoProgressPercent) / 2);
+
+        // Get latest certification for this course if any
+        const latestCertification = await prisma.yearCertification.findFirst({
+          where: {
+            studentId: studentId,
+            courseId: enrollment.course.id
+          },
+          orderBy: {
+            year: 'desc'
+          }
+        });
+
+        return {
+          enrollment: {
+            id: enrollment.id,
+            enrollmentDate: enrollment.enrollmentDate,
+            isActive: enrollment.isActive
+          },
+          course: {
+            id: enrollment.course.id,
+            title: enrollment.course.title,
+            description: enrollment.course.description,
+            durationYears: enrollment.course.durationYears,
+            coverImageUrl: enrollment.course.coverImageUrl
+          },
+          chapters: enrollment.course.chapters.map(chapter => ({
+            id: chapter.id,
+            title: chapter.title,
+            description: chapter.description,
+            orderIndex: chapter.orderIndex,
+            courseYear: chapter.courseYear,
+            videosCount: chapter._count.videos
+          })),
+          progress: {
+            completedChapters,
+            totalChapters,
+            chapterProgressPercent,
+            watchedVideos: watchedVideosInCourse,
+            totalVideos: totalVideosInCourse,
+            videoProgressPercent,
+            overallProgress
+          },
+          certification: latestCertification ? {
+            year: latestCertification.year,
+            certificateUrl: latestCertification.certificateUrl,
+            issuedAt: latestCertification.issuedAt
+          } : null
+        };
+      })
+    );
+
+    // Get recommended courses (courses student is not enrolled in)
+    const recommendedCourses = await prisma.course.findMany({
+      where: {
+        isActive: true,
+        enrollments: {
+          none: {
+            studentId: studentId
+          }
+        }
+      },
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        durationYears: true,
+        coverImageUrl: true,
+        _count: {
+          select: {
+            chapters: true
+          }
+        }
+      },
+      take: 3 // Limit to 3 recommended courses
+    });
+
+    logger.info('Enrolled courses retrieved successfully', { 
+      studentId, 
+      enrolledCount: courseEnrollments.length,
+      recommendedCount: recommendedCourses.length
+    });
+
+    return {
+      enrolled: {
+        count: courseEnrollments.length,
+        courses: coursesWithProgress
+      },
+      recommended: {
+        count: recommendedCourses.length,
+        courses: recommendedCourses
+      }
+    };
+  } catch (error) {
+    logger.error('Error in getStudentEnrolledCourses', {
+      studentId,
+      error: error instanceof Error ? error.message : String(error),
+    });
+    throw error;
+  }
+}
+
