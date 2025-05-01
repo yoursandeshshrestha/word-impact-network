@@ -1,10 +1,11 @@
 import express, { Router } from 'express';
-import adminRoutes from './admin.routes';
-import studentRoutes from './student.routes';
-import applicationRoutes from './application.routes';
-import courseRoutes from './course.routes';
-import chapterRoutes from './chapter.routes';
-import videoRoutes from './video.routes';
+import adminRoutes from '@/routes/admin.routes';
+import studentRoutes from '@/routes/student.routes';
+import applicationRoutes from '@/routes/application.routes';
+import courseRoutes from '@/routes/course.routes';
+import chapterRoutes from '@/routes/chapter.routes';
+import videoRoutes from '@/routes/video.routes';
+import examRoutes from '@/routes/exam.routes';
 const router: Router = express.Router();
 
 // admin routes
@@ -24,5 +25,8 @@ router.use('/chapters', chapterRoutes);
 
 // video routes
 router.use('/videos', videoRoutes);
+
+// exam routes
+router.use('/exams', examRoutes);
 
 export default router;
