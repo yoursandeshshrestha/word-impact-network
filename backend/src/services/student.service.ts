@@ -835,3 +835,339 @@ export async function enrollStudentInCourse(studentId: string, courseId: string)
     throw error;
   }
 }
+
+// Get student's overall learning progress
+export async function getStudentLearningProgress(studentId: string) {
+  try {
+    logger.info('Fetching learning progress for student', { studentId });
+
+    // Find the student first to verify they exist
+    const student = await prisma.student.findUnique({
+      where: { id: studentId },
+    });
+
+    if (!student) {
+      logger.warn('Progress fetch failed - student not found', { studentId });
+      throw new AppError('Student not found', 404, ErrorTypes.NOT_FOUND);
+    }
+
+    // Get all course enrollments
+    const enrollments = await prisma.courseEnrollment.findMany({
+      where: { 
+        studentId,
+        isActive: true 
+      },
+      include: {
+        course: true
+      }
+    });
+
+    // Total courses the student is enrolled in
+    const totalCourses = enrollments.length;
+
+    // Get all chapters across enrolled courses
+    const enrolledCourseIds = enrollments.map(enrollment => enrollment.courseId);
+    
+    const chapters = await prisma.chapter.findMany({
+      where: {
+        courseId: { in: enrolledCourseIds }
+      }
+    });
+    
+    const totalChapters = chapters.length;
+
+    // Find completed chapters
+    const completedChapters = await prisma.chapterProgress.count({
+      where: {
+        studentId,
+        isCompleted: true,
+        chapter: {
+          courseId: { in: enrolledCourseIds }
+        }
+      }
+    });
+
+    // Get all videos across enrolled courses
+    const videos = await prisma.video.findMany({
+      where: {
+        chapter: {
+          courseId: { in: enrolledCourseIds }
+        }
+      }
+    });
+    
+    const totalVideos = videos.length;
+
+    // Find watched videos
+    const watchedVideos = await prisma.videoProgress.count({
+      where: {
+        studentId,
+        watchedPercent: 100,
+        video: {
+          chapter: {
+            courseId: { in: enrolledCourseIds }
+          }
+        }
+      }
+    });
+
+    // Videos in progress (started but not completed)
+    const videosInProgress = await prisma.videoProgress.count({
+      where: {
+        studentId,
+        watchedPercent: { gt: 0, lt: 100 },
+        video: {
+          chapter: {
+            courseId: { in: enrolledCourseIds }
+          }
+        }
+      }
+    });
+
+    // Get exam attempts data
+    const examAttempts = await prisma.examAttempt.findMany({
+      where: {
+        studentId,
+        exam: {
+          chapter: {
+            courseId: { in: enrolledCourseIds }
+          }
+        }
+      },
+      include: {
+        exam: true
+      }
+    });
+
+    const totalExamAttempts = examAttempts.length;
+    const passedExams = examAttempts.filter(attempt => attempt.isPassed).length;
+
+    // Get all exams in enrolled courses
+    const totalExams = await prisma.exam.count({
+      where: {
+        chapter: {
+          courseId: { in: enrolledCourseIds }
+        }
+      }
+    });
+
+    // Unique exams attempted
+    const uniqueExamsAttempted = new Set(examAttempts.map(a => a.examId)).size;
+
+    // Get certifications
+    const certifications = await prisma.yearCertification.findMany({
+      where: {
+        studentId,
+        courseId: { in: enrolledCourseIds }
+      },
+      include: {
+        course: true
+      }
+    });
+
+    // Calculate recent activity
+    const recentActivity = await prisma.videoProgress.findMany({
+      where: {
+        studentId,
+        lastWatchedAt: {
+          gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) // 7 days ago
+        }
+      },
+      orderBy: {
+        lastWatchedAt: 'desc'
+      },
+      take: 5,
+      include: {
+        video: {
+          include: {
+            chapter: {
+              include: {
+                course: true
+              }
+            }
+          }
+        }
+      }
+    });
+
+    // Calculate recent exam attempts
+    const recentExamAttempts = await prisma.examAttempt.findMany({
+      where: {
+        studentId,
+        startTime: {
+          gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) // 30 days ago
+        }
+      },
+      orderBy: {
+        startTime: 'desc'
+      },
+      take: 5,
+      include: {
+        exam: {
+          include: {
+            chapter: {
+              include: {
+                course: true
+              }
+            }
+          }
+        }
+      }
+    });
+
+    // Calculate streak data (consecutive days with activity)
+    const activityDays = await prisma.videoProgress.findMany({
+      where: {
+        studentId,
+        lastWatchedAt: {
+          gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) // Last 30 days
+        }
+      },
+      select: {
+        lastWatchedAt: true
+      },
+      orderBy: {
+        lastWatchedAt: 'desc'
+      }
+    });
+
+    // Extract unique dates when the student was active
+    const uniqueDatesSet = new Set();
+    activityDays.forEach(activity => {
+      const dateStr = activity.lastWatchedAt.toISOString().split('T')[0];
+      uniqueDatesSet.add(dateStr);
+    });
+    const uniqueDates = Array.from(uniqueDatesSet) as string[];
+    uniqueDates.sort().reverse(); // Sort in descending order
+
+    // Calculate current streak
+    let currentStreak = 0;
+    const today = new Date().toISOString().split('T')[0];
+    
+    if (uniqueDates.length > 0 && uniqueDates[0] === today) {
+      currentStreak = 1;
+      for (let i = 1; i < uniqueDates.length; i++) {
+        const currentDate = new Date(uniqueDates[i-1]);
+        currentDate.setDate(currentDate.getDate() - 1);
+        const expectedPreviousDate = currentDate.toISOString().split('T')[0];
+        
+        if (uniqueDates[i] === expectedPreviousDate) {
+          currentStreak++;
+        } else {
+          break;
+        }
+      }
+    }
+
+    // Calculate longest streak
+    let longestStreak = 0;
+    let currentCount = 1;
+    
+    for (let i = 1; i < uniqueDates.length; i++) {
+      const currentDate = new Date(uniqueDates[i-1]);
+      currentDate.setDate(currentDate.getDate() - 1);
+      const expectedPreviousDate = currentDate.toISOString().split('T')[0];
+      
+      if (uniqueDates[i] === expectedPreviousDate) {
+        currentCount++;
+      } else {
+        longestStreak = Math.max(longestStreak, currentCount);
+        currentCount = 1;
+      }
+    }
+    longestStreak = Math.max(longestStreak, currentCount);
+
+    // Calculate progress percentages
+    const chapterProgress = totalChapters > 0 
+      ? Math.round((completedChapters / totalChapters) * 100) 
+      : 0;
+      
+    const videoProgress = totalVideos > 0 
+      ? Math.round((watchedVideos / totalVideos) * 100) 
+      : 0;
+      
+    const examProgress = totalExams > 0 
+      ? Math.round((passedExams / totalExams) * 100) 
+      : 0;
+      
+    // Overall progress is average of chapter, video, and exam progress
+    const overallProgress = Math.round((chapterProgress + videoProgress + examProgress) / 3);
+
+    // Format response data
+    const formattedRecentActivity = recentActivity.map(activity => ({
+      id: activity.id,
+      videoTitle: activity.video.title,
+      chapterTitle: activity.video.chapter.title,
+      courseName: activity.video.chapter.course.title,
+      watchedPercent: activity.watchedPercent,
+      lastWatchedAt: activity.lastWatchedAt
+    }));
+
+    const formattedRecentExams = recentExamAttempts.map(attempt => ({
+      id: attempt.id,
+      examTitle: attempt.exam.title,
+      chapterTitle: attempt.exam.chapter.title,
+      courseName: attempt.exam.chapter.course.title,
+      score: attempt.score || 0,
+      isPassed: attempt.isPassed,
+      startTime: attempt.startTime,
+      endTime: attempt.endTime
+    }));
+
+    logger.info('Learning progress retrieved successfully', { studentId });
+
+    return {
+      overview: {
+        totalCourses,
+        overallProgress,
+        currentStreak,
+        longestStreak,
+        uniqueActiveDays: uniqueDates.length,
+      },
+      courses: {
+        enrolled: totalCourses,
+        withCertification: new Set(certifications.map(c => c.courseId)).size,
+      },
+      chapters: {
+        total: totalChapters,
+        completed: completedChapters,
+        progress: chapterProgress
+      },
+      videos: {
+        total: totalVideos,
+        watched: watchedVideos,
+        inProgress: videosInProgress,
+        notStarted: totalVideos - (watchedVideos + videosInProgress),
+        progress: videoProgress
+      },
+      exams: {
+        total: totalExams,
+        attempted: uniqueExamsAttempted,
+        totalAttempts: totalExamAttempts,
+        passed: passedExams,
+        failed: totalExamAttempts - passedExams,
+        progress: examProgress
+      },
+      certifications: {
+        total: certifications.length,
+        courses: certifications.map(cert => ({
+          id: cert.id,
+          courseName: cert.course.title,
+          year: cert.year,
+          certificateUrl: cert.certificateUrl,
+          issuedAt: cert.issuedAt
+        }))
+      },
+      recentActivity: {
+        videos: formattedRecentActivity,
+        exams: formattedRecentExams
+      }
+    };
+  } catch (error) {
+    logger.error('Error in getStudentLearningProgress', {
+      studentId,
+      error: error instanceof Error ? error.message : String(error),
+    });
+    throw error;
+  }
+}
