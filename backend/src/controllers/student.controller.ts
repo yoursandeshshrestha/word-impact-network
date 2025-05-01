@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import {
+  enrollStudentInCourse,
   getStudentEnrolledCourses,
   getStudentProfileByUserId,
   loginStudent,
@@ -8,7 +9,7 @@ import {
 } from '../services/student.service';
 import { sendSuccess } from '../utils/responseHandler';
 import { catchAsync } from '../utils/catchAsync';
-import { Gender } from '@prisma/client';
+import { ApplicationStatus, Gender, PaymentStatus } from '@prisma/client';
 import { generateToken } from '@/utils/jwt';
 import { ErrorTypes } from '@/utils/appError';
 import { AppError } from '@/utils/appError';
@@ -138,7 +139,6 @@ export const updateStudentProfile = catchAsync(async (req: Request, res: Respons
   sendSuccess(res, 200, 'Student profile updated successfully', updatedProfile);
 });
 
-// Get courses
 // Get student's enrolled courses
 export const getCourses = catchAsync(async (req: Request, res: Response) => {
   // Ensure user is authenticated and get userId
@@ -160,4 +160,68 @@ export const getCourses = catchAsync(async (req: Request, res: Response) => {
   const coursesData = await getStudentEnrolledCourses(student.id);
 
   sendSuccess(res, 200, 'Courses retrieved successfully', coursesData);
+});
+
+// Enroll student in a course
+export const enrollInCourse = catchAsync(async (req: Request, res: Response) => {
+  // Ensure user is authenticated and get userId
+  if (!req.user || !req.user.userId) {
+    throw new AppError('Authentication required', 401, ErrorTypes.AUTHENTICATION);
+  }
+
+  const { courseId } = req.params;
+
+  // Validate courseId
+  if (!courseId) {
+    throw new AppError('Course ID is required', 400, ErrorTypes.VALIDATION);
+  }
+
+  // First find the student ID from the user ID
+  const student = await prisma.student.findFirst({
+    where: { userId: req.user.userId },
+  });
+
+  if (!student) {
+    logger.warn('Student not found for user', { userId: req.user.userId });
+    throw new AppError('Student not found', 404, ErrorTypes.NOT_FOUND);
+  }
+
+  // Ensure student's application is approved
+  if (student.applicationStatus !== ApplicationStatus.APPROVED) {
+    logger.warn('Enrollment failed - student application not approved', {
+      studentId: student.id,
+      applicationStatus: student.applicationStatus,
+    });
+
+    let errorMessage = 'Your application needs to be approved before enrolling in courses';
+
+    if (student.applicationStatus === ApplicationStatus.REJECTED) {
+      errorMessage = 'Your application has been rejected. Please contact support.';
+    }
+
+    throw new AppError(errorMessage, 403, ErrorTypes.AUTHORIZATION);
+  }
+
+  // // Check payment status if needed (can be expanded based on your payment requirements)
+  // if (student.paymentStatus !== PaymentStatus.PAID) {
+  //   logger.warn('Enrollment failed - payment pending', {
+  //     studentId: student.id,
+  //     paymentStatus: student.paymentStatus,
+  //   });
+  //   throw new AppError(
+  //     'Please complete your payment before enrolling in courses',
+  //     403,
+  //     ErrorTypes.AUTHORIZATION,
+  //   );
+  // }
+
+  // Enroll student in the course
+  const enrollmentResult = await enrollStudentInCourse(student.id, courseId);
+
+  // Different message based on whether it's a new enrollment or reactivation
+  const message = enrollmentResult.isNewEnrollment
+    ? 'Successfully enrolled in the course'
+    : 'Successfully reactivated your enrollment in the course';
+
+  sendSuccess(res, 201, message, enrollmentResult.enrollment);
 });
