@@ -17,11 +17,13 @@ const Header: React.FC = () => {
 
   return (
     <header
-      className={`fixed top-0 left-0 right-0 m-[5px] rounded-2xl lg:m-[15px] z-50 transition-all duration-300 ${
-        isScrolled ? "bg-white shadow-md py-2" : "bg-white py-4"
+      className={`fixed top-0 left-0 right-0 mx-[10px] mt-[10px] rounded-[1rem] lg:mx-[80px] lg:mt-[25px] z-50 transition-all duration-300 ${
+        isScrolled
+          ? "bg-white/95 backdrop-blur-sm shadow-xl py-2"
+          : "bg-white/95 backdrop-blur-sm py-4"
       }`}
     >
-      <div className="container mx-auto px-4">
+      <div className="container mx-auto px-6">
         {/* Restructured layout to 3 sections: logo, centered nav, auth buttons */}
         <div className="flex justify-between items-center">
           {/* Logo Section */}
@@ -30,9 +32,9 @@ const Header: React.FC = () => {
               <Image
                 src={logo}
                 alt="Himalayan Diaspora Academy Logo"
-                width={200}
-                height={200}
-                className="h-24 w-auto"
+                width={180}
+                height={180}
+                className="h-20 w-auto"
               />
             </Link>
           </div>
