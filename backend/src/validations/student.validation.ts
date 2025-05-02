@@ -49,6 +49,17 @@ const studentProfileUpdateSchema = Joi.object({
   'any.only': '{{#label}} must be one of [MALE, FEMALE, OTHER]',
 });
 
+// Video progress update validation schema
+const videoProgressUpdateSchema = Joi.object({
+  watchedPercent: Joi.number().integer().min(0).max(100).required().messages({
+    'number.base': 'Watched percent must be a number',
+    'number.integer': 'Watched percent must be an integer',
+    'number.min': 'Watched percent must be at least 0',
+    'number.max': 'Watched percent must be at most 100',
+    'any.required': 'Watched percent is required',
+  }),
+});
+
 // Validation middleware for student registration
 export const validateStudentRegistration = (req: Request, res: Response, next: NextFunction) => {
   // Convert string 'true'/'false' to boolean
@@ -97,6 +108,23 @@ export const validateStudentProfileUpdate = (req: Request, _res: Response, next:
     if (error) {
       const errorMessage = error.details.map((detail) => detail.message).join(', ');
       logger.warn('Student profile update validation failed', { errors: errorMessage });
+      throw new AppError(errorMessage, 400, ErrorTypes.VALIDATION);
+    }
+
+    next();
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Validate video progress update
+export const validateVideoProgressUpdate = (req: Request, _res: Response, next: NextFunction) => {
+  try {
+    const { error } = videoProgressUpdateSchema.validate(req.body, { abortEarly: false });
+
+    if (error) {
+      const errorMessage = error.details.map((detail) => detail.message).join(', ');
+      logger.warn('Video progress update validation failed', { errors: errorMessage });
       throw new AppError(errorMessage, 400, ErrorTypes.VALIDATION);
     }
 
