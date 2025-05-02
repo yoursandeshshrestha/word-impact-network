@@ -1776,3 +1776,203 @@ export async function getExamDetails(studentId: string, examId: string) {
     throw error;
   }
 }
+
+// Start a new exam attempt
+export async function startExamAttempt(studentId: string, examId: string) {
+  try {
+    logger.info('Starting exam attempt', { studentId, examId });
+
+    // Check if student exists
+    const student = await prisma.student.findUnique({
+      where: { id: studentId },
+    });
+
+    if (!student) {
+      logger.warn('Exam attempt failed - student not found', { studentId });
+      throw new AppError('Student not found', 404, ErrorTypes.NOT_FOUND);
+    }
+
+    // Check if exam exists
+    const exam = await prisma.exam.findUnique({
+      where: { id: examId },
+      include: {
+        chapter: {
+          include: {
+            course: true,
+          },
+        },
+        questions: {
+          select: {
+            id: true,
+            text: true,
+            questionType: true,
+            options: true,
+            points: true,
+          },
+          orderBy: {
+            createdAt: 'asc',
+          },
+        },
+      },
+    });
+
+    if (!exam) {
+      logger.warn('Exam attempt failed - exam not found', { examId });
+      throw new AppError('Exam not found', 404, ErrorTypes.NOT_FOUND);
+    }
+
+    // Check if student is enrolled in the course
+    const enrollment = await prisma.courseEnrollment.findFirst({
+      where: {
+        studentId,
+        courseId: exam.chapter.courseId,
+        isActive: true,
+      },
+    });
+
+    if (!enrollment) {
+      logger.warn('Exam attempt failed - student not enrolled in course', {
+        studentId,
+        courseId: exam.chapter.courseId,
+      });
+      throw new AppError('You are not enrolled in this course', 403, ErrorTypes.AUTHORIZATION);
+    }
+
+    // Check if student has completed all videos in the chapter (prerequisite)
+    // This is a business rule that can be adjusted or removed based on requirements
+    const totalVideosInChapter = await prisma.video.count({
+      where: {
+        chapterId: exam.chapter.id,
+      },
+    });
+
+    const completedVideosInChapter = await prisma.videoProgress.count({
+      where: {
+        studentId,
+        watchedPercent: 100,
+        video: {
+          chapterId: exam.chapter.id,
+        },
+      },
+    });
+
+    const allVideosCompleted = completedVideosInChapter === totalVideosInChapter;
+
+    // Get previous attempt information
+    const previousAttempts = await prisma.examAttempt.findMany({
+      where: {
+        studentId,
+        examId,
+      },
+      orderBy: {
+        startTime: 'desc',
+      },
+    });
+
+    const hasPreviousAttempts = previousAttempts.length > 0;
+    const hasPassed = previousAttempts.some((attempt) => attempt.isPassed);
+
+    // Check if there's an ongoing attempt
+    const ongoingAttempt = previousAttempts.find(
+      (attempt) => attempt.endTime === null || attempt.endTime === undefined,
+    );
+
+    if (ongoingAttempt) {
+      // Return the ongoing attempt instead of creating a new one
+      return {
+        attemptId: ongoingAttempt.id,
+        isNewAttempt: false,
+        message: 'You have an ongoing exam attempt',
+        exam: {
+          id: exam.id,
+          title: exam.title,
+          description: exam.description,
+          passingScore: exam.passingScore,
+          timeLimit: exam.timeLimit,
+        },
+        startTime: ongoingAttempt.startTime,
+        questions: exam.questions.map((question) => ({
+          id: question.id,
+          text: question.text,
+          questionType: question.questionType,
+          options:
+            question.questionType === 'multiple_choice' || question.questionType === 'true_false'
+              ? question.options
+              : null,
+          points: question.points,
+        })),
+      };
+    }
+
+    // If student has not completed all videos and has not passed previously,
+    // optionally restrict them from taking the exam
+    // Comment this out if videos are not a prerequisite for the exam
+    if (!allVideosCompleted && !hasPassed) {
+      logger.warn('Exam attempt failed - prerequisites not met', {
+        studentId,
+        examId,
+        completedVideos: completedVideosInChapter,
+        totalVideos: totalVideosInChapter,
+      });
+      throw new AppError(
+        `You need to complete all videos in this chapter before taking the exam. ` +
+          `(${completedVideosInChapter}/${totalVideosInChapter} completed)`,
+        403,
+        ErrorTypes.PRECONDITION_FAILED,
+      );
+    }
+
+    // Create a new exam attempt
+    const examAttempt = await prisma.examAttempt.create({
+      data: {
+        student: {
+          connect: { id: studentId },
+        },
+        exam: {
+          connect: { id: examId },
+        },
+        startTime: new Date(),
+        // endTime and score will be set when the attempt is submitted
+      },
+    });
+
+    logger.info('Exam attempt created successfully', {
+      studentId,
+      examId,
+      attemptId: examAttempt.id,
+    });
+
+    return {
+      attemptId: examAttempt.id,
+      isNewAttempt: true,
+      message: hasPreviousAttempts
+        ? `This is attempt #${previousAttempts.length + 1}`
+        : 'This is your first attempt at this exam',
+      exam: {
+        id: exam.id,
+        title: exam.title,
+        description: exam.description,
+        passingScore: exam.passingScore,
+        timeLimit: exam.timeLimit,
+      },
+      startTime: examAttempt.startTime,
+      questions: exam.questions.map((question) => ({
+        id: question.id,
+        text: question.text,
+        questionType: question.questionType,
+        options:
+          question.questionType === 'multiple_choice' || question.questionType === 'true_false'
+            ? question.options
+            : null,
+        points: question.points,
+      })),
+    };
+  } catch (error) {
+    logger.error('Error in startExamAttempt', {
+      studentId,
+      examId,
+      error: error instanceof Error ? error.message : String(error),
+    });
+    throw error;
+  }
+}
