@@ -498,9 +498,9 @@ export async function getStudentEnrolledCourses(studentId: string) {
 
     // Get course enrollments with course details
     const courseEnrollments = await prisma.courseEnrollment.findMany({
-      where: { 
+      where: {
         studentId: studentId,
-        isActive: true 
+        isActive: true,
       },
       include: {
         course: {
@@ -514,21 +514,21 @@ export async function getStudentEnrolledCourses(studentId: string) {
                 courseYear: true,
                 _count: {
                   select: {
-                    videos: true
-                  }
-                }
+                    videos: true,
+                  },
+                },
               },
               orderBy: {
-                orderIndex: 'asc'
-              }
+                orderIndex: 'asc',
+              },
             },
             _count: {
               select: {
-                chapters: true
-              }
-            }
-          }
-        }
+                chapters: true,
+              },
+            },
+          },
+        },
       },
       orderBy: {
         enrollmentDate: 'desc',
@@ -556,9 +556,9 @@ export async function getStudentEnrolledCourses(studentId: string) {
         const totalVideosInCourse = await prisma.video.count({
           where: {
             chapter: {
-              courseId: enrollment.course.id
-            }
-          }
+              courseId: enrollment.course.id,
+            },
+          },
         });
 
         const watchedVideosInCourse = await prisma.videoProgress.count({
@@ -566,21 +566,21 @@ export async function getStudentEnrolledCourses(studentId: string) {
             studentId: studentId,
             video: {
               chapter: {
-                courseId: enrollment.course.id
-              }
+                courseId: enrollment.course.id,
+              },
             },
-            watchedPercent: 100
-          }
+            watchedPercent: 100,
+          },
         });
 
         // Calculate progress percentages
-        const chapterProgressPercent = totalChapters > 0 
-          ? Math.round((completedChapters / totalChapters) * 100) 
-          : 0;
-          
-        const videoProgressPercent = totalVideosInCourse > 0 
-          ? Math.round((watchedVideosInCourse / totalVideosInCourse) * 100) 
-          : 0;
+        const chapterProgressPercent =
+          totalChapters > 0 ? Math.round((completedChapters / totalChapters) * 100) : 0;
+
+        const videoProgressPercent =
+          totalVideosInCourse > 0
+            ? Math.round((watchedVideosInCourse / totalVideosInCourse) * 100)
+            : 0;
 
         // Calculate overall progress as average of chapter and video progress
         const overallProgress = Math.round((chapterProgressPercent + videoProgressPercent) / 2);
@@ -589,33 +589,33 @@ export async function getStudentEnrolledCourses(studentId: string) {
         const latestCertification = await prisma.yearCertification.findFirst({
           where: {
             studentId: studentId,
-            courseId: enrollment.course.id
+            courseId: enrollment.course.id,
           },
           orderBy: {
-            year: 'desc'
-          }
+            year: 'desc',
+          },
         });
 
         return {
           enrollment: {
             id: enrollment.id,
             enrollmentDate: enrollment.enrollmentDate,
-            isActive: enrollment.isActive
+            isActive: enrollment.isActive,
           },
           course: {
             id: enrollment.course.id,
             title: enrollment.course.title,
             description: enrollment.course.description,
             durationYears: enrollment.course.durationYears,
-            coverImageUrl: enrollment.course.coverImageUrl
+            coverImageUrl: enrollment.course.coverImageUrl,
           },
-          chapters: enrollment.course.chapters.map(chapter => ({
+          chapters: enrollment.course.chapters.map((chapter) => ({
             id: chapter.id,
             title: chapter.title,
             description: chapter.description,
             orderIndex: chapter.orderIndex,
             courseYear: chapter.courseYear,
-            videosCount: chapter._count.videos
+            videosCount: chapter._count.videos,
           })),
           progress: {
             completedChapters,
@@ -624,15 +624,17 @@ export async function getStudentEnrolledCourses(studentId: string) {
             watchedVideos: watchedVideosInCourse,
             totalVideos: totalVideosInCourse,
             videoProgressPercent,
-            overallProgress
+            overallProgress,
           },
-          certification: latestCertification ? {
-            year: latestCertification.year,
-            certificateUrl: latestCertification.certificateUrl,
-            issuedAt: latestCertification.issuedAt
-          } : null
+          certification: latestCertification
+            ? {
+                year: latestCertification.year,
+                certificateUrl: latestCertification.certificateUrl,
+                issuedAt: latestCertification.issuedAt,
+              }
+            : null,
         };
-      })
+      }),
     );
 
     // Get recommended courses (courses student is not enrolled in)
@@ -641,9 +643,9 @@ export async function getStudentEnrolledCourses(studentId: string) {
         isActive: true,
         enrollments: {
           none: {
-            studentId: studentId
-          }
-        }
+            studentId: studentId,
+          },
+        },
       },
       select: {
         id: true,
@@ -653,28 +655,28 @@ export async function getStudentEnrolledCourses(studentId: string) {
         coverImageUrl: true,
         _count: {
           select: {
-            chapters: true
-          }
-        }
+            chapters: true,
+          },
+        },
       },
-      take: 3 // Limit to 3 recommended courses
+      take: 3, // Limit to 3 recommended courses
     });
 
-    logger.info('Enrolled courses retrieved successfully', { 
-      studentId, 
+    logger.info('Enrolled courses retrieved successfully', {
+      studentId,
       enrolledCount: courseEnrollments.length,
-      recommendedCount: recommendedCourses.length
+      recommendedCount: recommendedCourses.length,
     });
 
     return {
       enrolled: {
         count: courseEnrollments.length,
-        courses: coursesWithProgress
+        courses: coursesWithProgress,
       },
       recommended: {
         count: recommendedCourses.length,
-        courses: recommendedCourses
-      }
+        courses: recommendedCourses,
+      },
     };
   } catch (error) {
     logger.error('Error in getStudentEnrolledCourses', {
@@ -702,17 +704,17 @@ export async function enrollStudentInCourse(studentId: string, courseId: string)
 
     // Check if course exists and is active
     const course = await prisma.course.findUnique({
-      where: { 
+      where: {
         id: courseId,
-        isActive: true
+        isActive: true,
       },
       include: {
         chapters: {
           select: {
-            id: true
-          }
-        }
-      }
+            id: true,
+          },
+        },
+      },
     });
 
     if (!course) {
@@ -725,9 +727,9 @@ export async function enrollStudentInCourse(studentId: string, courseId: string)
       where: {
         studentId_courseId: {
           studentId: studentId,
-          courseId: courseId
-        }
-      }
+          courseId: courseId,
+        },
+      },
     });
 
     if (existingEnrollment) {
@@ -735,21 +737,21 @@ export async function enrollStudentInCourse(studentId: string, courseId: string)
       if (!existingEnrollment.isActive) {
         const reactivatedEnrollment = await prisma.courseEnrollment.update({
           where: {
-            id: existingEnrollment.id
+            id: existingEnrollment.id,
           },
           data: {
             isActive: true,
-            updatedAt: new Date()
+            updatedAt: new Date(),
           },
           include: {
-            course: true
-          }
+            course: true,
+          },
         });
 
-        logger.info('Course enrollment reactivated', { 
-          studentId, 
-          courseId, 
-          enrollmentId: reactivatedEnrollment.id 
+        logger.info('Course enrollment reactivated', {
+          studentId,
+          courseId,
+          enrollmentId: reactivatedEnrollment.id,
         });
 
         return {
@@ -762,9 +764,9 @@ export async function enrollStudentInCourse(studentId: string, courseId: string)
               id: reactivatedEnrollment.course.id,
               title: reactivatedEnrollment.course.title,
               description: reactivatedEnrollment.course.description,
-              durationYears: reactivatedEnrollment.course.durationYears
-            }
-          }
+              durationYears: reactivatedEnrollment.course.durationYears,
+            },
+          },
         };
       }
 
@@ -777,39 +779,39 @@ export async function enrollStudentInCourse(studentId: string, courseId: string)
     const enrollment = await prisma.courseEnrollment.create({
       data: {
         student: {
-          connect: { id: studentId }
+          connect: { id: studentId },
         },
         course: {
-          connect: { id: courseId }
+          connect: { id: courseId },
         },
-        isActive: true
+        isActive: true,
       },
       include: {
-        course: true
-      }
+        course: true,
+      },
     });
 
     // Initialize chapter progress for all chapters in this course
-    const chapterProgressPromises = course.chapters.map(chapter => {
+    const chapterProgressPromises = course.chapters.map((chapter) => {
       return prisma.chapterProgress.create({
         data: {
           student: {
-            connect: { id: studentId }
+            connect: { id: studentId },
           },
           chapter: {
-            connect: { id: chapter.id }
+            connect: { id: chapter.id },
           },
-          isCompleted: false
-        }
+          isCompleted: false,
+        },
       });
     });
 
     await Promise.all(chapterProgressPromises);
 
-    logger.info('Student enrolled in course successfully', { 
-      studentId, 
-      courseId, 
-      enrollmentId: enrollment.id 
+    logger.info('Student enrolled in course successfully', {
+      studentId,
+      courseId,
+      enrollmentId: enrollment.id,
     });
 
     return {
@@ -822,9 +824,9 @@ export async function enrollStudentInCourse(studentId: string, courseId: string)
           id: enrollment.course.id,
           title: enrollment.course.title,
           description: enrollment.course.description,
-          durationYears: enrollment.course.durationYears
-        }
-      }
+          durationYears: enrollment.course.durationYears,
+        },
+      },
     };
   } catch (error) {
     logger.error('Error in enrollStudentInCourse', {
@@ -853,27 +855,27 @@ export async function getStudentLearningProgress(studentId: string) {
 
     // Get all course enrollments
     const enrollments = await prisma.courseEnrollment.findMany({
-      where: { 
+      where: {
         studentId,
-        isActive: true 
+        isActive: true,
       },
       include: {
-        course: true
-      }
+        course: true,
+      },
     });
 
     // Total courses the student is enrolled in
     const totalCourses = enrollments.length;
 
     // Get all chapters across enrolled courses
-    const enrolledCourseIds = enrollments.map(enrollment => enrollment.courseId);
-    
+    const enrolledCourseIds = enrollments.map((enrollment) => enrollment.courseId);
+
     const chapters = await prisma.chapter.findMany({
       where: {
-        courseId: { in: enrolledCourseIds }
-      }
+        courseId: { in: enrolledCourseIds },
+      },
     });
-    
+
     const totalChapters = chapters.length;
 
     // Find completed chapters
@@ -882,20 +884,20 @@ export async function getStudentLearningProgress(studentId: string) {
         studentId,
         isCompleted: true,
         chapter: {
-          courseId: { in: enrolledCourseIds }
-        }
-      }
+          courseId: { in: enrolledCourseIds },
+        },
+      },
     });
 
     // Get all videos across enrolled courses
     const videos = await prisma.video.findMany({
       where: {
         chapter: {
-          courseId: { in: enrolledCourseIds }
-        }
-      }
+          courseId: { in: enrolledCourseIds },
+        },
+      },
     });
-    
+
     const totalVideos = videos.length;
 
     // Find watched videos
@@ -905,10 +907,10 @@ export async function getStudentLearningProgress(studentId: string) {
         watchedPercent: 100,
         video: {
           chapter: {
-            courseId: { in: enrolledCourseIds }
-          }
-        }
-      }
+            courseId: { in: enrolledCourseIds },
+          },
+        },
+      },
     });
 
     // Videos in progress (started but not completed)
@@ -918,10 +920,10 @@ export async function getStudentLearningProgress(studentId: string) {
         watchedPercent: { gt: 0, lt: 100 },
         video: {
           chapter: {
-            courseId: { in: enrolledCourseIds }
-          }
-        }
-      }
+            courseId: { in: enrolledCourseIds },
+          },
+        },
+      },
     });
 
     // Get exam attempts data
@@ -930,39 +932,39 @@ export async function getStudentLearningProgress(studentId: string) {
         studentId,
         exam: {
           chapter: {
-            courseId: { in: enrolledCourseIds }
-          }
-        }
+            courseId: { in: enrolledCourseIds },
+          },
+        },
       },
       include: {
-        exam: true
-      }
+        exam: true,
+      },
     });
 
     const totalExamAttempts = examAttempts.length;
-    const passedExams = examAttempts.filter(attempt => attempt.isPassed).length;
+    const passedExams = examAttempts.filter((attempt) => attempt.isPassed).length;
 
     // Get all exams in enrolled courses
     const totalExams = await prisma.exam.count({
       where: {
         chapter: {
-          courseId: { in: enrolledCourseIds }
-        }
-      }
+          courseId: { in: enrolledCourseIds },
+        },
+      },
     });
 
     // Unique exams attempted
-    const uniqueExamsAttempted = new Set(examAttempts.map(a => a.examId)).size;
+    const uniqueExamsAttempted = new Set(examAttempts.map((a) => a.examId)).size;
 
     // Get certifications
     const certifications = await prisma.yearCertification.findMany({
       where: {
         studentId,
-        courseId: { in: enrolledCourseIds }
+        courseId: { in: enrolledCourseIds },
       },
       include: {
-        course: true
-      }
+        course: true,
+      },
     });
 
     // Calculate recent activity
@@ -970,11 +972,11 @@ export async function getStudentLearningProgress(studentId: string) {
       where: {
         studentId,
         lastWatchedAt: {
-          gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) // 7 days ago
-        }
+          gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // 7 days ago
+        },
       },
       orderBy: {
-        lastWatchedAt: 'desc'
+        lastWatchedAt: 'desc',
       },
       take: 5,
       include: {
@@ -982,12 +984,12 @@ export async function getStudentLearningProgress(studentId: string) {
           include: {
             chapter: {
               include: {
-                course: true
-              }
-            }
-          }
-        }
-      }
+                course: true,
+              },
+            },
+          },
+        },
+      },
     });
 
     // Calculate recent exam attempts
@@ -995,11 +997,11 @@ export async function getStudentLearningProgress(studentId: string) {
       where: {
         studentId,
         startTime: {
-          gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) // 30 days ago
-        }
+          gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), // 30 days ago
+        },
       },
       orderBy: {
-        startTime: 'desc'
+        startTime: 'desc',
       },
       take: 5,
       include: {
@@ -1007,12 +1009,12 @@ export async function getStudentLearningProgress(studentId: string) {
           include: {
             chapter: {
               include: {
-                course: true
-              }
-            }
-          }
-        }
-      }
+                course: true,
+              },
+            },
+          },
+        },
+      },
     });
 
     // Calculate streak data (consecutive days with activity)
@@ -1020,20 +1022,20 @@ export async function getStudentLearningProgress(studentId: string) {
       where: {
         studentId,
         lastWatchedAt: {
-          gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) // Last 30 days
-        }
+          gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), // Last 30 days
+        },
       },
       select: {
-        lastWatchedAt: true
+        lastWatchedAt: true,
       },
       orderBy: {
-        lastWatchedAt: 'desc'
-      }
+        lastWatchedAt: 'desc',
+      },
     });
 
     // Extract unique dates when the student was active
     const uniqueDatesSet = new Set();
-    activityDays.forEach(activity => {
+    activityDays.forEach((activity) => {
       const dateStr = activity.lastWatchedAt.toISOString().split('T')[0];
       uniqueDatesSet.add(dateStr);
     });
@@ -1043,14 +1045,14 @@ export async function getStudentLearningProgress(studentId: string) {
     // Calculate current streak
     let currentStreak = 0;
     const today = new Date().toISOString().split('T')[0];
-    
+
     if (uniqueDates.length > 0 && uniqueDates[0] === today) {
       currentStreak = 1;
       for (let i = 1; i < uniqueDates.length; i++) {
-        const currentDate = new Date(uniqueDates[i-1]);
+        const currentDate = new Date(uniqueDates[i - 1]);
         currentDate.setDate(currentDate.getDate() - 1);
         const expectedPreviousDate = currentDate.toISOString().split('T')[0];
-        
+
         if (uniqueDates[i] === expectedPreviousDate) {
           currentStreak++;
         } else {
@@ -1062,12 +1064,12 @@ export async function getStudentLearningProgress(studentId: string) {
     // Calculate longest streak
     let longestStreak = 0;
     let currentCount = 1;
-    
+
     for (let i = 1; i < uniqueDates.length; i++) {
-      const currentDate = new Date(uniqueDates[i-1]);
+      const currentDate = new Date(uniqueDates[i - 1]);
       currentDate.setDate(currentDate.getDate() - 1);
       const expectedPreviousDate = currentDate.toISOString().split('T')[0];
-      
+
       if (uniqueDates[i] === expectedPreviousDate) {
         currentCount++;
       } else {
@@ -1078,32 +1080,27 @@ export async function getStudentLearningProgress(studentId: string) {
     longestStreak = Math.max(longestStreak, currentCount);
 
     // Calculate progress percentages
-    const chapterProgress = totalChapters > 0 
-      ? Math.round((completedChapters / totalChapters) * 100) 
-      : 0;
-      
-    const videoProgress = totalVideos > 0 
-      ? Math.round((watchedVideos / totalVideos) * 100) 
-      : 0;
-      
-    const examProgress = totalExams > 0 
-      ? Math.round((passedExams / totalExams) * 100) 
-      : 0;
-      
+    const chapterProgress =
+      totalChapters > 0 ? Math.round((completedChapters / totalChapters) * 100) : 0;
+
+    const videoProgress = totalVideos > 0 ? Math.round((watchedVideos / totalVideos) * 100) : 0;
+
+    const examProgress = totalExams > 0 ? Math.round((passedExams / totalExams) * 100) : 0;
+
     // Overall progress is average of chapter, video, and exam progress
     const overallProgress = Math.round((chapterProgress + videoProgress + examProgress) / 3);
 
     // Format response data
-    const formattedRecentActivity = recentActivity.map(activity => ({
+    const formattedRecentActivity = recentActivity.map((activity) => ({
       id: activity.id,
       videoTitle: activity.video.title,
       chapterTitle: activity.video.chapter.title,
       courseName: activity.video.chapter.course.title,
       watchedPercent: activity.watchedPercent,
-      lastWatchedAt: activity.lastWatchedAt
+      lastWatchedAt: activity.lastWatchedAt,
     }));
 
-    const formattedRecentExams = recentExamAttempts.map(attempt => ({
+    const formattedRecentExams = recentExamAttempts.map((attempt) => ({
       id: attempt.id,
       examTitle: attempt.exam.title,
       chapterTitle: attempt.exam.chapter.title,
@@ -1111,7 +1108,7 @@ export async function getStudentLearningProgress(studentId: string) {
       score: attempt.score || 0,
       isPassed: attempt.isPassed,
       startTime: attempt.startTime,
-      endTime: attempt.endTime
+      endTime: attempt.endTime,
     }));
 
     logger.info('Learning progress retrieved successfully', { studentId });
@@ -1126,19 +1123,19 @@ export async function getStudentLearningProgress(studentId: string) {
       },
       courses: {
         enrolled: totalCourses,
-        withCertification: new Set(certifications.map(c => c.courseId)).size,
+        withCertification: new Set(certifications.map((c) => c.courseId)).size,
       },
       chapters: {
         total: totalChapters,
         completed: completedChapters,
-        progress: chapterProgress
+        progress: chapterProgress,
       },
       videos: {
         total: totalVideos,
         watched: watchedVideos,
         inProgress: videosInProgress,
         notStarted: totalVideos - (watchedVideos + videosInProgress),
-        progress: videoProgress
+        progress: videoProgress,
       },
       exams: {
         total: totalExams,
@@ -1146,26 +1143,286 @@ export async function getStudentLearningProgress(studentId: string) {
         totalAttempts: totalExamAttempts,
         passed: passedExams,
         failed: totalExamAttempts - passedExams,
-        progress: examProgress
+        progress: examProgress,
       },
       certifications: {
         total: certifications.length,
-        courses: certifications.map(cert => ({
+        courses: certifications.map((cert) => ({
           id: cert.id,
           courseName: cert.course.title,
           year: cert.year,
           certificateUrl: cert.certificateUrl,
-          issuedAt: cert.issuedAt
-        }))
+          issuedAt: cert.issuedAt,
+        })),
       },
       recentActivity: {
         videos: formattedRecentActivity,
-        exams: formattedRecentExams
-      }
+        exams: formattedRecentExams,
+      },
     };
   } catch (error) {
     logger.error('Error in getStudentLearningProgress', {
       studentId,
+      error: error instanceof Error ? error.message : String(error),
+    });
+    throw error;
+  }
+}
+
+// Get student's progress for a specific chapter
+export async function getChapterProgress(studentId: string, chapterId: string) {
+  try {
+    logger.info('Fetching chapter progress', { studentId, chapterId });
+
+    // Check if student exists
+    const student = await prisma.student.findUnique({
+      where: { id: studentId },
+    });
+
+    if (!student) {
+      logger.warn('Chapter progress fetch failed - student not found', { studentId });
+      throw new AppError('Student not found', 404, ErrorTypes.NOT_FOUND);
+    }
+
+    // Check if chapter exists
+    const chapter = await prisma.chapter.findUnique({
+      where: { id: chapterId },
+      include: {
+        course: true,
+        videos: {
+          orderBy: {
+            orderIndex: 'asc',
+          },
+        },
+        exam: true,
+      },
+    });
+
+    if (!chapter) {
+      logger.warn('Chapter progress fetch failed - chapter not found', { chapterId });
+      throw new AppError('Chapter not found', 404, ErrorTypes.NOT_FOUND);
+    }
+
+    // Check if student is enrolled in the course
+    const enrollment = await prisma.courseEnrollment.findFirst({
+      where: {
+        studentId,
+        courseId: chapter.courseId,
+        isActive: true,
+      },
+    });
+
+    if (!enrollment) {
+      logger.warn('Chapter progress fetch failed - student not enrolled in course', {
+        studentId,
+        courseId: chapter.courseId,
+      });
+      throw new AppError('You are not enrolled in this course', 403, ErrorTypes.AUTHORIZATION);
+    }
+
+    // Get chapter progress record
+    const chapterProgress = await prisma.chapterProgress.findUnique({
+      where: {
+        studentId_chapterId: {
+          studentId,
+          chapterId,
+        },
+      },
+    });
+
+    // If no progress record exists, create one
+    const progressRecord =
+      chapterProgress ||
+      (await prisma.chapterProgress.create({
+        data: {
+          student: { connect: { id: studentId } },
+          chapter: { connect: { id: chapterId } },
+          isCompleted: false,
+        },
+      }));
+
+    // Get video progress for each video in the chapter
+    const videoProgress = await Promise.all(
+      chapter.videos.map(async (video) => {
+        const progress = await prisma.videoProgress.findUnique({
+          where: {
+            studentId_videoId: {
+              studentId,
+              videoId: video.id,
+            },
+          },
+        });
+
+        return {
+          video: {
+            id: video.id,
+            title: video.title,
+            description: video.description,
+            duration: video.duration,
+            orderIndex: video.orderIndex,
+            backblazeUrl: video.backblazeUrl,
+          },
+          progress: progress
+            ? {
+                watchedPercent: progress.watchedPercent,
+                lastWatchedAt: progress.lastWatchedAt,
+                isCompleted: progress.watchedPercent === 100,
+              }
+            : {
+                watchedPercent: 0,
+                lastWatchedAt: null,
+                isCompleted: false,
+              },
+        };
+      }),
+    );
+
+    // Calculate video completion statistics
+    const totalVideos = videoProgress.length;
+    const completedVideos = videoProgress.filter((vp) => vp.progress.isCompleted).length;
+    const videosInProgress = videoProgress.filter(
+      (vp) => !vp.progress.isCompleted && vp.progress.watchedPercent > 0,
+    ).length;
+
+    // Calculate overall video progress as percentage
+    const videoProgressPercent =
+      totalVideos > 0 ? Math.round((completedVideos / totalVideos) * 100) : 0;
+
+    // Get exam attempts if chapter has an exam
+    let examAttempts = [];
+    let examStats = null;
+
+    if (chapter.exam) {
+      examAttempts = await prisma.examAttempt.findMany({
+        where: {
+          studentId,
+          examId: chapter.exam.id,
+        },
+        orderBy: {
+          startTime: 'desc',
+        },
+      });
+
+      const totalAttempts = examAttempts.length;
+      const passedAttempts = examAttempts.filter((attempt) => attempt.isPassed).length;
+      const bestScore =
+        examAttempts.length > 0
+          ? Math.max(...examAttempts.map((attempt) => attempt.score || 0))
+          : 0;
+
+      const latestAttempt = examAttempts.length > 0 ? examAttempts[0] : null;
+
+      examStats = {
+        exam: {
+          id: chapter.exam.id,
+          title: chapter.exam.title,
+          description: chapter.exam.description,
+          passingScore: chapter.exam.passingScore,
+          timeLimit: chapter.exam.timeLimit,
+        },
+        attempts: {
+          total: totalAttempts,
+          passed: passedAttempts,
+          bestScore,
+        },
+        latestAttempt: latestAttempt
+          ? {
+              id: latestAttempt.id,
+              startTime: latestAttempt.startTime,
+              endTime: latestAttempt.endTime,
+              score: latestAttempt.score,
+              isPassed: latestAttempt.isPassed,
+            }
+          : null,
+        isPassed: passedAttempts > 0,
+      };
+    }
+
+    // Determine if chapter is completed
+    // A chapter is completed if all videos are watched and exam is passed (if exists)
+    const allVideosCompleted = totalVideos > 0 && completedVideos === totalVideos;
+    const examPassed = examStats ? examStats.isPassed : true; // If no exam, consider as passed
+
+    const isCompleted = allVideosCompleted && examPassed;
+
+    // Update chapter progress status if it has changed
+    if (progressRecord.isCompleted !== isCompleted) {
+      await prisma.chapterProgress.update({
+        where: {
+          id: progressRecord.id,
+        },
+        data: {
+          isCompleted,
+          completedAt: isCompleted ? new Date() : null,
+          lastVideoWatched:
+            videoProgress.length > 0
+              ? Math.max(
+                  ...videoProgress
+                    .filter((vp) => vp.progress.watchedPercent > 0)
+                    .map((vp) => vp.video.orderIndex),
+                )
+              : null,
+        },
+      });
+    }
+
+    // Get next and previous chapters for navigation
+    const siblingChapters = await prisma.chapter.findMany({
+      where: {
+        courseId: chapter.courseId,
+        orderIndex: {
+          in: [chapter.orderIndex - 1, chapter.orderIndex + 1],
+        },
+      },
+      select: {
+        id: true,
+        title: true,
+        orderIndex: true,
+      },
+    });
+
+    const previousChapter =
+      siblingChapters.find((ch) => ch.orderIndex === chapter.orderIndex - 1) || null;
+    const nextChapter =
+      siblingChapters.find((ch) => ch.orderIndex === chapter.orderIndex + 1) || null;
+
+    logger.info('Chapter progress retrieved successfully', { studentId, chapterId });
+
+    return {
+      chapter: {
+        id: chapter.id,
+        title: chapter.title,
+        description: chapter.description,
+        orderIndex: chapter.orderIndex,
+        courseYear: chapter.courseYear,
+        course: {
+          id: chapter.course.id,
+          title: chapter.course.title,
+        },
+      },
+      progress: {
+        isCompleted,
+        completedAt: isCompleted ? progressRecord.completedAt || new Date() : null,
+        lastVideoWatched: progressRecord.lastVideoWatched,
+        videos: {
+          total: totalVideos,
+          completed: completedVideos,
+          inProgress: videosInProgress,
+          notStarted: totalVideos - (completedVideos + videosInProgress),
+          progressPercent: videoProgressPercent,
+        },
+        exam: examStats,
+      },
+      videoProgress,
+      navigation: {
+        previousChapter,
+        nextChapter,
+      },
+    };
+  } catch (error) {
+    logger.error('Error in getChapterProgress', {
+      studentId,
+      chapterId,
       error: error instanceof Error ? error.message : String(error),
     });
     throw error;
