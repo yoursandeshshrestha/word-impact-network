@@ -9,11 +9,13 @@ import {
   loginStudentController,
   registerStudent,
   updateStudentProfile,
+  updateStudentVideoProgress,
 } from '../controllers/student.controller';
 import {
   validateStudentLogin,
   validateStudentProfileUpdate,
   validateStudentRegistration,
+  validateVideoProgressUpdate,
 } from '../validations/student.validation';
 import { authenticate } from '../middlewares/auth.middleware';
 
@@ -54,5 +56,11 @@ router.post('/courses/:courseId/enroll', authenticate, enrollInCourse);
 // Progress route
 router.get('/progress', authenticate, getStudentProgress);
 router.get('/chapters/:chapterId/progress', authenticate, getStudentChapterProgress);
+router.post(
+  '/videos/:videoId/progress',
+  authenticate,
+  validateVideoProgressUpdate,
+  updateStudentVideoProgress,
+);
 
 export default router;
