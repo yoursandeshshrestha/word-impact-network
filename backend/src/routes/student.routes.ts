@@ -9,6 +9,7 @@ import {
   getStudentProgress,
   loginStudentController,
   registerStudent,
+  startStudentExamAttempt,
   updateStudentProfile,
   updateStudentVideoProgress,
 } from '../controllers/student.controller';
@@ -66,5 +67,6 @@ router.post(
 
 // Exam routes
 router.get('/exams/:examId', authenticate, getStudentExamDetails);
+router.post('/exams/:examId/attempt', authenticate, startStudentExamAttempt);
 
 export default router;
