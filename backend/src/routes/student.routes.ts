@@ -3,6 +3,7 @@ import multer from 'multer';
 import {
   enrollInCourse,
   getCourses,
+  getStudentChapterProgress,
   getStudentProfile,
   getStudentProgress,
   loginStudentController,
@@ -52,5 +53,6 @@ router.post('/courses/:courseId/enroll', authenticate, enrollInCourse);
 
 // Progress route
 router.get('/progress', authenticate, getStudentProgress);
+router.get('/chapters/:chapterId/progress', authenticate, getStudentChapterProgress);
 
 export default router;
