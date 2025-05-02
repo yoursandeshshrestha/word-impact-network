@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import {
   enrollStudentInCourse,
   getChapterProgress,
+  getExamDetails,
   getStudentEnrolledCourses,
   getStudentLearningProgress,
   getStudentProfileByUserId,
@@ -378,4 +379,50 @@ export const updateStudentVideoProgress = catchAsync(async (req: Request, res: R
   const progressData = await updateVideoProgress(student.id, videoId, watchedPercentNum);
 
   sendSuccess(res, 200, 'Video progress updated successfully', progressData);
+});
+
+// Get exam details for a student
+export const getStudentExamDetails = catchAsync(async (req: Request, res: Response) => {
+  // Ensure user is authenticated and get userId
+  if (!req.user || !req.user.userId) {
+    throw new AppError('Authentication required', 401, ErrorTypes.AUTHENTICATION);
+  }
+
+  const { examId } = req.params;
+
+  // Validate examId
+  if (!examId) {
+    throw new AppError('Exam ID is required', 400, ErrorTypes.VALIDATION);
+  }
+
+  // First find the student ID from the user ID
+  const student = await prisma.student.findFirst({
+    where: { userId: req.user.userId },
+  });
+
+  if (!student) {
+    logger.warn('Student not found for user', { userId: req.user.userId });
+    throw new AppError('Student not found', 404, ErrorTypes.NOT_FOUND);
+  }
+
+  // Ensure student's application is approved
+  if (student.applicationStatus !== ApplicationStatus.APPROVED) {
+    logger.warn('Exam details fetch failed - student application not approved', {
+      studentId: student.id,
+      applicationStatus: student.applicationStatus,
+    });
+
+    let errorMessage = 'Your application needs to be approved to access course content';
+
+    if (student.applicationStatus === ApplicationStatus.REJECTED) {
+      errorMessage = 'Your application has been rejected. Please contact support.';
+    }
+
+    throw new AppError(errorMessage, 403, ErrorTypes.AUTHORIZATION);
+  }
+
+  // Get exam details
+  const examData = await getExamDetails(student.id, examId);
+
+  sendSuccess(res, 200, 'Exam details retrieved successfully', examData);
 });
