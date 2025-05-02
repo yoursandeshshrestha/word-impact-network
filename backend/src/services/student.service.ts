@@ -1571,3 +1571,208 @@ export async function updateVideoProgress(
     throw error;
   }
 }
+
+// Get exam details for a student
+export async function getExamDetails(studentId: string, examId: string) {
+  try {
+    logger.info('Fetching exam details', { studentId, examId });
+
+    // Check if student exists
+    const student = await prisma.student.findUnique({
+      where: { id: studentId },
+    });
+
+    if (!student) {
+      logger.warn('Exam details fetch failed - student not found', { studentId });
+      throw new AppError('Student not found', 404, ErrorTypes.NOT_FOUND);
+    }
+
+    // Check if exam exists
+    const exam = await prisma.exam.findUnique({
+      where: { id: examId },
+      include: {
+        chapter: {
+          include: {
+            course: true,
+          },
+        },
+        questions: {
+          orderBy: {
+            createdAt: 'asc',
+          },
+        },
+        createdBy: {
+          select: {
+            fullName: true,
+          },
+        },
+      },
+    });
+
+    if (!exam) {
+      logger.warn('Exam details fetch failed - exam not found', { examId });
+      throw new AppError('Exam not found', 404, ErrorTypes.NOT_FOUND);
+    }
+
+    // Check if student is enrolled in the course
+    const enrollment = await prisma.courseEnrollment.findFirst({
+      where: {
+        studentId,
+        courseId: exam.chapter.courseId,
+        isActive: true,
+      },
+    });
+
+    if (!enrollment) {
+      logger.warn('Exam details fetch failed - student not enrolled in course', {
+        studentId,
+        courseId: exam.chapter.courseId,
+      });
+      throw new AppError('You are not enrolled in this course', 403, ErrorTypes.AUTHORIZATION);
+    }
+
+    // Get student's previous attempts for this exam
+    const examAttempts = await prisma.examAttempt.findMany({
+      where: {
+        studentId,
+        examId,
+      },
+      orderBy: {
+        startTime: 'desc',
+      },
+      include: {
+        answers: {
+          include: {
+            question: true,
+          },
+        },
+      },
+    });
+
+    // Calculate attempt statistics
+    const totalAttempts = examAttempts.length;
+    const passedAttempts = examAttempts.filter((attempt) => attempt.isPassed).length;
+    const highestScore =
+      examAttempts.length > 0 ? Math.max(...examAttempts.map((attempt) => attempt.score || 0)) : 0;
+    const mostRecentAttempt = examAttempts.length > 0 ? examAttempts[0] : null;
+
+    // Check if student has a passing attempt
+    const hasPassed = passedAttempts > 0;
+
+    // Determine if student can attempt the exam again
+    // (Add any business rules here, e.g. maximum attempts, cooling off period, etc.)
+    const canAttempt = true; // For now, always allow attempts
+
+    // Format questions for the response
+    // Only include correct answers if student has passed the exam
+    const formattedQuestions = exam.questions.map((question) => {
+      // Basic question data
+      const questionData = {
+        id: question.id,
+        text: question.text,
+        questionType: question.questionType,
+        points: question.points,
+      };
+
+      // Add options if multiple choice or true/false
+      if (question.questionType === 'multiple_choice' || question.questionType === 'true_false') {
+        return {
+          ...questionData,
+          options: question.options,
+          // Only include correct answer if student has passed
+          ...(hasPassed && { correctAnswer: question.correctAnswer }),
+        };
+      }
+
+      return questionData;
+    });
+
+    // Get chapter progress to check if prerequisites are met
+    // (e.g., all videos watched before attempting exam)
+    const chapterProgress = await prisma.chapterProgress.findUnique({
+      where: {
+        studentId_chapterId: {
+          studentId,
+          chapterId: exam.chapter.id,
+        },
+      },
+    });
+
+    // Get video progress to check completion
+    const totalVideosInChapter = await prisma.video.count({
+      where: {
+        chapterId: exam.chapter.id,
+      },
+    });
+
+    const completedVideosInChapter = await prisma.videoProgress.count({
+      where: {
+        studentId,
+        watchedPercent: 100,
+        video: {
+          chapterId: exam.chapter.id,
+        },
+      },
+    });
+
+    // Check if student has completed all videos in the chapter
+    const allVideosCompleted = completedVideosInChapter === totalVideosInChapter;
+
+    // Determine if student is ready to take the exam
+    const isReadyForExam = allVideosCompleted || hasPassed;
+
+    logger.info('Exam details retrieved successfully', { studentId, examId });
+
+    // Return exam details
+    return {
+      exam: {
+        id: exam.id,
+        title: exam.title,
+        description: exam.description,
+        passingScore: exam.passingScore,
+        timeLimit: exam.timeLimit, // in minutes
+        createdBy: exam.createdBy.fullName,
+        totalQuestions: exam.questions.length,
+        totalPoints: exam.questions.reduce((sum, q) => sum + q.points, 0),
+      },
+      courseContext: {
+        courseId: exam.chapter.courseId,
+        courseName: exam.chapter.course.title,
+        chapterId: exam.chapter.id,
+        chapterTitle: exam.chapter.title,
+      },
+      studentProgress: {
+        attempts: {
+          total: totalAttempts,
+          passed: passedAttempts,
+          highestScore,
+        },
+        hasPassed,
+        canAttempt,
+        isReadyForExam,
+        prerequisites: {
+          videosCompleted: completedVideosInChapter,
+          totalVideos: totalVideosInChapter,
+          allVideosCompleted,
+        },
+        mostRecentAttempt: mostRecentAttempt
+          ? {
+              id: mostRecentAttempt.id,
+              startTime: mostRecentAttempt.startTime,
+              endTime: mostRecentAttempt.endTime,
+              score: mostRecentAttempt.score,
+              isPassed: mostRecentAttempt.isPassed,
+            }
+          : null,
+      },
+      questions: formattedQuestions,
+    };
+  } catch (error) {
+    logger.error('Error in getExamDetails', {
+      studentId,
+      examId,
+      error: error instanceof Error ? error.message : String(error),
+    });
+    throw error;
+  }
+}
