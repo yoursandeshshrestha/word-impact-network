@@ -5,6 +5,7 @@ import { uploadToCloudinary } from '../utils/cloudinary';
 import { sendApplicationConfirmationEmail } from './email.service';
 import bcrypt from 'bcryptjs';
 import { StudentProfileUpdateData } from '@/types/types';
+import { updateChapterProgressBasedOnVideo } from '@/utils/progressUtils';
 const prisma = new PrismaClient();
 
 // Register a new student
@@ -1423,6 +1424,148 @@ export async function getChapterProgress(studentId: string, chapterId: string) {
     logger.error('Error in getChapterProgress', {
       studentId,
       chapterId,
+      error: error instanceof Error ? error.message : String(error),
+    });
+    throw error;
+  }
+}
+
+// Updated service function without the helper function
+export async function updateVideoProgress(
+  studentId: string,
+  videoId: string,
+  watchedPercent: number,
+) {
+  try {
+    logger.info('Updating video progress', { studentId, videoId, watchedPercent });
+
+    // Validate watchedPercent (0-100)
+    if (watchedPercent < 0 || watchedPercent > 100) {
+      logger.warn('Invalid watched percent value', { watchedPercent });
+      throw new AppError('Watched percent must be between 0 and 100', 400, ErrorTypes.VALIDATION);
+    }
+
+    // Check if student exists
+    const student = await prisma.student.findUnique({
+      where: { id: studentId },
+    });
+
+    if (!student) {
+      logger.warn('Video progress update failed - student not found', { studentId });
+      throw new AppError('Student not found', 404, ErrorTypes.NOT_FOUND);
+    }
+
+    // Check if video exists
+    const video = await prisma.video.findUnique({
+      where: { id: videoId },
+      include: {
+        chapter: {
+          include: {
+            course: true,
+          },
+        },
+      },
+    });
+
+    if (!video) {
+      logger.warn('Video progress update failed - video not found', { videoId });
+      throw new AppError('Video not found', 404, ErrorTypes.NOT_FOUND);
+    }
+
+    // Check if student is enrolled in the course
+    const enrollment = await prisma.courseEnrollment.findFirst({
+      where: {
+        studentId,
+        courseId: video.chapter.courseId,
+        isActive: true,
+      },
+    });
+
+    if (!enrollment) {
+      logger.warn('Video progress update failed - student not enrolled in course', {
+        studentId,
+        courseId: video.chapter.courseId,
+      });
+      throw new AppError('You are not enrolled in this course', 403, ErrorTypes.AUTHORIZATION);
+    }
+
+    // Find existing progress record or create a new one
+    const existingProgress = await prisma.videoProgress.findUnique({
+      where: {
+        studentId_videoId: {
+          studentId,
+          videoId,
+        },
+      },
+    });
+
+    let videoProgress;
+
+    if (existingProgress) {
+      // Only update if new progress is higher than previous
+      if (watchedPercent > existingProgress.watchedPercent) {
+        videoProgress = await prisma.videoProgress.update({
+          where: {
+            id: existingProgress.id,
+          },
+          data: {
+            watchedPercent,
+            lastWatchedAt: new Date(),
+          },
+        });
+      } else {
+        // Just update the timestamp if the percentage is the same or lower
+        videoProgress = await prisma.videoProgress.update({
+          where: {
+            id: existingProgress.id,
+          },
+          data: {
+            lastWatchedAt: new Date(),
+          },
+        });
+      }
+    } else {
+      // Create new progress record
+      videoProgress = await prisma.videoProgress.create({
+        data: {
+          student: {
+            connect: { id: studentId },
+          },
+          video: {
+            connect: { id: videoId },
+          },
+          watchedPercent,
+          lastWatchedAt: new Date(),
+        },
+      });
+    }
+
+    // Update chapter progress if this is the last video the student is watching
+    await updateChapterProgressBasedOnVideo(studentId, video.chapterId);
+
+    logger.info('Video progress updated successfully', {
+      studentId,
+      videoId,
+      watchedPercent: videoProgress.watchedPercent,
+    });
+
+    return {
+      id: videoProgress.id,
+      videoId: videoProgress.videoId,
+      watchedPercent: videoProgress.watchedPercent,
+      lastWatchedAt: videoProgress.lastWatchedAt,
+      video: {
+        id: video.id,
+        title: video.title,
+        chapterTitle: video.chapter.title,
+        courseName: video.chapter.course.title,
+      },
+    };
+  } catch (error) {
+    logger.error('Error in updateVideoProgress', {
+      studentId,
+      videoId,
+      watchedPercent,
       error: error instanceof Error ? error.message : String(error),
     });
     throw error;
