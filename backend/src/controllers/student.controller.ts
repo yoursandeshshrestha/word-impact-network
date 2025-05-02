@@ -8,6 +8,7 @@ import {
   loginStudent,
   registerStudent as registerStudentService,
   updateStudentProfileByUserId,
+  updateVideoProgress,
 } from '../services/student.service';
 import { sendSuccess } from '../utils/responseHandler';
 import { catchAsync } from '../utils/catchAsync';
@@ -311,4 +312,70 @@ export const getStudentChapterProgress = catchAsync(async (req: Request, res: Re
   const progressData = await getChapterProgress(student.id, chapterId);
 
   sendSuccess(res, 200, 'Chapter progress retrieved successfully', progressData);
+});
+
+// Update video watching progress
+export const updateStudentVideoProgress = catchAsync(async (req: Request, res: Response) => {
+  // Ensure user is authenticated and get userId
+  if (!req.user || !req.user.userId) {
+    throw new AppError('Authentication required', 401, ErrorTypes.AUTHENTICATION);
+  }
+
+  const { videoId } = req.params;
+  const { watchedPercent } = req.body;
+
+  // Validate videoId
+  if (!videoId) {
+    throw new AppError('Video ID is required', 400, ErrorTypes.VALIDATION);
+  }
+
+  // Validate watchedPercent
+  if (watchedPercent === undefined || watchedPercent === null) {
+    throw new AppError('Watched percent is required', 400, ErrorTypes.VALIDATION);
+  }
+
+  // Convert to number if string
+  const watchedPercentNum =
+    typeof watchedPercent === 'string' ? parseInt(watchedPercent, 10) : watchedPercent;
+
+  // Check if watchedPercent is a valid number
+  if (isNaN(watchedPercentNum) || !Number.isInteger(watchedPercentNum)) {
+    throw new AppError('Watched percent must be an integer', 400, ErrorTypes.VALIDATION);
+  }
+
+  // Check range
+  if (watchedPercentNum < 0 || watchedPercentNum > 100) {
+    throw new AppError('Watched percent must be between 0 and 100', 400, ErrorTypes.VALIDATION);
+  }
+
+  // First find the student ID from the user ID
+  const student = await prisma.student.findFirst({
+    where: { userId: req.user.userId },
+  });
+
+  if (!student) {
+    logger.warn('Student not found for user', { userId: req.user.userId });
+    throw new AppError('Student not found', 404, ErrorTypes.NOT_FOUND);
+  }
+
+  // Ensure student's application is approved
+  if (student.applicationStatus !== ApplicationStatus.APPROVED) {
+    logger.warn('Video progress update failed - student application not approved', {
+      studentId: student.id,
+      applicationStatus: student.applicationStatus,
+    });
+
+    let errorMessage = 'Your application needs to be approved to access course content';
+
+    if (student.applicationStatus === ApplicationStatus.REJECTED) {
+      errorMessage = 'Your application has been rejected. Please contact support.';
+    }
+
+    throw new AppError(errorMessage, 403, ErrorTypes.AUTHORIZATION);
+  }
+
+  // Update video progress
+  const progressData = await updateVideoProgress(student.id, videoId, watchedPercentNum);
+
+  sendSuccess(res, 200, 'Video progress updated successfully', progressData);
 });
