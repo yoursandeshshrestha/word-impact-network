@@ -41,7 +41,7 @@ export const uploadToCloudinary = async (
 
     const result = await cloudinary.uploader.upload(base64File, {
       folder,
-      resource_type: 'video',
+      resource_type: 'auto',
       access_mode: 'public',
       overwrite: true,
       public_id: fileName ? `${folder}/${fileName}` : undefined,
