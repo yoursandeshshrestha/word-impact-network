@@ -4,6 +4,7 @@ import {
   enrollInCourse,
   getCourses,
   getStudentChapterProgress,
+  getStudentExamDetails,
   getStudentProfile,
   getStudentProgress,
   loginStudentController,
@@ -62,5 +63,8 @@ router.post(
   validateVideoProgressUpdate,
   updateStudentVideoProgress,
 );
+
+// Exam routes
+router.get('/exams/:examId', authenticate, getStudentExamDetails);
 
 export default router;
