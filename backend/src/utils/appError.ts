@@ -8,6 +8,7 @@ export enum ErrorTypes {
   DATABASE = 'DatabaseError',
   THIRD_PARTY = 'ThirdPartyError',
   REQUEST = 'RequestError',
+  PRECONDITION_FAILED = 'PreconditionFailedError',
 }
 
 export class AppError extends Error {
@@ -69,5 +70,9 @@ export class AppError extends Error {
 
   static internal(message = 'Internal server error') {
     return new AppError(message, 500, ErrorTypes.SERVER, false);
+  }
+
+  static preconditionFailed(message = 'Precondition failed') {
+    return new AppError(message, 412, ErrorTypes.PRECONDITION_FAILED, true);
   }
 }
