@@ -1,6 +1,7 @@
 import app from './app';
 import config from './types';
 import { PrismaClient } from '@prisma/client';
+import { initializeSocketIO } from './websocket/websocket';
 
 const prisma = new PrismaClient();
 const PORT = config.port;
@@ -12,6 +13,12 @@ const server = app.listen(PORT, () => {
   📚 API docs: http://localhost:${PORT}${config.apiPrefix}/docs
   `);
 });
+
+// Initialize Socket.IO with the HTTP server
+const io = initializeSocketIO(server);
+
+// Make io available globally
+(global as any).io = io;
 
 // Function to gracefully close server and database connections
 const gracefulShutdown = async (signal?: string) => {
