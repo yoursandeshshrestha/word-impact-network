@@ -14,7 +14,7 @@ import { useAuth } from "@/src/hooks/useAuth";
 
 const Login = () => {
   const router = useRouter();
-  useAuth(false); // Don't require auth for login page
+  useAuth(false);
 
   const [formData, setFormData] = useState({
     email: "",
@@ -26,7 +26,6 @@ const Login = () => {
   const [rememberMe, setRememberMe] = useState(false);
 
   useEffect(() => {
-    // Check if token exists and redirect
     const token = getAuthToken();
     if (token) {
       router.push("/");
