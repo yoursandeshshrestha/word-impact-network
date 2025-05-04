@@ -1,6 +1,5 @@
 "use client";
 import React from "react";
-import { useAuth } from "@/src/hooks/useAuth";
 import Sidebar from "@/src/components/layout/Sidebar";
 import { getUserInfo } from "@/src/utils/auth";
 import Topbar from "@/src/components/layout/Topbar";
@@ -9,7 +8,6 @@ export default function ProtectedLayout({
 }: {
   children: React.ReactNode;
 }) {
-  useAuth(true);
   const userInfo = getUserInfo();
 
   return (
