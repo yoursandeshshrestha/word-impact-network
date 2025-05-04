@@ -7,7 +7,9 @@ import {
   requestPasswordReset,
 } from '../controllers/admin.controller';
 import { validateAdminLogin, validateAdminRegister } from '../validations/admin.validation';
-import { authenticate } from '@/middlewares/auth.middleware';
+import { authenticate, authorize } from '@/middlewares/auth.middleware';
+import { UserRole } from '@prisma/client';
+import { sendBroadcastController } from '@/controllers/broadcast.controller';
 
 const router: Router = express.Router();
 
@@ -17,5 +19,7 @@ router.get('/profile', authenticate, getAdminProfile);
 
 router.post('/request-password-reset', authenticate, requestPasswordReset);
 router.post('/verify-password-reset', authenticate, verifyPasswordReset);
+
+router.post('/broadcast', authenticate, authorize([UserRole.ADMIN]), sendBroadcastController);
 
 export default router;
