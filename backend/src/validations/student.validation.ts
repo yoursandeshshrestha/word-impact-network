@@ -60,6 +60,29 @@ const videoProgressUpdateSchema = Joi.object({
   }),
 });
 
+// Exam submission validation schema
+const examSubmissionSchema = Joi.object({
+  answers: Joi.array()
+    .items(
+      Joi.object({
+        questionId: Joi.string().uuid().required().messages({
+          'string.uuid': 'Question ID must be a valid UUID',
+          'any.required': 'Question ID is required for each answer',
+        }),
+        answer: Joi.string().required().messages({
+          'string.empty': 'Answer cannot be empty',
+          'any.required': 'Answer is required for each question',
+        }),
+      }),
+    )
+    .min(1)
+    .required()
+    .messages({
+      'array.min': 'At least one answer is required',
+      'any.required': 'Answers are required',
+    }),
+});
+
 // Validation middleware for student registration
 export const validateStudentRegistration = (req: Request, res: Response, next: NextFunction) => {
   // Convert string 'true'/'false' to boolean
@@ -125,6 +148,23 @@ export const validateVideoProgressUpdate = (req: Request, _res: Response, next: 
     if (error) {
       const errorMessage = error.details.map((detail) => detail.message).join(', ');
       logger.warn('Video progress update validation failed', { errors: errorMessage });
+      throw new AppError(errorMessage, 400, ErrorTypes.VALIDATION);
+    }
+
+    next();
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Validate exam submission
+export const validateExamSubmission = (req: Request, _res: Response, next: NextFunction) => {
+  try {
+    const { error } = examSubmissionSchema.validate(req.body, { abortEarly: false });
+
+    if (error) {
+      const errorMessage = error.details.map((detail) => detail.message).join(', ');
+      logger.warn('Exam submission validation failed', { errors: errorMessage });
       throw new AppError(errorMessage, 400, ErrorTypes.VALIDATION);
     }
 
