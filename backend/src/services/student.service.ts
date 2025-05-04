@@ -2269,3 +2269,178 @@ export async function submitExamAttempt(
     throw error;
   }
 }
+
+// Get exam attempt result
+export async function getExamAttemptResult(studentId: string, attemptId: string) {
+  try {
+    logger.info('Fetching exam attempt result', { studentId, attemptId });
+
+    // Check if student exists
+    const student = await prisma.student.findUnique({
+      where: { id: studentId },
+    });
+
+    if (!student) {
+      logger.warn('Fetch exam result failed - student not found', { studentId });
+      throw new AppError('Student not found', 404, ErrorTypes.NOT_FOUND);
+    }
+
+    // Check if the attempt exists and belongs to the student
+    const examAttempt = await prisma.examAttempt.findUnique({
+      where: { id: attemptId },
+      include: {
+        exam: {
+          include: {
+            questions: true,
+            chapter: {
+              include: {
+                course: true
+              }
+            }
+          }
+        },
+        answers: {
+          include: {
+            question: true
+          }
+        }
+      }
+    });
+
+    if (!examAttempt) {
+      logger.warn('Fetch exam result failed - attempt not found', { attemptId });
+      throw new AppError('Exam attempt not found', 404, ErrorTypes.NOT_FOUND);
+    }
+
+    if (examAttempt.studentId !== studentId) {
+      logger.warn('Fetch exam result failed - attempt does not belong to student', { 
+        attemptId, 
+        studentId, 
+        attemptStudentId: examAttempt.studentId 
+      });
+      throw new AppError('This exam attempt does not belong to you', 403, ErrorTypes.AUTHORIZATION);
+    }
+
+    // Check if attempt has been completed
+    if (!examAttempt.endTime) {
+      logger.warn('Fetch exam result failed - attempt not yet completed', { attemptId });
+      throw new AppError(
+        'This exam attempt has not been submitted yet', 
+        400, 
+        ErrorTypes.VALIDATION
+      );
+    }
+
+    // Format the answers for the response
+    const answersWithDetails = examAttempt.answers.map(answer => {
+      const question = examAttempt.exam.questions.find(q => q.id === answer.questionId);
+      
+      return {
+        questionId: answer.questionId,
+        questionText: question?.text || '',
+        questionType: question?.questionType || '',
+        studentAnswer: answer.studentAnswer,
+        isCorrect: answer.isCorrect,
+        points: answer.points,
+        maxPoints: question?.points || 0,
+        correctAnswer: question?.correctAnswer || null,
+        options: question?.options || null
+      };
+    });
+
+    // Calculate statistics for answer types
+    const objectiveQuestions = answersWithDetails.filter(
+      a => a.questionType === 'multiple_choice' || a.questionType === 'true_false'
+    );
+    
+    const correctAnswers = objectiveQuestions.filter(a => a.isCorrect === true).length;
+    const incorrectAnswers = objectiveQuestions.filter(a => a.isCorrect === false).length;
+    const essayQuestions = answersWithDetails.filter(a => a.questionType === 'essay').length;
+
+    // Calculate time spent on the exam
+    const startTime = examAttempt.startTime;
+    const endTime = examAttempt.endTime;
+    const timeTakenMinutes = Math.round((endTime.getTime() - startTime.getTime()) / 1000 / 60);
+    
+    // Format dates for display
+    const formattedStartTime = startTime.toISOString();
+    const formattedEndTime = endTime.toISOString();
+    
+    // Check if the student has any other attempts at this exam
+    const otherAttempts = await prisma.examAttempt.findMany({
+      where: {
+        studentId,
+        examId: examAttempt.examId,
+        id: { not: attemptId }
+      },
+      orderBy: {
+        startTime: 'desc'
+      },
+      select: {
+        id: true,
+        startTime: true,
+        endTime: true,
+        score: true,
+        isPassed: true
+      }
+    });
+
+    logger.info('Exam result retrieved successfully', { 
+      attemptId, 
+      studentId, 
+      score: examAttempt.score, 
+      isPassed: examAttempt.isPassed 
+    });
+
+    // Construct response
+    return {
+      attemptId: examAttempt.id,
+      exam: {
+        id: examAttempt.exam.id,
+        title: examAttempt.exam.title,
+        description: examAttempt.exam.description,
+        passingScore: examAttempt.exam.passingScore,
+        timeLimit: examAttempt.exam.timeLimit,
+        totalQuestions: examAttempt.exam.questions.length,
+        totalPoints: examAttempt.exam.questions.reduce((sum, q) => sum + q.points, 0)
+      },
+      courseContext: {
+        courseId: examAttempt.exam.chapter.course.id,
+        courseName: examAttempt.exam.chapter.course.title,
+        chapterId: examAttempt.exam.chapter.id,
+        chapterTitle: examAttempt.exam.chapter.title
+      },
+      result: {
+        score: examAttempt.score,
+        isPassed: examAttempt.isPassed,
+        startTime: formattedStartTime,
+        endTime: formattedEndTime,
+        timeTaken: timeTakenMinutes,
+        statistics: {
+          totalQuestions: answersWithDetails.length,
+          correctAnswers,
+          incorrectAnswers,
+          essayQuestions,
+          objectiveScore: objectiveQuestions.length > 0 
+            ? Math.round((correctAnswers / objectiveQuestions.length) * 100) 
+            : 0
+        }
+      },
+      otherAttempts: otherAttempts.map(attempt => ({
+        id: attempt.id,
+        startTime: attempt.startTime.toISOString(),
+        endTime: attempt.endTime?.toISOString() || null,
+        score: attempt.score,
+        isPassed: attempt.isPassed
+      })),
+      answers: answersWithDetails
+    };
+  } catch (error) {
+    logger.error('Error in getExamAttemptResult', {
+      studentId,
+      attemptId,
+      error: error instanceof Error ? error.message : String(error),
+    });
+    throw error;
+  }
+}
