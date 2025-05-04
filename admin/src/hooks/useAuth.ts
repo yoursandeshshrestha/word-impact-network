@@ -11,7 +11,7 @@ export const useAuth = (requireAuth: boolean = true) => {
     if (requireAuth && !token) {
       router.push("/auth/login");
     } else if (!requireAuth && token) {
-      router.push("/");
+      router.push("/dashboard");
     }
   }, [router, requireAuth]);
 
