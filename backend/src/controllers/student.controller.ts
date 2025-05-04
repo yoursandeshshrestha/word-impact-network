@@ -9,6 +9,7 @@ import {
   loginStudent,
   registerStudent as registerStudentService,
   startExamAttempt,
+  submitExamAttempt,
   updateStudentProfileByUserId,
   updateVideoProgress,
 } from '../services/student.service';
@@ -475,4 +476,74 @@ export const startStudentExamAttempt = catchAsync(async (req: Request, res: Resp
   const statusCode = attemptData.isNewAttempt ? 201 : 200;
 
   sendSuccess(res, statusCode, attemptData.message, attemptData);
+});
+
+// Submit an exam attempt with answers
+export const submitStudentExamAttempt = catchAsync(async (req: Request, res: Response) => {
+  // Ensure user is authenticated and get userId
+  if (!req.user || !req.user.userId) {
+    throw new AppError('Authentication required', 401, ErrorTypes.AUTHENTICATION);
+  }
+
+  const { attemptId } = req.params;
+  const { answers } = req.body;
+
+  // Validate attemptId
+  if (!attemptId) {
+    throw new AppError('Attempt ID is required', 400, ErrorTypes.VALIDATION);
+  }
+
+  // Validate answers
+  if (!answers || !Array.isArray(answers) || answers.length === 0) {
+    throw new AppError('Valid answers are required', 400, ErrorTypes.VALIDATION);
+  }
+
+  // Check if each answer has questionId and answer fields
+  const invalidAnswers = answers.filter(
+    (answer) => !answer.questionId || answer.answer === undefined || answer.answer === null,
+  );
+
+  if (invalidAnswers.length > 0) {
+    throw new AppError(
+      'Each answer must have questionId and answer fields',
+      400,
+      ErrorTypes.VALIDATION,
+    );
+  }
+
+  // First find the student ID from the user ID
+  const student = await prisma.student.findFirst({
+    where: { userId: req.user.userId },
+  });
+
+  if (!student) {
+    logger.warn('Student not found for user', { userId: req.user.userId });
+    throw new AppError('Student not found', 404, ErrorTypes.NOT_FOUND);
+  }
+
+  // Ensure student's application is approved
+  if (student.applicationStatus !== ApplicationStatus.APPROVED) {
+    logger.warn('Exam submission failed - student application not approved', {
+      studentId: student.id,
+      applicationStatus: student.applicationStatus,
+    });
+
+    let errorMessage = 'Your application needs to be approved to submit exams';
+
+    if (student.applicationStatus === ApplicationStatus.REJECTED) {
+      errorMessage = 'Your application has been rejected. Please contact support.';
+    }
+
+    throw new AppError(errorMessage, 403, ErrorTypes.AUTHORIZATION);
+  }
+
+  // Submit the exam attempt
+  const resultData = await submitExamAttempt(student.id, attemptId, answers);
+
+  // Create success message based on pass/fail status
+  const message = resultData.isPassed
+    ? `Congratulations! You passed the exam with a score of ${resultData.score}%`
+    : `Exam submitted. Your score is ${resultData.score}%. The passing score was ${resultData.exam.passingScore}%`;
+
+  sendSuccess(res, 200, message, resultData);
 });
