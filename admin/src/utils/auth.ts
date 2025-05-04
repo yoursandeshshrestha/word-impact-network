@@ -1,6 +1,5 @@
 import Cookies from "js-cookie";
 import { toast } from "sonner";
-import { useRouter } from "next/navigation";
 
 export interface User {
   id: string;
@@ -71,24 +70,8 @@ export const isAuthenticated = (): boolean => {
 export const logout = () => {
   Cookies.remove("authToken");
   Cookies.remove("user");
-};
 
-/**
- * Custom hook for protected routes
- */
-export const useAuthProtection = () => {
-  const router = useRouter();
-
-  const checkAuth = () => {
-    if (typeof window !== "undefined") {
-      if (!isAuthenticated()) {
-        toast.error("You must be logged in to access this page");
-        router.push("/auth/login");
-      }
-    }
-  };
-
-  return { checkAuth };
+  toast.success("You have been logged out successfully");
 };
 
 /**
