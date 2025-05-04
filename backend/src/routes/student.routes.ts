@@ -5,6 +5,7 @@ import {
   getCourses,
   getStudentChapterProgress,
   getStudentExamDetails,
+  getStudentExamResult,
   getStudentProfile,
   getStudentProgress,
   loginStudentController,
@@ -76,5 +77,6 @@ router.post(
   validateExamSubmission,
   submitStudentExamAttempt,
 );
+router.get('/exam-attempts/:attemptId/result', authenticate, getStudentExamResult);
 
 export default router;
