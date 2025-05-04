@@ -10,10 +10,12 @@ import {
   loginStudentController,
   registerStudent,
   startStudentExamAttempt,
+  submitStudentExamAttempt,
   updateStudentProfile,
   updateStudentVideoProgress,
 } from '../controllers/student.controller';
 import {
+  validateExamSubmission,
   validateStudentLogin,
   validateStudentProfileUpdate,
   validateStudentRegistration,
@@ -68,5 +70,11 @@ router.post(
 // Exam routes
 router.get('/exams/:examId', authenticate, getStudentExamDetails);
 router.post('/exams/:examId/attempt', authenticate, startStudentExamAttempt);
+router.post(
+  '/exam-attempts/:attemptId/submit',
+  authenticate,
+  validateExamSubmission,
+  submitStudentExamAttempt,
+);
 
 export default router;
