@@ -1976,3 +1976,296 @@ export async function startExamAttempt(studentId: string, examId: string) {
     throw error;
   }
 }
+
+// Submit an exam attempt with answers
+export async function submitExamAttempt(
+  studentId: string,
+  attemptId: string,
+  answers: { questionId: string; answer: string }[],
+) {
+  try {
+    logger.info('Submitting exam attempt', { studentId, attemptId, answersCount: answers.length });
+
+    // Check if student exists
+    const student = await prisma.student.findUnique({
+      where: { id: studentId },
+    });
+
+    if (!student) {
+      logger.warn('Exam submission failed - student not found', { studentId });
+      throw new AppError('Student not found', 404, ErrorTypes.NOT_FOUND);
+    }
+
+    // Check if the attempt exists and belongs to the student
+    const examAttempt = await prisma.examAttempt.findUnique({
+      where: { id: attemptId },
+      include: {
+        exam: {
+          include: {
+            questions: true,
+            chapter: true,
+          },
+        },
+        answers: true,
+      },
+    });
+
+    if (!examAttempt) {
+      logger.warn('Exam submission failed - attempt not found', { attemptId });
+      throw new AppError('Exam attempt not found', 404, ErrorTypes.NOT_FOUND);
+    }
+
+    if (examAttempt.studentId !== studentId) {
+      logger.warn('Exam submission failed - attempt does not belong to student', {
+        attemptId,
+        studentId,
+        attemptStudentId: examAttempt.studentId,
+      });
+      throw new AppError('This exam attempt does not belong to you', 403, ErrorTypes.AUTHORIZATION);
+    }
+
+    // Check if attempt is already completed
+    if (examAttempt.endTime) {
+      logger.warn('Exam submission failed - attempt already completed', { attemptId });
+      throw new AppError(
+        'This exam attempt has already been submitted',
+        400,
+        ErrorTypes.VALIDATION,
+      );
+    }
+
+    // Check if all required questions are answered
+    const allQuestionIds = examAttempt.exam.questions.map((q) => q.id);
+    const answeredQuestionIds = answers.map((a) => a.questionId);
+
+    // Find missing questions (questions that should be answered but aren't)
+    const missingQuestionIds = allQuestionIds.filter((qId) => !answeredQuestionIds.includes(qId));
+
+    if (missingQuestionIds.length > 0) {
+      logger.warn('Exam submission failed - missing answers', {
+        attemptId,
+        missingQuestionIds,
+      });
+      throw new AppError(
+        `Missing answers for ${missingQuestionIds.length} question(s)`,
+        400,
+        ErrorTypes.VALIDATION,
+      );
+    }
+
+    // Check for answers to questions that don't belong to this exam
+    const invalidQuestionIds = answeredQuestionIds.filter((qId) => !allQuestionIds.includes(qId));
+
+    if (invalidQuestionIds.length > 0) {
+      logger.warn('Exam submission failed - invalid question IDs', {
+        attemptId,
+        invalidQuestionIds,
+      });
+      throw new AppError(
+        `Invalid question IDs: ${invalidQuestionIds.join(', ')}`,
+        400,
+        ErrorTypes.VALIDATION,
+      );
+    }
+
+    // Create/update answers in a transaction
+    const result = await prisma.$transaction(async (tx) => {
+      // Delete any existing answers for this attempt
+      if (examAttempt.answers.length > 0) {
+        await tx.answer.deleteMany({
+          where: { examAttemptId: attemptId },
+        });
+      }
+
+      // Create new answers
+      const createdAnswers = await Promise.all(
+        answers.map(async ({ questionId, answer }) => {
+          const question = examAttempt.exam.questions.find((q) => q.id === questionId);
+
+          if (!question) {
+            throw new AppError(`Question not found: ${questionId}`, 400, ErrorTypes.VALIDATION);
+          }
+
+          // Determine if the answer is correct for objective questions
+          let isCorrect: boolean | null = null;
+
+          if (
+            question.questionType === 'multiple_choice' ||
+            question.questionType === 'true_false'
+          ) {
+            isCorrect = question.correctAnswer === answer;
+          }
+
+          // Essay questions will have isCorrect = null initially, to be graded manually
+
+          // Calculate points for this answer
+          let points: number | null = null;
+
+          if (isCorrect !== null) {
+            points = isCorrect ? question.points : 0;
+          }
+
+          return tx.answer.create({
+            data: {
+              studentAnswer: answer,
+              isCorrect,
+              points,
+              question: {
+                connect: { id: questionId },
+              },
+              examAttempt: {
+                connect: { id: attemptId },
+              },
+            },
+          });
+        }),
+      );
+
+      // Calculate the score for this attempt (for objective questions)
+      const totalPossiblePoints = examAttempt.exam.questions.reduce((sum, q) => sum + q.points, 0);
+
+      const earnedPoints = createdAnswers.reduce((sum, a) => sum + (a.points || 0), 0);
+
+      // Only include objective questions in the score calculation
+      const totalObjectivePoints = examAttempt.exam.questions
+        .filter((q) => q.questionType === 'multiple_choice' || q.questionType === 'true_false')
+        .reduce((sum, q) => sum + q.points, 0);
+
+      // Calculate score percentage
+      let score = 0;
+
+      if (totalObjectivePoints > 0) {
+        score = Math.round((earnedPoints / totalObjectivePoints) * 100);
+      }
+
+      // Determine if the attempt is passed
+      const isPassed = score >= examAttempt.exam.passingScore;
+
+      // Update the exam attempt with end time and score
+      const updatedAttempt = await tx.examAttempt.update({
+        where: { id: attemptId },
+        data: {
+          endTime: new Date(),
+          score,
+          isPassed,
+        },
+        include: {
+          answers: {
+            include: {
+              question: true,
+            },
+          },
+          exam: {
+            include: {
+              questions: true,
+            },
+          },
+        },
+      });
+
+      // Update chapter progress if this is the first passed attempt
+      if (isPassed) {
+        const chapterId = examAttempt.exam.chapter.id;
+
+        // Get chapter progress record
+        const chapterProgress = await tx.chapterProgress.findUnique({
+          where: {
+            studentId_chapterId: {
+              studentId,
+              chapterId,
+            },
+          },
+        });
+
+        // Check if all videos are completed too
+        const totalVideosInChapter = await tx.video.count({
+          where: { chapterId },
+        });
+
+        const completedVideosInChapter = await tx.videoProgress.count({
+          where: {
+            studentId,
+            watchedPercent: 100,
+            video: {
+              chapterId,
+            },
+          },
+        });
+
+        const allVideosCompleted = completedVideosInChapter === totalVideosInChapter;
+
+        // Chapter is completed if all videos are watched and exam is passed
+        const isCompleted = allVideosCompleted && isPassed;
+
+        // Update chapter progress
+        if (chapterProgress) {
+          await tx.chapterProgress.update({
+            where: { id: chapterProgress.id },
+            data: {
+              isCompleted,
+              completedAt: isCompleted ? new Date() : chapterProgress.completedAt,
+            },
+          });
+        } else {
+          // Create new chapter progress if doesn't exist
+          await tx.chapterProgress.create({
+            data: {
+              student: { connect: { id: studentId } },
+              chapter: { connect: { id: chapterId } },
+              isCompleted,
+              completedAt: isCompleted ? new Date() : null,
+            },
+          });
+        }
+      }
+
+      return updatedAttempt;
+    });
+
+    // Prepare response
+    const answersWithDetails = result.answers.map((answer) => {
+      const question = result.exam.questions.find((q) => q.id === answer.questionId);
+
+      return {
+        questionId: answer.questionId,
+        questionText: question?.text || '',
+        studentAnswer: answer.studentAnswer,
+        isCorrect: answer.isCorrect,
+        points: answer.points,
+        maxPoints: question?.points || 0,
+        correctAnswer: question?.correctAnswer || null,
+      };
+    });
+
+    logger.info('Exam attempt submitted successfully', {
+      attemptId,
+      studentId,
+      score: result.score,
+      isPassed: result.isPassed,
+    });
+
+    return {
+      attemptId: result.id,
+      exam: {
+        id: result.exam.id,
+        title: result.exam.title,
+        passingScore: result.exam.passingScore,
+      },
+      score: result.score,
+      isPassed: result.isPassed,
+      startTime: result.startTime,
+      endTime: result.endTime,
+      timeTaken: result.endTime
+        ? Math.round((result.endTime.getTime() - result.startTime.getTime()) / 1000 / 60)
+        : null,
+      answers: answersWithDetails,
+    };
+  } catch (error) {
+    logger.error('Error in submitExamAttempt', {
+      studentId,
+      attemptId,
+      error: error instanceof Error ? error.message : String(error),
+    });
+    throw error;
+  }
+}
