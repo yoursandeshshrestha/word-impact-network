@@ -1,20 +1,18 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { AuthService, getAuthToken } from "@/src/utils/auth";
+import { AuthService, setAuthToken, setUserInfo } from "@/src/utils/auth";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
-import { useAuth } from "@/src/hooks/useAuth";
 
 const Register = () => {
   const router = useRouter();
-
   const [formData, setFormData] = useState({
+    fullName: "",
     email: "",
     password: "",
     confirmPassword: "",
-    fullName: "",
     adminCreationSecret:
       process.env.NEXT_PUBLIC_ADMIN_CREATION_SECRET || "Helloworld",
   });
@@ -23,19 +21,11 @@ const Register = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  useAuth(false);
-
-  useEffect(() => {
-    const token = getAuthToken();
-    if (token) {
-      router.push("/");
-    }
-  }, [router]);
-
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
 
+    // Clear error for the field being changed
     if (errors[name]) {
       setErrors({ ...errors, [name]: "" });
     }
