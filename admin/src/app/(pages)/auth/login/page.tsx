@@ -1,21 +1,13 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import {
-  AuthService,
-  setAuthToken,
-  setUserInfo,
-  getAuthToken,
-} from "@/src/utils/auth";
+import { AuthService, setAuthToken, setUserInfo } from "@/src/utils/auth";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
-import { useAuth } from "@/src/hooks/useAuth";
 
 const Login = () => {
   const router = useRouter();
-  useAuth(false);
-
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -24,13 +16,6 @@ const Login = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
-
-  useEffect(() => {
-    const token = getAuthToken();
-    if (token) {
-      router.push("/");
-    }
-  }, [router]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
