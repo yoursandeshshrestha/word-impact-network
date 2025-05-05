@@ -10,7 +10,8 @@ export interface User {
 // Cookie expiration options
 const COOKIE_OPTIONS = {
   secure: process.env.NODE_ENV === "production",
-  sameSite: "strict" as const,
+  sameSite: "lax" as const,
+  path: "/",
 };
 
 /**
