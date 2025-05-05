@@ -1,4 +1,5 @@
 "use client";
+
 import React, { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -129,12 +130,8 @@ const Sidebar: React.FC<SidebarProps> = ({ userEmail, userName }) => {
         {/* User Info & Logout */}
         <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-700">
           <div className="mb-4">
-            <h3 className="text-sm font-medium text-white">
-              {userName || "Admin User"}
-            </h3>
-            <p className="text-gray-400 text-xs">
-              {userEmail || "admin@example.com"}
-            </p>
+            <h3 className="text-sm font-medium text-white">{userName}</h3>
+            <p className="text-gray-400 text-xs">{userEmail}</p>
           </div>
           <button
             onClick={handleLogout}
