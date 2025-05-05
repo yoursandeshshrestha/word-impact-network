@@ -180,6 +180,18 @@ export async function updateApplicationStatus(
       throw new AppError('Application not found', 404, ErrorTypes.NOT_FOUND);
     }
 
+    // Check if admin exists
+    const admin = await prisma.admin.findFirst({
+      where: { userId: adminId },
+    });
+
+    if (!admin) {
+      logger.warn('Update application status failed - admin not found', {
+        adminId,
+      });
+      throw new AppError('Admin not found', 404, ErrorTypes.NOT_FOUND);
+    }
+
     // If rejecting, ensure a reason is provided
     if (status === ApplicationStatus.REJECTED && !rejectionReason) {
       logger.warn('Rejection reason not provided', { applicationId });
@@ -194,7 +206,7 @@ export async function updateApplicationStatus(
         data: {
           status,
           reviewedBy: {
-            connect: { id: adminId },
+            connect: { id: admin.id },
           },
           reviewedAt: new Date(),
           rejectionReason: status === ApplicationStatus.REJECTED ? rejectionReason : null,
@@ -252,7 +264,7 @@ export async function updateApplicationStatus(
             referredBy: updatedApp.referredBy,
             referrerContact: updatedApp.referrerContact,
             agreesToTerms: updatedApp.agreesToTerms,
-            applicationStatus: status, // Set initial application status
+            applicationStatus: status,
           },
         });
 
@@ -286,7 +298,9 @@ export async function updateApplicationStatus(
             applicationStatus: status,
           },
         });
-      } else if (status === ApplicationStatus.REJECTED && rejectionReason) {
+      }
+
+      if (status === ApplicationStatus.REJECTED && rejectionReason) {
         // Send rejection email
         sendApplicationRejectedEmail(updatedApp.email, updatedApp.fullName, rejectionReason).catch(
           (emailError) => {
