@@ -8,6 +8,7 @@ import {
   updateApplicationStatus,
   deleteApplication,
 } from '../services/application.service';
+import { AppError, ErrorTypes } from '../utils/appError';
 
 // Get all applications with pagination and filtering options
 export const getAllApplicationsController = catchAsync(async (req: Request, res: Response) => {
@@ -36,21 +37,40 @@ export const getApplicationByIdController = catchAsync(async (req: Request, res:
 // Update application status (approve/reject)
 export const updateApplicationStatusController = catchAsync(async (req: Request, res: Response) => {
   const adminId = req.user?.userId;
-  const { id } = req.params; // Get application ID from URL
+  console.log(adminId);
+  const { id } = req.params;
+  console.log(id);
   const { status, rejectionReason } = req.body;
 
   if (!adminId) {
     return sendError(res, 401, 'Unauthorized');
   }
 
-  const updatedApplication = await updateApplicationStatus(
-    id, // Use the ID from URL params
-    adminId,
-    status as ApplicationStatus,
-    rejectionReason,
-  );
+  // Validate status
+  if (!['APPROVED', 'REJECTED', 'PENDING'].includes(status)) {
+    return sendError(res, 400, 'Invalid status value');
+  }
 
-  sendSuccess(res, 200, `Application ${status.toLowerCase()} successfully`, updatedApplication);
+  // If status is REJECTED, ensure rejectionReason is provided
+  if (status === 'REJECTED' && !rejectionReason) {
+    return sendError(res, 400, 'Rejection reason is required');
+  }
+
+  try {
+    const updatedApplication = await updateApplicationStatus(
+      id,
+      adminId,
+      status as ApplicationStatus,
+      rejectionReason,
+    );
+
+    sendSuccess(res, 200, `Application ${status.toLowerCase()} successfully`, updatedApplication);
+  } catch (error) {
+    if (error instanceof AppError && error.errorType === ErrorTypes.NOT_FOUND) {
+      return sendError(res, 404, 'Application not found');
+    }
+    throw error;
+  }
 });
 
 // Delete application by ID
