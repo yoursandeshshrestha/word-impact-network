@@ -17,8 +17,14 @@ const authPaths = ["/auth/login", "/auth/register"];
 export function middleware(request: NextRequest) {
   const currentPath = request.nextUrl.pathname;
 
-  // Get auth token from cookies
+  // Get all cookies
+  const cookies = request.cookies.getAll();
+  console.log("All cookies:", cookies);
+
+  // Check for auth token in cookies
   const authToken = request.cookies.get("authToken")?.value;
+  console.log("Auth token found:", !!authToken);
+  console.log("Current path:", currentPath);
 
   // Check if the path is protected and user is not authenticated
   if (
@@ -33,6 +39,7 @@ export function middleware(request: NextRequest) {
 
   // Redirect authenticated users away from auth pages
   if (authPaths.some((path) => currentPath === path) && authToken) {
+    console.log("Redirecting to dashboard");
     return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 
