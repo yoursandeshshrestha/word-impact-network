@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { logout } from "@/src/utils/auth";
@@ -23,10 +23,22 @@ type SidebarProps = {
   userName?: string;
 };
 
-const Sidebar: React.FC<SidebarProps> = ({ userEmail, userName }) => {
+const Sidebar: React.FC<SidebarProps> = ({
+  userEmail = "admin@example.com",
+  userName = "Admin User",
+}) => {
   const pathname = usePathname();
   const router = useRouter();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // During SSR and initial client render, use the default values
+  const displayName = mounted ? userName : "Admin User";
+  const displayEmail = mounted ? userEmail : "admin@example.com";
 
   const handleLogout = () => {
     logout();
@@ -130,8 +142,8 @@ const Sidebar: React.FC<SidebarProps> = ({ userEmail, userName }) => {
         {/* User Info & Logout */}
         <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-700">
           <div className="mb-4">
-            <h3 className="text-sm font-medium text-white">{userName}</h3>
-            <p className="text-gray-400 text-xs">{userEmail}</p>
+            <h3 className="text-sm font-medium text-white">{displayName}</h3>
+            <p className="text-gray-400 text-xs">{displayEmail}</p>
           </div>
           <button
             onClick={handleLogout}
