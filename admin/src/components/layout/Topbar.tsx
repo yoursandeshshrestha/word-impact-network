@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Bell, MessageSquare } from "lucide-react";
 
 interface TopbarProps {
@@ -12,6 +12,16 @@ const Topbar: React.FC<TopbarProps> = ({
   userName = "Admin User",
   userRole = "Administrator",
 }) => {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // During SSR and initial client render, use the default values
+  const displayName = mounted ? userName : "Admin User";
+  const displayRole = mounted ? userRole : "Administrator";
+
   return (
     <header className="sticky top-0 z-30 w-full bg-white border-b border-gray-100 flex items-center justify-end h-16 px-8 shadow-sm font-sans">
       <div className="flex items-center gap-8">
@@ -33,14 +43,14 @@ const Topbar: React.FC<TopbarProps> = ({
         <div className="flex items-center gap-3">
           <div className="text-right leading-tight">
             <div className="font-semibold text-gray-900 text-base tracking-tight">
-              {userName}
+              {displayName}
             </div>
             <div className="text-xs text-gray-400 font-medium tracking-wide">
-              {userRole}
+              {displayRole}
             </div>
           </div>
           <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-blue-400 flex items-center justify-center text-white font-bold text-lg shadow-md border-2 border-white">
-            {userName.charAt(0)}
+            {displayName.charAt(0)}
           </div>
         </div>
       </div>
