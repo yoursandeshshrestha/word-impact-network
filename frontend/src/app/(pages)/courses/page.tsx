@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useLoading } from "@/src/common/contexts/LoadingContext";
 
 interface Course {
   id: string;
@@ -20,8 +21,8 @@ interface Course {
 
 export default function CoursesPage() {
   const [courses, setCourses] = useState<Course[]>([]);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { setLoading } = useLoading();
 
   useEffect(() => {
     const fetchCourses = async () => {
@@ -44,15 +45,7 @@ export default function CoursesPage() {
     };
 
     fetchCourses();
-  }, []);
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex justify-center items-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-      </div>
-    );
-  }
+  }, [setLoading]);
 
   if (error) {
     return (
