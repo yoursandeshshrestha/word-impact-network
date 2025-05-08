@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
+import { useLoading } from "@/common/contexts/LoadingContext";
 
 interface Video {
   id: string;
@@ -58,11 +59,11 @@ export default function CourseDetailPage() {
   const courseId = params?.id as string;
   const router = useRouter();
   const [course, setCourse] = useState<CourseDetail | null>(null);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeYear, setActiveYear] = useState<number>(1);
   const [selectedVideo, setSelectedVideo] = useState<Video | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const { setLoading } = useLoading();
 
   useEffect(() => {
     const fetchCourseDetail = async () => {
@@ -116,7 +117,7 @@ export default function CourseDetailPage() {
     };
 
     fetchCourseDetail();
-  }, [courseId, params]);
+  }, [courseId, params, setLoading]);
 
   // Format video duration from seconds to MM:SS
   const formatDuration = (seconds: number) => {
@@ -140,23 +141,11 @@ export default function CourseDetailPage() {
   };
 
   console.log("Current state:", {
-    loading,
     error,
     course,
     courseId,
     selectedVideo,
   });
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex justify-center items-center">
-        <div className="flex flex-col items-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mb-4"></div>
-          <p className="text-gray-600">Loading course details...</p>
-        </div>
-      </div>
-    );
-  }
 
   if (error) {
     return (
