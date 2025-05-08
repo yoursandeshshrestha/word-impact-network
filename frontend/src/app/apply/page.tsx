@@ -5,6 +5,7 @@ import Header from "@/src/components/Homepage/Header";
 import Footer from "@/src/components/Homepage/Footer";
 import { Upload, ArrowRight, Check } from "lucide-react";
 import { Toaster, toast } from "sonner";
+import { useLoading } from "@/src/common/contexts/LoadingContext";
 
 // Define Gender type to match Prisma schema
 type Gender = "MALE" | "FEMALE" | "OTHER";
@@ -28,8 +29,8 @@ const ApplyPage = () => {
   const [recommendationFile, setRecommendationFile] = useState<File | null>(
     null
   );
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const { setLoading } = useLoading();
 
   const handleChange = (
     e: React.ChangeEvent<
@@ -90,7 +91,7 @@ const ApplyPage = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitting(true);
+    setLoading(true);
     setError("");
 
     try {
@@ -154,7 +155,7 @@ const ApplyPage = () => {
       setError(errorMessage);
       toast.error(errorMessage);
     } finally {
-      setIsSubmitting(false);
+      setLoading(false);
     }
   };
 
@@ -457,20 +458,10 @@ const ApplyPage = () => {
             <div className="flex justify-center mt-6">
               <button
                 type="submit"
-                disabled={isSubmitting}
                 className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg font-medium flex items-center transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed transform hover:-translate-y-1 shadow-lg"
               >
-                {isSubmitting ? (
-                  <div className="flex items-center">
-                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3"></div>
-                    Processing...
-                  </div>
-                ) : (
-                  <>
-                    Submit Application
-                    <ArrowRight className="ml-2 w-5 h-5" />
-                  </>
-                )}
+                Submit Application
+                <ArrowRight className="ml-2 w-5 h-5" />
               </button>
             </div>
           </form>
