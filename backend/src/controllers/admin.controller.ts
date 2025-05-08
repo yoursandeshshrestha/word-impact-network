@@ -3,6 +3,7 @@ import {
   completePasswordReset,
   createAdmin,
   getAdminProfileById,
+  getAllStudentsWithSearch,
   initiatePasswordReset,
   loginAdmin,
 } from '../services/admin.service';
@@ -105,5 +106,24 @@ export const verifyPasswordReset = catchAsync(async (req: Request, res: Response
 
   sendSuccess(res, 200, 'Password reset successful', {
     message: 'Your password has been updated successfully',
+  });
+});
+
+// get all students
+export const getAllStudentsController = catchAsync(async (req: Request, res: Response) => {
+  const search = req.query.search as string | undefined;
+  const page = parseInt((req.query.page as string) || '1', 10);
+  const limit = parseInt((req.query.limit as string) || '10', 10);
+
+  const { students, total, totalPages } = await getAllStudentsWithSearch(search, page, limit);
+
+  sendSuccess(res, 200, 'Students retrieved successfully', {
+    students,
+    pagination: {
+      total,
+      totalPages,
+      currentPage: page,
+      limit,
+    },
   });
 });
