@@ -186,6 +186,69 @@ export async function getAdminProfileById(userId: string) {
   }
 }
 
+// get all students
+export async function getAllStudentsWithSearch(
+  search?: string,
+  page: number = 1,
+  limit: number = 10,
+) {
+  try {
+    logger.info('Fetching all students', { search: search || 'none', page, limit });
+
+    const skip = (page - 1) * limit;
+
+    const whereClause = search
+      ? {
+          OR: [
+            { fullName: { contains: search, mode: 'insensitive' as const } },
+            { phoneNumber: { contains: search, mode: 'insensitive' as const } },
+            { user: { email: { contains: search, mode: 'insensitive' as const } } },
+          ],
+        }
+      : {};
+
+    const [students, total] = await Promise.all([
+      prisma.student.findMany({
+        where: whereClause,
+        select: {
+          id: true,
+          fullName: true,
+          gender: true,
+          phoneNumber: true,
+          user: {
+            select: {
+              email: true,
+            },
+          },
+        },
+        orderBy: { fullName: 'asc' },
+        skip,
+        take: limit,
+      }),
+      prisma.student.count({ where: whereClause }),
+    ]);
+
+    const totalPages = Math.ceil(total / limit);
+
+    return {
+      students: students.map((student) => ({
+        id: student.id,
+        fullName: student.fullName,
+        gender: student.gender,
+        phoneNumber: student.phoneNumber,
+        email: student.user.email,
+      })),
+      total,
+      totalPages,
+    };
+  } catch (error) {
+    logger.error('Error in getAllStudentsWithSearch', {
+      error: error instanceof Error ? error.message : String(error),
+    });
+    throw error;
+  }
+}
+
 // Initiate password reset
 export async function initiatePasswordReset(
   userId: string,
