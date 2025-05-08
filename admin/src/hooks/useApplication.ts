@@ -13,6 +13,7 @@ import {
   selectError,
   clearError,
   Application,
+  setLimit,
 } from "@/src/redux/features/applicationsSlice";
 
 /**
@@ -29,10 +30,20 @@ export const useApplications = () => {
 
   // Fetch all applications with pagination
   const loadApplications = useCallback(
-    (page: number = 1) => {
-      return dispatch(fetchApplications(page));
+    (page: number = 1, limit: number = 10) => {
+      return dispatch(fetchApplications({ page, limit }));
     },
     [dispatch]
+  );
+
+  // Change items per page limit
+  const changeLimit = useCallback(
+    (limit: number) => {
+      dispatch(setLimit(limit));
+      // Reset to page 1 when changing limit
+      loadApplications(1, limit);
+    },
+    [dispatch, loadApplications]
   );
 
   // Fetch a single application by ID
@@ -90,6 +101,7 @@ export const useApplications = () => {
     updateStatus,
     removeApplication,
     selectApplication,
+    changeLimit,
     resetError,
   };
 };
