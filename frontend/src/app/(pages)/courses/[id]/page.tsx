@@ -4,7 +4,7 @@ import { useEffect, useState, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { useLoading } from "@/common/contexts/LoadingContext";
+import { useLoading } from "@/src/common/contexts/LoadingContext";
 
 interface Video {
   id: string;
