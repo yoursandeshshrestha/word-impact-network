@@ -1,11 +1,12 @@
 import { configureStore } from "@reduxjs/toolkit";
 import applicationsReducer from "./features/applicationsSlice";
-// Import other reducers as needed
-
+import studentsReducer from "./features/studentsSlice";
+import adminProfileReducer from "./features/adminProfileSlice";
 export const store = configureStore({
   reducer: {
     applications: applicationsReducer,
-    // Add other reducers here
+    students: studentsReducer,
+    adminProfile: adminProfileReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
