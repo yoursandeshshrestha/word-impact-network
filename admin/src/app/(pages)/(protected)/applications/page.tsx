@@ -6,9 +6,12 @@ import ApplicationsList from "@/src/components/application/ApplicationsList";
 import ApplicationDetails from "@/src/components/application/ApplicationDetails";
 import RejectionModal from "@/src/components/application/RejectionModal";
 import DeleteConfirmationModal from "@/src/components/application/DeleteConfirmationModal";
-import Pagination from "@/src/components/application/Pagination";
+import Pagination from "@/src/components/common/Pagination";
+import PaginationControls from "@/src/components/common/PaginationControls";
 import { Application } from "@/src/redux/features/applicationsSlice";
 import { toast } from "sonner";
+import NoDataFound from "@/src/components/common/NoDataFound";
+import Loading from "@/src/components/common/Loading";
 
 const Page: React.FC = () => {
   const {
@@ -21,24 +24,29 @@ const Page: React.FC = () => {
     updateStatus,
     removeApplication,
     selectApplication,
+    changeLimit,
   } = useApplications();
 
   const [showDetails, setShowDetails] = useState(false);
   const [showRejectionModal, setShowRejectionModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [localApplications, setLocalApplications] = useState<Application[]>([]);
 
   useEffect(() => {
     loadApplications(1);
-  }, [
-    loadApplications,
-    updateStatus,
-    removeApplication,
-    selectApplication,
-    applications,
-  ]);
+  }, [loadApplications]);
+
+  // Update local applications state when applications from the hook changes
+  useEffect(() => {
+    setLocalApplications(applications);
+  }, [applications]);
 
   const handlePageChange = (page: number) => {
-    loadApplications(page);
+    loadApplications(page, pagination.limit);
+  };
+
+  const handleLimitChange = (limit: number) => {
+    changeLimit(limit);
   };
 
   const handleViewDetails = (application: Application) => {
@@ -51,33 +59,93 @@ const Page: React.FC = () => {
     selectApplication(null);
   };
 
+  // Helper to update application status locally
+  const updateLocalApplicationStatus = (
+    id: string,
+    status: string,
+    rejectionReason?: string
+  ) => {
+    setLocalApplications((prevApps) =>
+      prevApps.map((app) =>
+        app.applicationId === id
+          ? {
+              ...app,
+              status: status as "APPROVED" | "REJECTED" | "PENDING",
+              rejectionReason: rejectionReason || app.rejectionReason,
+            }
+          : app
+      )
+    );
+  };
+
   const handleUpdateStatus = (status: "APPROVED" | "REJECTED" | "PENDING") => {
     if (!selectedApplication) return;
 
     if (status === "REJECTED") {
       setShowRejectionModal(true);
     } else {
+      // Immediately update UI and close modal
+      updateLocalApplicationStatus(selectedApplication.applicationId, status);
+      setShowDetails(false);
+
+      // Show loading toast that will be replaced with success/error
+      const toastId = toast.loading("Updating application status...");
+
+      // Make API call in background
       updateStatus({
         id: selectedApplication.applicationId,
         status,
-      });
-      setShowDetails(false);
-      toast.success(`Application ${status.toLowerCase()} successfully`);
+      })
+        .then(() => {
+          // Update toast on success
+          toast.success(`Application ${status.toLowerCase()} successfully`, {
+            id: toastId,
+          });
+          // Refresh data
+          loadApplications(pagination.current, pagination.limit);
+        })
+        .catch((error) => {
+          console.error("Failed to update status:", error);
+          toast.error("Failed to update application status", { id: toastId });
+          // Revert the local state change on error
+          loadApplications(pagination.current, pagination.limit);
+        });
     }
   };
 
   const handleConfirmReject = (rejectionReason: string) => {
     if (!selectedApplication) return;
 
+    // Immediately update UI and close modals
+    updateLocalApplicationStatus(
+      selectedApplication.applicationId,
+      "REJECTED",
+      rejectionReason
+    );
+    setShowRejectionModal(false);
+    setShowDetails(false);
+
+    // Show loading toast that will be replaced with success/error
+    const toastId = toast.loading("Rejecting application...");
+
+    // Make API call in background
     updateStatus({
       id: selectedApplication.applicationId,
       status: "REJECTED",
       rejectionReason,
-    });
-
-    setShowRejectionModal(false);
-    setShowDetails(false);
-    toast.success("Application rejected successfully");
+    })
+      .then(() => {
+        // Update toast on success
+        toast.success("Application rejected successfully", { id: toastId });
+        // Refresh data
+        loadApplications(pagination.current, pagination.limit);
+      })
+      .catch((error) => {
+        console.error("Failed to reject application:", error);
+        toast.error("Failed to reject application", { id: toastId });
+        // Revert the local state change on error
+        loadApplications(pagination.current, pagination.limit);
+      });
   };
 
   const handleDeleteClick = () => {
@@ -87,10 +155,32 @@ const Page: React.FC = () => {
   const handleConfirmDelete = () => {
     if (!selectedApplication) return;
 
-    removeApplication(selectedApplication.applicationId);
+    // Immediately update UI and close modals
+    setLocalApplications((prevApps) =>
+      prevApps.filter(
+        (app) => app.applicationId !== selectedApplication.applicationId
+      )
+    );
     setShowDeleteModal(false);
     setShowDetails(false);
-    toast.success("Application deleted successfully");
+
+    // Show loading toast that will be replaced with success/error
+    const toastId = toast.loading("Deleting application...");
+
+    // Make API call in background
+    removeApplication(selectedApplication.applicationId)
+      .then(() => {
+        // Update toast on success
+        toast.success("Application deleted successfully", { id: toastId });
+        // Refresh data
+        loadApplications(pagination.current, pagination.limit);
+      })
+      .catch((error) => {
+        console.error("Failed to delete application:", error);
+        toast.error("Failed to delete application", { id: toastId });
+        // Revert the local state change on error
+        loadApplications(pagination.current, pagination.limit);
+      });
   };
 
   return (
@@ -105,27 +195,40 @@ const Page: React.FC = () => {
         </div>
       )}
 
-      {isLoading && !applications.length ? (
-        <div className="text-center py-8">
-          <div className="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-indigo-600"></div>
-          <p className="mt-2 text-gray-500">Loading applications...</p>
+      {isLoading ? (
+        <Loading />
+      ) : localApplications.length === 0 ? (
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+          <NoDataFound
+            icon="file"
+            title="No Applications Found"
+            message="There are no applications to display at the moment."
+          />
         </div>
       ) : (
         <div className="bg-white rounded-lg shadow-sm border border-gray-200">
           <ApplicationsList
-            applications={applications}
+            applications={localApplications}
             onViewDetails={handleViewDetails}
             isDisabled={showDetails}
           />
 
-          {applications.length > 0 && (
-            <div className="px-6 py-4 border-t border-gray-200">
-              <Pagination
-                currentPage={pagination.current}
-                totalPages={pagination.total}
-                onPageChange={handlePageChange}
+          {localApplications.length > 0 && (
+            <>
+              <PaginationControls
+                total={pagination.total}
+                currentCount={localApplications.length}
+                limit={pagination.limit || 10}
+                onLimitChange={handleLimitChange}
               />
-            </div>
+              <div className="px-6 py-4 border-t border-gray-200">
+                <Pagination
+                  currentPage={pagination.current}
+                  totalPages={pagination.total}
+                  onPageChange={handlePageChange}
+                />
+              </div>
+            </>
           )}
         </div>
       )}
