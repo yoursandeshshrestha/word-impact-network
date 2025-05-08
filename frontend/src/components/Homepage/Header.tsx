@@ -17,7 +17,7 @@ const Header: React.FC = () => {
 
   return (
     <header
-      className={`fixed top-0 left-0 right-0 mx-[10px] mt-[10px] rounded-[1rem] lg:mx-[80px] lg:mt-[25px] z-50 transition-all duration-300 ${
+      className={`fixed top-0 left-0 right-0 mx-[10px] mt-[10px] rounded-[1rem] lg:mx-[40px] lg:mt-[25px] z-50 transition-all duration-300 ${
         isScrolled
           ? "bg-white/95 backdrop-blur-sm shadow-xl py-2 !mx-0 !mt-0 rounded-none"
           : "bg-white/95 backdrop-blur-sm py-4"
@@ -75,34 +75,28 @@ const Header: React.FC = () => {
                   <div className="absolute -top-4 left-0 right-0 h-4"></div>
                   <div className="py-2">
                     <Link
-                      href="/bachelor-degree"
+                      href="/first-year"
                       className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                     >
-                      Bachelor Degree
+                      First Year
                     </Link>
                     <Link
-                      href="/diploma-degree"
+                      href="/second-year"
                       className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                     >
-                      Diploma Degree
+                      Second Year
                     </Link>
                     <Link
-                      href="/3b-study-program"
+                      href="/third-year"
                       className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                     >
-                      3B Study Program
+                      Third Year
                     </Link>
                     <Link
-                      href="/academic-calendar"
+                      href="/fourth-year"
                       className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                     >
-                      Academic Calendar
-                    </Link>
-                    <Link
-                      href="/tuition-fees"
-                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                    >
-                      Tuition & Fees
+                      Fourth Year
                     </Link>
                   </div>
                 </div>
