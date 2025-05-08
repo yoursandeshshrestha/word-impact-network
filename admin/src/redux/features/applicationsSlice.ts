@@ -58,10 +58,13 @@ const initialState: ApplicationsState = {
 // Async thunks
 export const fetchApplications = createAsyncThunk(
   "applications/fetchApplications",
-  async (page: number = 1, { rejectWithValue }) => {
+  async (
+    { page = 1, limit = 10 }: { page?: number; limit?: number } = {},
+    { rejectWithValue }
+  ) => {
     try {
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/applications?page=${page}`,
+        `${process.env.NEXT_PUBLIC_API_URL}/applications?page=${page}&limit=${limit}`,
         {
           headers: {
             Authorization: `Bearer ${getAuthToken()}`,
@@ -190,6 +193,9 @@ const applicationsSlice = createSlice({
     ) => {
       state.selectedApplication = action.payload;
     },
+    setLimit: (state, action: PayloadAction<number>) => {
+      state.pagination.limit = action.payload;
+    },
     clearError: (state) => {
       state.error = null;
     },
@@ -299,6 +305,7 @@ export const selectIsLoading = (state: RootState) =>
 export const selectError = (state: RootState) => state.applications.error;
 
 // Actions
-export const { setSelectedApplication, clearError } = applicationsSlice.actions;
+export const { setSelectedApplication, setLimit, clearError } =
+  applicationsSlice.actions;
 
 export default applicationsSlice.reducer;
