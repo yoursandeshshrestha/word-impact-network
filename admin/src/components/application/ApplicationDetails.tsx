@@ -1,6 +1,7 @@
 import React from "react";
 import { Application } from "@/src/redux/features/applicationsSlice";
 import { formatDate } from "@/src/utils/formatters";
+import { X } from "lucide-react";
 
 interface ApplicationDetailsProps {
   application: Application;
@@ -28,6 +29,10 @@ const ApplicationDetails: React.FC<ApplicationDetailsProps> = ({
     return String(value);
   };
 
+  // Check if the application is in a reviewed state (approved or rejected)
+  const isReviewed =
+    application.status === "APPROVED" || application.status === "REJECTED";
+
   return (
     <div className="fixed inset-0 bg-black/50 px-4 lg:px-0 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg shadow-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto relative">
@@ -39,20 +44,7 @@ const ApplicationDetails: React.FC<ApplicationDetailsProps> = ({
             onClick={onClose}
             className="text-gray-400 cursor-pointer hover:text-gray-500 transition-colors duration-150"
           >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-6 w-6"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
+            <X className="h-6 w-6" />
           </button>
         </div>
 
@@ -262,33 +254,25 @@ const ApplicationDetails: React.FC<ApplicationDetailsProps> = ({
           </div>
 
           <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
-            {application.status !== "APPROVED" && (
-              <button
-                onClick={() => onUpdateStatus("APPROVED")}
-                className="inline-flex cursor-pointer items-center px-4 py-2 text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-150"
-              >
-                Approve
-              </button>
+            {/* Only show action buttons if the application hasn't been reviewed yet */}
+            {!isReviewed && (
+              <>
+                <button
+                  onClick={() => onUpdateStatus("APPROVED")}
+                  className="inline-flex cursor-pointer items-center px-4 py-2 text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-150"
+                >
+                  Approve
+                </button>
+                <button
+                  onClick={() => onUpdateStatus("REJECTED")}
+                  className="inline-flex cursor-pointer items-center px-4 py-2 text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors duration-150"
+                >
+                  Reject
+                </button>
+              </>
             )}
 
-            {application.status !== "REJECTED" && (
-              <button
-                onClick={() => onUpdateStatus("REJECTED")}
-                className="inline-flex cursor-pointer items-center px-4 py-2 text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors duration-150"
-              >
-                Reject
-              </button>
-            )}
-
-            {application.status !== "PENDING" && (
-              <button
-                onClick={() => onUpdateStatus("PENDING")}
-                className="inline-flex cursor-pointer items-center px-4 py-2 text-sm font-medium rounded-md text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-150"
-              >
-                Mark as Pending
-              </button>
-            )}
-
+            {/* Always show the delete button */}
             <button
               onClick={onDelete}
               className="inline-flex items-center px-4 py-2 text-sm font-medium rounded-md text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-150"
