@@ -1,17 +1,17 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { useApplications } from "@/src/hooks/useApplication";
-import ApplicationsList from "@/src/components/application/ApplicationsList";
-import ApplicationDetails from "@/src/components/application/ApplicationDetails";
-import RejectionModal from "@/src/components/application/RejectionModal";
-import DeleteConfirmationModal from "@/src/components/application/DeleteConfirmationModal";
-import Pagination from "@/src/components/common/Pagination";
-import PaginationControls from "@/src/components/common/PaginationControls";
-import { Application } from "@/src/redux/features/applicationsSlice";
+import { useApplications } from "@/hooks/useApplication";
+import ApplicationsList from "@/components/application/ApplicationsList";
+import ApplicationDetails from "@/components/application/ApplicationDetails";
+import RejectionModal from "@/components/application/RejectionModal";
+import DeleteConfirmationModal from "@/components/application/DeleteConfirmationModal";
+import Pagination from "@/components/common/Pagination";
+import PaginationControls from "@/components/common/PaginationControls";
+import { Application } from "@/redux/features/applicationsSlice";
 import { toast } from "sonner";
-import NoDataFound from "@/src/components/common/NoDataFound";
-import Loading from "@/src/components/common/Loading";
+import NoDataFound from "@/components/common/NoDataFound";
+import Loading from "@/components/common/Loading";
 
 const Page: React.FC = () => {
   const {
@@ -104,7 +104,7 @@ const Page: React.FC = () => {
           // Refresh data
           loadApplications(pagination.current, pagination.limit);
         })
-        .catch((error) => {
+        .catch((error: unknown) => {
           console.error("Failed to update status:", error);
           toast.error("Failed to update application status", { id: toastId });
           // Revert the local state change on error
@@ -140,7 +140,7 @@ const Page: React.FC = () => {
         // Refresh data
         loadApplications(pagination.current, pagination.limit);
       })
-      .catch((error) => {
+      .catch((error: unknown) => {
         console.error("Failed to reject application:", error);
         toast.error("Failed to reject application", { id: toastId });
         // Revert the local state change on error
@@ -175,7 +175,7 @@ const Page: React.FC = () => {
         // Refresh data
         loadApplications(pagination.current, pagination.limit);
       })
-      .catch((error) => {
+      .catch((error: unknown) => {
         console.error("Failed to delete application:", error);
         toast.error("Failed to delete application", { id: toastId });
         // Revert the local state change on error
