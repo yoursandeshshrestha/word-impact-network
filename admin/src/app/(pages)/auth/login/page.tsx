@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { AuthService, setAuthToken, setUserInfo } from "@/src/utils/auth";
+import { AuthService, setAuthToken, setUserInfo } from "@/utils/auth";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 
 const Login = () => {
