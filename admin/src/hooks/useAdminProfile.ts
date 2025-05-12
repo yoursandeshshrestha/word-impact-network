@@ -15,7 +15,7 @@ import {
   selectResetId,
   PasswordReset,
   PasswordResetVerification,
-} from "@/src/redux/features/adminProfileSlice";
+} from "@/redux/features/adminProfileSlice";
 
 /**
  * Custom hook for admin profile management
