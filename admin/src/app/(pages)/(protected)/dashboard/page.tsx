@@ -2,8 +2,8 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { getUserInfo } from "@/src/utils/auth";
-import { useAuth } from "@/src/hooks/useAuth";
+import { getUserInfo } from "@/utils/auth";
+import { useAuth } from "@/hooks/useAuth";
 import { BookOpen, FileText, Users, Video } from "lucide-react";
 
 const Home = () => {
