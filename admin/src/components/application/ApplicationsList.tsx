@@ -1,10 +1,10 @@
 import React from "react";
-import { useAppDispatch } from "@/src/hooks/hooks";
+import { useAppDispatch } from "@/hooks/hooks";
 import {
   Application,
   setSelectedApplication,
-} from "@/src/redux/features/applicationsSlice";
-import { formatDate } from "@/src/utils/formatters";
+} from "@/redux/features/applicationsSlice";
+import { formatDate } from "@/utils/formatters";
 
 interface ApplicationsListProps {
   applications: Application[];
