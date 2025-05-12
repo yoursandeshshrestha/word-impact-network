@@ -3,17 +3,15 @@
 import React, { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import { Bell, MessageSquare, Settings, User, LogOut, Key } from "lucide-react";
-import { useAdminProfile } from "@/src/hooks/useAdminProfile";
 
-const Topbar: React.FC = () => {
-  const { profile } = useAdminProfile();
-  const [mounted, setMounted] = useState(false);
+interface TopbarProps {
+  userName: string;
+  userRole: string;
+}
+
+const Topbar: React.FC<TopbarProps> = ({ userName, userRole }) => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   // Handle click outside to close dropdown
   useEffect(() => {
@@ -31,14 +29,6 @@ const Topbar: React.FC = () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
-
-  // Default values to use during loading or SSR
-  const defaultName = "Admin User";
-  const defaultRole = "Administrator";
-
-  // Get profile information
-  const userName = mounted && profile ? profile.fullName : defaultName;
-  const userRole = mounted && profile ? profile.role : defaultRole;
 
   const handleProfileClick = () => {
     setIsDropdownOpen(!isDropdownOpen);
