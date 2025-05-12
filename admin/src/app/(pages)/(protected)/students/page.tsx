@@ -1,15 +1,15 @@
 "use client";
 
-import React, { useState } from "react";
-import { useStudents } from "@/src/hooks/useStudent";
-import StudentsList from "@/src/components/students/StudentsList";
-import StudentDetails from "@/src/components/students/StudentDetails";
-import SearchBar from "@/src/components/students/SearchBar";
-import { Student } from "@/src/redux/features/studentsSlice";
-import NoDataFound from "@/src/components/common/NoDataFound";
-import Loading from "@/src/components/common/Loading";
-import Pagination from "@/src/components/common/Pagination";
-import PaginationControls from "@/src/components/common/PaginationControls";
+import React, { useState, useEffect } from "react";
+import { useStudents } from "@/hooks/useStudent";
+import StudentsList from "@/components/students/StudentsList";
+import StudentDetails from "@/components/students/StudentDetails";
+import SearchBar from "@/components/students/SearchBar";
+import { Student } from "@/redux/features/studentsSlice";
+import NoDataFound from "@/components/common/NoDataFound";
+import Loading from "@/components/common/Loading";
+import Pagination from "@/components/common/Pagination";
+import PaginationControls from "@/components/common/PaginationControls";
 
 const StudentsPage: React.FC = () => {
   const {
@@ -23,9 +23,27 @@ const StudentsPage: React.FC = () => {
     selectStudent,
     changePage,
     changeLimit,
+    loadStudents,
   } = useStudents();
 
   const [showDetails, setShowDetails] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
+
+  useEffect(() => {
+    if (error && retryCount < 3) {
+      const timer = setTimeout(() => {
+        loadStudents();
+        setRetryCount((prev) => prev + 1);
+      }, 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [error, retryCount, loadStudents]);
+
+  useEffect(() => {
+    if (!error) {
+      setRetryCount(0);
+    }
+  }, [error]);
 
   const handleViewDetails = (student: Student) => {
     selectStudent(student);
@@ -35,6 +53,11 @@ const StudentsPage: React.FC = () => {
   const handleCloseDetails = () => {
     setShowDetails(false);
     selectStudent(null);
+  };
+
+  const handleRetry = () => {
+    setRetryCount(0);
+    loadStudents();
   };
 
   return (
@@ -52,8 +75,14 @@ const StudentsPage: React.FC = () => {
       </div>
 
       {error && (
-        <div className="mb-4 p-4 bg-red-100 text-red-700 rounded-md">
-          Error: {error}
+        <div className="mb-4 p-4 bg-red-100 text-red-700 rounded-md flex justify-between items-center">
+          <span>Error: {error}</span>
+          <button
+            onClick={handleRetry}
+            className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
+          >
+            Retry
+          </button>
         </div>
       )}
 
