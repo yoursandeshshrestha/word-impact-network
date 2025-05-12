@@ -13,7 +13,7 @@ import {
   selectSearchQuery,
   selectPagination,
   Student,
-} from "@/src/redux/features/studentsSlice";
+} from "@/redux/features/studentsSlice";
 
 /**
  * Custom hook for students management with debounced search and pagination
