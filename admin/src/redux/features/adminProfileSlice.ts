@@ -1,6 +1,6 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import { RootState } from "../store";
-import { getAuthToken } from "@/src/utils/auth";
+import { getAuthToken } from "@/utils/auth";
 
 // Types
 export interface AdminStatistics {
