@@ -14,7 +14,7 @@ import {
   clearError,
   Application,
   setLimit,
-} from "@/src/redux/features/applicationsSlice";
+} from "@/redux/features/applicationsSlice";
 
 /**
  * Custom hook for applications management
