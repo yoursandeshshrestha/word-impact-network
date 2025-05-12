@@ -1,9 +1,9 @@
 "use client";
 
 import React from "react";
-import { useAdminProfile } from "@/src/hooks/useAdminProfile";
-import PasswordResetForm from "@/src/components/profile/PasswordResetForm";
-import VerificationForm from "@/src/components/profile/VerificationForm";
+import { useAdminProfile } from "@/hooks/useAdminProfile";
+import PasswordResetForm from "@/components/profile/PasswordResetForm";
+import VerificationForm from "@/components/profile/VerificationForm";
 import { Check } from "lucide-react";
 
 const ChangePasswordPage: React.FC = () => {
