@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { logout } from "@/src/utils/auth";
+import { logout } from "@/utils/auth";
 import { useRouter } from "next/navigation";
 import {
   Home,
