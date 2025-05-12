@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { getAuthToken } from "@/src/utils/auth";
+import { getAuthToken } from "@/utils/auth";
 
 export const useAuth = (requireAuth: boolean = true) => {
   const router = useRouter();
