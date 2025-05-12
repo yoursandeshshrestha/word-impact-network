@@ -21,6 +21,17 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
+// Helper to sanitize file names for Cloudinary public_id
+function sanitizeFileName(fileName: string): string {
+  // Only allow alphanumeric, dash, and underscore
+  // Remove any path, just keep the base name
+  const base = fileName.split('/').pop()?.split('\\').pop() || fileName;
+  // Remove extension for public_id (Cloudinary will add it based on the file type)
+  const name = base.replace(/\.[^/.]+$/, '');
+  // Only allow safe characters
+  return name.replace(/[^a-zA-Z0-9-_]/g, '');
+}
+
 /**
  * Upload a file to Cloudinary
  * @param file The file buffer to upload
@@ -36,6 +47,9 @@ export const uploadToCloudinary = async (
   try {
     logger.info('Uploading file to Cloudinary', { folder, fileName });
 
+    // Sanitize the fileName for Cloudinary public_id
+    let safeFileName = fileName ? sanitizeFileName(fileName) : undefined;
+
     // Convert buffer to base64
     const base64File = `data:application/octet-stream;base64,${file.toString('base64')}`;
 
@@ -44,7 +58,7 @@ export const uploadToCloudinary = async (
       resource_type: 'auto',
       access_mode: 'public',
       overwrite: true,
-      public_id: fileName ? `${folder}/${fileName}` : undefined,
+      public_id: safeFileName ? `${folder}/${safeFileName}` : undefined,
       type: 'upload',
       chunk_size: 6000000,
       eager: [
