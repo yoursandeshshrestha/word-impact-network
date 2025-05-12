@@ -1,9 +1,9 @@
 "use client";
 
 import React from "react";
-import { useAdminProfile } from "@/src/hooks/useAdminProfile";
-import { formatDate } from "@/src/utils/formatters";
-import Loading from "@/src/components/common/Loading";
+import { useAdminProfile } from "@/hooks/useAdminProfile";
+import { formatDate } from "@/utils/formatters";
+import Loading from "@/components/common/Loading";
 
 const ProfileSettingsPage: React.FC = () => {
   const { profile, isLoading, error } = useAdminProfile();
