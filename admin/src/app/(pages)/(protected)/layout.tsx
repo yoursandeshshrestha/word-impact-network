@@ -1,8 +1,8 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import Sidebar from "@/src/components/layout/Sidebar";
-import { getUserInfo } from "@/src/utils/auth";
-import Topbar from "@/src/components/layout/Topbar";
+import Sidebar from "@/components/layout/Sidebar";
+import { getUserInfo } from "@/utils/auth";
+import Topbar from "@/components/layout/Topbar";
 import { Toaster } from "sonner";
 
 export default function ProtectedLayout({
