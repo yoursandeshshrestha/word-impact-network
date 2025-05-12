@@ -1,6 +1,6 @@
 import React from "react";
-import { Application } from "@/src/redux/features/applicationsSlice";
-import { formatDate } from "@/src/utils/formatters";
+import { Application } from "@/redux/features/applicationsSlice";
+import { formatDate } from "@/utils/formatters";
 import { X } from "lucide-react";
 
 interface ApplicationDetailsProps {
