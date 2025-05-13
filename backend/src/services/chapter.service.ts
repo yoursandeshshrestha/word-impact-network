@@ -38,10 +38,11 @@ export async function createChapter(
       throw new AppError('Admin not found', 404, ErrorTypes.NOT_FOUND);
     }
 
-    // Check if a chapter with the same orderIndex already exists for this course
+    // Check if a chapter with the same orderIndex already exists for this course and year
     const existingChapter = await prisma.chapter.findFirst({
       where: {
         courseId,
+        courseYear,
         orderIndex,
       },
     });
@@ -49,7 +50,7 @@ export async function createChapter(
     if (existingChapter) {
       logger.warn('Chapter creation failed - order index already exists', { courseId, orderIndex });
       throw new AppError(
-        `A chapter with order index ${orderIndex} already exists for this course`,
+        `A chapter with order index ${orderIndex} already exists for this course and year`,
         400,
         ErrorTypes.VALIDATION,
       );
@@ -212,6 +213,7 @@ export async function updateChapterById(
       const conflictingChapter = await prisma.chapter.findFirst({
         where: {
           courseId: existingChapter.courseId,
+          courseYear: existingChapter.courseYear,
           orderIndex: updateData.orderIndex,
           id: { not: id }, // Exclude the current chapter
         },
@@ -219,7 +221,7 @@ export async function updateChapterById(
 
       if (conflictingChapter) {
         throw new AppError(
-          `A chapter with order index ${updateData.orderIndex} already exists for this course`,
+          `A chapter with order index ${updateData.orderIndex} already exists for this course and year`,
           400,
           ErrorTypes.VALIDATION,
         );
@@ -294,6 +296,145 @@ export async function deleteChapterById(id: string) {
   } catch (error) {
     logger.error('Error deleting chapter', {
       chapterId: id,
+      error: error instanceof Error ? error.message : String(error),
+    });
+    throw error;
+  }
+}
+
+/**
+ * Reorder a chapter
+ */
+export async function reorderChapter(
+  chapterId: string,
+  newOrderIndex: number,
+  newCourseYear?: number,
+) {
+  try {
+    logger.info('Reordering chapter', { chapterId, newOrderIndex, newCourseYear });
+
+    // Check if chapter exists
+    const chapter = await prisma.chapter.findUnique({
+      where: { id: chapterId },
+    });
+
+    if (!chapter) {
+      throw new AppError('Chapter not found', 404, ErrorTypes.NOT_FOUND);
+    }
+
+    // Start a transaction to ensure all updates are atomic
+    return await prisma.$transaction(async (tx) => {
+      const currentYear = newCourseYear !== undefined ? newCourseYear : chapter.courseYear;
+
+      // If year is changing, we need special handling
+      if (newCourseYear !== undefined && newCourseYear !== chapter.courseYear) {
+        // Step 1: Shift all chapters in the new year with orderIndex >= newOrderIndex up by 1
+        await tx.chapter.updateMany({
+          where: {
+            courseId: chapter.courseId,
+            courseYear: newCourseYear,
+            orderIndex: {
+              gte: newOrderIndex,
+            },
+          },
+          data: {
+            orderIndex: {
+              increment: 1,
+            },
+          },
+        });
+
+        // Step 2: Shift all chapters in the old year with orderIndex > current chapter's orderIndex down by 1
+        await tx.chapter.updateMany({
+          where: {
+            courseId: chapter.courseId,
+            courseYear: chapter.courseYear,
+            orderIndex: {
+              gt: chapter.orderIndex,
+            },
+          },
+          data: {
+            orderIndex: {
+              decrement: 1,
+            },
+          },
+        });
+      } else {
+        // If staying in the same year but changing position
+        if (newOrderIndex > chapter.orderIndex) {
+          // Moving down: decrement positions of chapters between old and new position
+          await tx.chapter.updateMany({
+            where: {
+              courseId: chapter.courseId,
+              courseYear: chapter.courseYear,
+              orderIndex: {
+                gt: chapter.orderIndex,
+                lte: newOrderIndex,
+              },
+            },
+            data: {
+              orderIndex: {
+                decrement: 1,
+              },
+            },
+          });
+        } else if (newOrderIndex < chapter.orderIndex) {
+          // Moving up: increment positions of chapters between new and old position
+          await tx.chapter.updateMany({
+            where: {
+              courseId: chapter.courseId,
+              courseYear: chapter.courseYear,
+              orderIndex: {
+                gte: newOrderIndex,
+                lt: chapter.orderIndex,
+              },
+            },
+            data: {
+              orderIndex: {
+                increment: 1,
+              },
+            },
+          });
+        } else {
+          // Same position, no changes needed
+          return await fetchChapterById(chapterId);
+        }
+      }
+
+      // Update the chapter with its new position and year
+      const updatedChapter = await tx.chapter.update({
+        where: { id: chapterId },
+        data: {
+          orderIndex: newOrderIndex,
+          courseYear: currentYear,
+        },
+        include: {
+          course: {
+            select: {
+              title: true,
+            },
+          },
+          createdBy: {
+            select: {
+              fullName: true,
+            },
+          },
+        },
+      });
+
+      logger.info('Chapter reordered successfully', {
+        chapterId,
+        newOrderIndex,
+        newCourseYear,
+      });
+
+      return updatedChapter;
+    });
+  } catch (error) {
+    logger.error('Error reordering chapter', {
+      chapterId,
+      newOrderIndex,
+      newCourseYear,
       error: error instanceof Error ? error.message : String(error),
     });
     throw error;
