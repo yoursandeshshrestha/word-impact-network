@@ -6,7 +6,7 @@ import coursesReducer from "./features/coursesSlice";
 import loadingReducer from "./features/loadingSlice";
 import { persistStore, persistReducer } from "redux-persist";
 import storage from "redux-persist/lib/storage";
-
+import chaptersReducer from "./features/chaptersSlice";
 const persistConfig = {
   key: "root",
   storage,
@@ -26,6 +26,7 @@ export const store = configureStore({
     adminProfile: persistedAdminProfileReducer,
     courses: coursesReducer,
     loading: loadingReducer,
+    chapters: chaptersReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
