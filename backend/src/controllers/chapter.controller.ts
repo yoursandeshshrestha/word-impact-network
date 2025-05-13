@@ -8,6 +8,7 @@ import {
   fetchChapterById,
   updateChapterById,
   deleteChapterById,
+  reorderChapter,
 } from '@/services/chapter.service';
 
 /**
@@ -123,4 +124,39 @@ export const deleteChapter = catchAsync(async (req: Request, res: Response) => {
   await deleteChapterById(id);
 
   sendSuccess(res, 200, 'Chapter deleted successfully', { id });
+});
+
+/**
+ * Reorder chapter
+ * @route PATCH /api/v1/chapters/:id/reorder
+ * @access Private (Admin only)
+ */
+export const reorderChapterController = catchAsync(async (req: Request, res: Response) => {
+  if (!req.user) {
+    throw new AppError('Authentication required', 401, ErrorTypes.AUTHENTICATION);
+  }
+
+  const { id } = req.params;
+  const { newOrderIndex, newCourseYear } = req.body;
+
+  // Validate input
+  if (newOrderIndex === undefined || isNaN(parseInt(newOrderIndex, 10))) {
+    throw new AppError(
+      'New order index is required and must be a valid number',
+      400,
+      ErrorTypes.VALIDATION,
+    );
+  }
+
+  let parsedNewCourseYear = undefined;
+  if (newCourseYear !== undefined) {
+    parsedNewCourseYear = parseInt(newCourseYear, 10);
+    if (isNaN(parsedNewCourseYear)) {
+      throw new AppError('New course year must be a valid number', 400, ErrorTypes.VALIDATION);
+    }
+  }
+
+  const chapter = await reorderChapter(id, parseInt(newOrderIndex, 10), parsedNewCourseYear);
+
+  sendSuccess(res, 200, 'Chapter reordered successfully', chapter);
 });
