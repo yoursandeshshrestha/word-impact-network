@@ -3,6 +3,7 @@ import { RootState } from "../store";
 import { getAuthToken } from "@/utils/auth";
 import { toast } from "sonner";
 import { setLoading } from "./loadingSlice";
+import { Chapter } from "./chaptersSlice";
 
 export interface Course {
   id: string;
@@ -17,6 +18,7 @@ export interface Course {
   createdBy?: {
     fullName: string;
   };
+  chapters?: Chapter[];
 }
 
 interface CoursesState {
