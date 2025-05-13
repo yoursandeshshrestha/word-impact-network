@@ -140,7 +140,7 @@ const CourseDetailPage: React.FC<CourseDetailPageProps> = ({ params }) => {
   return (
     <div className="min-h-screen bg-white">
       {/* Navigation */}
-      <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-30">
+      <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-10">
         <div className="p-6 flex justify-between items-center">
           <button
             onClick={() => router.push("/courses")}
@@ -149,24 +149,6 @@ const CourseDetailPage: React.FC<CourseDetailPageProps> = ({ params }) => {
             <ChevronLeft size={18} className="mr-1" />
             Back to Courses
           </button>
-
-          <div className="flex space-x-2">
-            <button
-              onClick={() => setIsEditModalOpen(true)}
-              className="inline-flex items-center px-3 py-1.5 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200"
-            >
-              <Edit size={16} className="mr-1.5" />
-              Edit
-            </button>
-
-            <button
-              onClick={() => setIsDeleteModalOpen(true)}
-              className="inline-flex items-center px-3 py-1.5 border border-gray-300 rounded-md text-sm font-medium text-red-600 bg-white hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-all duration-200"
-            >
-              <Trash2 size={16} className="mr-1.5" />
-              Delete
-            </button>
-          </div>
         </div>
       </header>
 
@@ -308,6 +290,14 @@ const CourseDetailPage: React.FC<CourseDetailPageProps> = ({ params }) => {
                 >
                   <Edit size={18} className="mr-2" />
                   Edit Course
+                </button>
+
+                <button
+                  onClick={() => setIsDeleteModalOpen(true)}
+                  className="inline-flex items-center px-6 py-3 border border-gray-300 rounded-md text-sm font-medium text-red-600 bg-white hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-all duration-200"
+                >
+                  <Trash2 size={16} className="mr-1.5" />
+                  Delete
                 </button>
               </div>
             </div>
