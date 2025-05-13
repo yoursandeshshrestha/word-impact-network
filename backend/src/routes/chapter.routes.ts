@@ -1,7 +1,12 @@
 import express, { Router } from 'express';
 import { authenticate, requireAdmin } from '../middlewares/auth.middleware';
-import { validateUpdateChapter } from '../validations/chapter.validation';
-import { getChapterById, updateChapter, deleteChapter } from '@/controllers/chapter.controller';
+import { validateReorderChapter, validateUpdateChapter } from '../validations/chapter.validation';
+import {
+  getChapterById,
+  updateChapter,
+  deleteChapter,
+  reorderChapterController,
+} from '@/controllers/chapter.controller';
 import { addVideoToChapter, getVideosByChapterId } from '@/controllers/video.controller';
 import { validateCreateVideo } from '@/validations/video.validation';
 import { upload } from '../utils/upload';
@@ -38,5 +43,14 @@ router.get('/:chapterId/videos', getVideosByChapterId);
 
 // GET /api/v1/chapters/:chapterId/video - Get All Videos for Chapter - Singular form
 router.get('/:chapterId/video', getVideosByChapterId);
+
+// PATCH /api/v1/chapters/:id/reorder - Reorder a chapter
+router.patch(
+  '/:id/reorder',
+  authenticate,
+  requireAdmin,
+  validateReorderChapter,
+  reorderChapterController,
+);
 
 export default router;
