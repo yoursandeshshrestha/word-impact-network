@@ -76,3 +76,29 @@ export const validateUpdateChapter = (req: Request, res: Response, next: NextFun
 
   next();
 };
+
+/**
+ * Validate reorder chapter request
+ */
+export const validateReorderChapter = (req: Request, res: Response, next: NextFunction) => {
+  const schema = Joi.object({
+    newOrderIndex: Joi.number().integer().min(1).required().messages({
+      'number.base': 'New order index must be a number',
+      'number.integer': 'New order index must be an integer',
+      'number.min': 'New order index must be at least 1',
+      'any.required': 'New order index is required',
+    }),
+    newCourseYear: Joi.number().integer().min(1).optional().messages({
+      'number.base': 'New course year must be a number',
+      'number.integer': 'New course year must be an integer',
+      'number.min': 'New course year must be at least 1',
+    }),
+  });
+
+  const { error } = schema.validate(req.body);
+  if (error) {
+    return sendError(res, 400, error.details[0].message, [ErrorTypes.VALIDATION]);
+  }
+
+  next();
+};
