@@ -193,7 +193,7 @@ model Chapter {
   createdAt         DateTime         @default(now())
   updatedAt         DateTime         @updatedAt
 
-  @@unique([courseId, orderIndex])
+  @@unique([courseId, courseYear, orderIndex])
   @@map("chapters")
 }
 
