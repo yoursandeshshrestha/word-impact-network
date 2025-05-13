@@ -9,6 +9,21 @@ import CourseModal from "@/components/courses/CoursesModel";
 import DeleteCourseModal from "@/components/courses/DeleteCoursesModel";
 import Image from "next/image";
 import { toast } from "sonner";
+import {
+  ChevronLeft,
+  Edit,
+  Trash2,
+  BookOpen,
+  Video,
+  FileText,
+  Calendar,
+  User,
+  Clock,
+  CheckCircle,
+  XCircle,
+  Plus,
+  ArrowRight,
+} from "lucide-react";
 
 interface CourseDetailPageProps {
   params: {
@@ -34,6 +49,9 @@ const CourseDetailPage: React.FC<CourseDetailPageProps> = ({ params }) => {
 
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<"overview" | "content">(
+    "overview"
+  );
 
   useEffect(() => {
     fetchCourseById(id);
@@ -72,24 +90,45 @@ const CourseDetailPage: React.FC<CourseDetailPageProps> = ({ params }) => {
     }
   };
 
+  // Count total videos
+  const totalVideos =
+    course?.chapters?.reduce(
+      (total, chapter) => total + (chapter.videos?.length || 0),
+      0
+    ) || 0;
+
+  // Count total exams
+  const totalExams =
+    course?.chapters?.reduce(
+      (total, chapter) => total + (chapter.exam ? 1 : 0),
+      0
+    ) || 0;
+
   if (loading) {
-    return <Loading />;
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <Loading />
+      </div>
+    );
   }
 
   if (!course && !loading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen">
-        <div className="text-center p-8 bg-gray-50 rounded-lg max-w-md">
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">
+      <div className="min-h-screen flex items-center justify-center bg-gray-100 p-4">
+        <div className="bg-white shadow-lg rounded-lg p-8 max-w-md w-full text-center">
+          <div className="bg-red-50 text-red-500 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-6">
+            <XCircle size={40} />
+          </div>
+          <h2 className="text-2xl font-bold text-gray-800 mb-3">
             Course Not Found
           </h2>
-          <p className="text-gray-600 mb-6">
+          <p className="text-gray-600 mb-8">
             The course you&apos;re looking for doesn&apos;t exist or has been
             removed.
           </p>
           <button
             onClick={() => router.push("/courses")}
-            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+            className="w-full inline-flex justify-center items-center px-4 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200"
           >
             Back to Courses
           </button>
@@ -99,213 +138,517 @@ const CourseDetailPage: React.FC<CourseDetailPageProps> = ({ params }) => {
   }
 
   return (
-    <div className="p-6">
-      <div className="mb-6 flex items-center">
-        <button
-          onClick={() => router.push("/courses")}
-          className="inline-flex items-center text-sm font-medium text-indigo-600 hover:text-indigo-900"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-5 w-5 mr-1"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
+    <div className="min-h-screen bg-white">
+      {/* Navigation */}
+      <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-30">
+        <div className="p-6 flex justify-between items-center">
+          <button
+            onClick={() => router.push("/courses")}
+            className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-gray-700 hover:text-blue-600 focus:outline-none transition-colors duration-200"
           >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M10 19l-7-7m0 0l7-7m-7 7h18"
-            />
-          </svg>
-          Back to Courses
-        </button>
-      </div>
+            <ChevronLeft size={18} className="mr-1" />
+            Back to Courses
+          </button>
 
-      {course && (
-        <div className="bg-white rounded-lg shadow-md overflow-hidden">
-          <div className="relative h-64 w-full bg-gray-200">
-            {course.coverImageUrl ? (
-              <Image
-                src={course.coverImageUrl}
-                alt={course.title}
-                fill
-                className="object-cover"
-                priority
-                onError={(e) => {
-                  const target = e.target as HTMLImageElement;
-                  target.src = "/placeholder-image.jpg"; // Fallback image
-                  target.onerror = null; // Prevent infinite loop
-                }}
-              />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-24 w-24 text-gray-400"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={1}
-                    d="M19 14v6a2 2 0 01-2 2H7a2 2 0 01-2-2v-6m3-3h6m-6 0H4m2-3h12a2 2 0 012 2v6a2 2 0 01-2 2H6a2 2 0 01-2-2V8a2 2 0 012-2z"
-                  />
-                </svg>
-              </div>
-            )}
+          <div className="flex space-x-2">
+            <button
+              onClick={() => setIsEditModalOpen(true)}
+              className="inline-flex items-center px-3 py-1.5 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200"
+            >
+              <Edit size={16} className="mr-1.5" />
+              Edit
+            </button>
+
+            <button
+              onClick={() => setIsDeleteModalOpen(true)}
+              className="inline-flex items-center px-3 py-1.5 border border-gray-300 rounded-md text-sm font-medium text-red-600 bg-white hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-all duration-200"
+            >
+              <Trash2 size={16} className="mr-1.5" />
+              Delete
+            </button>
           </div>
+        </div>
+      </header>
 
-          <div className="p-6">
-            <div className="flex justify-between items-start mb-4">
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900">
-                  {course.title}
-                </h1>
-                <div className="mt-2 flex items-center">
-                  <span
-                    className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                      course.isActive
-                        ? "bg-green-100 text-green-800"
-                        : "bg-red-100 text-red-800"
-                    }`}
-                  >
-                    {course.isActive ? "Active" : "Inactive"}
+      {/* Course hero banner - improved with background image */}
+      <section
+        className="relative text-white pb-6"
+        style={{
+          backgroundImage: `url(${
+            course?.coverImageUrl || "/placeholder-image.jpg"
+          })`,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          backgroundRepeat: "no-repeat",
+        }}
+      >
+        {/* Dark overlay for better text contrast */}
+        <div className="absolute inset-0 bg-gradient-to-b from-black/80 to-black/50 z-0"></div>
+
+        <div className="p-6 relative z-10">
+          <div className="flex flex-col lg:flex-row gap-8 items-start">
+            {/* Course preview image - in a card */}
+            <div className="w-full lg:w-1/3 xl:w-1/4 flex-shrink-0">
+              <div className="rounded-lg overflow-hidden border-4 border-white/20 shadow-2xl aspect-video relative">
+                {course?.coverImageUrl ? (
+                  <Image
+                    src={course.coverImageUrl}
+                    alt={course.title}
+                    width={400}
+                    height={225}
+                    className="object-cover w-full"
+                    priority
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      target.src = "/placeholder-image.jpg";
+                      target.onerror = null;
+                    }}
+                  />
+                ) : (
+                  <div className="w-full h-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center aspect-video">
+                    <BookOpen size={64} className="text-white opacity-70" />
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Course details */}
+            <div className="w-full lg:w-2/3 xl:w-3/4">
+              <div className="flex items-center gap-3 mb-3 flex-wrap">
+                <span
+                  className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
+                    course?.isActive
+                      ? "bg-green-500/90 text-white"
+                      : "bg-red-500/90 text-white"
+                  }`}
+                >
+                  {course?.isActive ? (
+                    <>
+                      <CheckCircle size={12} className="mr-1.5" />
+                      Active
+                    </>
+                  ) : (
+                    <>
+                      <XCircle size={12} className="mr-1.5" />
+                      Inactive
+                    </>
+                  )}
+                </span>
+
+                <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-500/90 text-white">
+                  <Clock size={12} className="mr-1.5" />
+                  {course?.durationYears}{" "}
+                  {course?.durationYears === 1 ? "Year" : "Years"} Curriculum
+                </span>
+
+                <span className="text-xs text-gray-300 font-medium ml-auto">
+                  Last updated: {formatDate(course?.updatedAt || "")}
+                </span>
+              </div>
+
+              <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4 text-white drop-shadow-md">
+                {course?.title}
+              </h1>
+
+              <p className="text-gray-100 mb-6 text-lg max-w-3xl leading-relaxed drop-shadow-sm line-clamp-3 md:line-clamp-none">
+                {course?.description}
+              </p>
+
+              <div className="w-fit flex flex-wrap items-center gap-6 mb-6 bg-black/30 p-4 rounded-lg backdrop-blur-sm">
+                <div className="flex items-center">
+                  <User size={20} className="text-blue-300 mr-2" />
+                  <span className="text-gray-100">
+                    Created by{" "}
+                    <span className="text-white font-medium">
+                      {course?.createdBy?.fullName || "Unknown"}
+                    </span>
                   </span>
-                  <span className="ml-4 text-sm text-gray-500">
-                    {course.durationYears} Year
-                    {course.durationYears !== 1 ? "s" : ""}
+                </div>
+
+                <div className="flex items-center">
+                  <Calendar size={20} className="text-blue-300 mr-2" />
+                  <span className="text-gray-100">
+                    {formatDate(course?.createdAt || "")}
+                  </span>
+                </div>
+
+                <div className="flex items-center">
+                  <BookOpen size={20} className="text-blue-300 mr-2" />
+                  <span className="text-gray-100">
+                    <span className="text-white font-medium">
+                      {course?.chapters?.length || 0}
+                    </span>{" "}
+                    Chapters
+                  </span>
+                </div>
+
+                <div className="flex items-center">
+                  <Video size={20} className="text-blue-300 mr-2" />
+                  <span className="text-gray-100">
+                    <span className="text-white font-medium">
+                      {totalVideos}
+                    </span>{" "}
+                    Videos
                   </span>
                 </div>
               </div>
 
-              <div className="flex space-x-2">
+              <div className="flex flex-wrap gap-4 mt-8">
+                <button
+                  onClick={() => router.push(`/courses/${course?.id}/chapters`)}
+                  className="inline-flex items-center px-6 py-3 border border-transparent rounded-md shadow-lg text-base font-medium text-white bg-blue-600 hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200"
+                >
+                  <Plus size={18} className="mr-2" />
+                  Add Chapter
+                </button>
+
                 <button
                   onClick={() => setIsEditModalOpen(true)}
-                  className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                  className="inline-flex items-center px-6 py-3 border border-white/30 rounded-md shadow-lg text-base font-medium text-white bg-white/10 hover:bg-white/20 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200"
                 >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-4 w-4 mr-1"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                    />
-                  </svg>
-                  Edit
+                  <Edit size={18} className="mr-2" />
+                  Edit Course
                 </button>
-
-                <button
-                  onClick={() => setIsDeleteModalOpen(true)}
-                  className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-red-700 bg-white hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-4 w-4 mr-1"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                    />
-                  </svg>
-                  Delete
-                </button>
-              </div>
-            </div>
-
-            <div className="border-t border-gray-200 pt-4 mt-4">
-              <h2 className="text-lg font-medium text-gray-900 mb-2">
-                Description
-              </h2>
-              <p className="text-gray-600 whitespace-pre-line">
-                {course.description}
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6 border-t border-gray-200 pt-4">
-              <div>
-                <h2 className="text-lg font-medium text-gray-900 mb-4">
-                  Course Details
-                </h2>
-                <dl className="space-y-3">
-                  <div className="flex">
-                    <dt className="text-sm font-medium text-gray-500 w-32">
-                      Created By:
-                    </dt>
-                    <dd className="text-sm text-gray-900">
-                      {course.createdBy?.fullName || "Unknown"}
-                    </dd>
-                  </div>
-                  <div className="flex">
-                    <dt className="text-sm font-medium text-gray-500 w-32">
-                      Created On:
-                    </dt>
-                    <dd className="text-sm text-gray-900">
-                      {formatDate(course.createdAt)}
-                    </dd>
-                  </div>
-                  <div className="flex">
-                    <dt className="text-sm font-medium text-gray-500 w-32">
-                      Last Updated:
-                    </dt>
-                    <dd className="text-sm text-gray-900">
-                      {formatDate(course.updatedAt)}
-                    </dd>
-                  </div>
-                </dl>
-              </div>
-
-              <div>
-                <h2 className="text-lg font-medium text-gray-900 mb-4">
-                  Course Structure
-                </h2>
-                <div className="bg-gray-50 p-4 rounded-md">
-                  <p className="text-sm text-gray-600">
-                    This course has {course.durationYears} year
-                    {course.durationYears !== 1 ? "s" : ""} of curriculum.
-                  </p>
-                  <button
-                    className="mt-4 inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-indigo-700 bg-indigo-100 hover:bg-indigo-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                    onClick={() =>
-                      router.push(`/courses/${course.id}/chapters`)
-                    }
-                  >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="h-4 w-4 mr-1"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
-                      />
-                    </svg>
-                    Manage Chapters
-                  </button>
-                </div>
               </div>
             </div>
           </div>
         </div>
-      )}
+      </section>
+
+      {/* Content tabs and navigation */}
+      <div className="border-b border-gray-200 bg-white">
+        <div className="container mx-auto px-4">
+          <div className="flex overflow-x-auto">
+            <button
+              onClick={() => setActiveTab("overview")}
+              className={`py-4 px-6 text-sm font-medium border-b-2 transition-colors duration-200 whitespace-nowrap ${
+                activeTab === "overview"
+                  ? "border-blue-600 text-blue-600"
+                  : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+              }`}
+            >
+              Overview
+            </button>
+            <button
+              onClick={() => setActiveTab("content")}
+              className={`py-4 px-6 text-sm font-medium border-b-2 transition-colors duration-200 whitespace-nowrap flex items-center ${
+                activeTab === "content"
+                  ? "border-blue-600 text-blue-600"
+                  : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+              }`}
+            >
+              Course Content
+              <span className="ml-2 bg-gray-100 text-gray-700 px-2 py-0.5 rounded-full text-xs">
+                {course?.chapters?.length || 0}
+              </span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Main content */}
+      <main className="container mx-auto px-4 py-8">
+        {activeTab === "overview" ? (
+          <div className="max-w-4xl">
+            {/* Top stats section */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+              <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-6 flex flex-col items-center">
+                <div className="bg-blue-100 p-3 rounded-full mb-4">
+                  <Clock size={24} className="text-blue-600" />
+                </div>
+                <h3 className="text-lg font-medium text-gray-900 mb-1">
+                  Course Duration
+                </h3>
+                <p className="text-3xl font-bold text-blue-600">
+                  {course?.durationYears}{" "}
+                  {course?.durationYears === 1 ? "Year" : "Years"}
+                </p>
+              </div>
+
+              <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-6 flex flex-col items-center">
+                <div className="bg-green-100 p-3 rounded-full mb-4">
+                  <BookOpen size={24} className="text-green-600" />
+                </div>
+                <h3 className="text-lg font-medium text-gray-900 mb-1">
+                  Total Chapters
+                </h3>
+                <p className="text-3xl font-bold text-green-600">
+                  {course?.chapters?.length || 0}
+                </p>
+              </div>
+
+              <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-6 flex flex-col items-center">
+                <div className="bg-purple-100 p-3 rounded-full mb-4">
+                  <Video size={24} className="text-purple-600" />
+                </div>
+                <h3 className="text-lg font-medium text-gray-900 mb-1">
+                  Learning Materials
+                </h3>
+                <p className="text-3xl font-bold text-purple-600">
+                  {totalVideos}{" "}
+                  <span className="text-sm font-normal">Videos</span> •{" "}
+                  {totalExams}{" "}
+                  <span className="text-sm font-normal">Exams</span>
+                </p>
+              </div>
+            </div>
+
+            {/* About this course */}
+            <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-6 mb-10">
+              <h2 className="text-xl font-bold text-gray-900 mb-4">
+                About This Course
+              </h2>
+              <div className="prose max-w-none text-gray-700">
+                <p className="whitespace-pre-line leading-relaxed">
+                  {course?.description || "No description provided."}
+                </p>
+              </div>
+            </div>
+
+            {/* What you'll learn section */}
+            <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-6 mb-10">
+              <h2 className="text-xl font-bold text-gray-900 mb-4">
+                What You&apos;ll Learn
+              </h2>
+
+              {course?.chapters && course.chapters.length > 0 ? (
+                <>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {course.chapters.slice(0, 6).map((chapter) => (
+                      <div key={chapter.id} className="flex">
+                        <CheckCircle
+                          size={20}
+                          className="text-green-500 mr-3 flex-shrink-0 mt-0.5"
+                        />
+                        <span className="text-gray-700">{chapter.title}</span>
+                      </div>
+                    ))}
+                  </div>
+
+                  {course.chapters.length > 6 && (
+                    <div className="mt-4">
+                      <button
+                        onClick={() => setActiveTab("content")}
+                        className="text-blue-600 font-medium hover:text-blue-800 inline-flex items-center"
+                      >
+                        See more chapters
+                        <ArrowRight size={16} className="ml-1" />
+                      </button>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <p className="text-gray-500">
+                  No chapters added yet. Add your first chapter to start
+                  building your course.
+                </p>
+              )}
+            </div>
+
+            {/* Course creator */}
+            <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-6">
+              <h2 className="text-xl font-bold text-gray-900 mb-4">
+                Course Creator
+              </h2>
+              <div className="flex items-start">
+                <div className="bg-blue-100 text-blue-600 rounded-full h-12 w-12 flex items-center justify-center flex-shrink-0 mr-4">
+                  <User size={24} />
+                </div>
+                <div>
+                  <h3 className="text-lg font-medium text-gray-900">
+                    {course?.createdBy?.fullName || "Unknown"}
+                  </h3>
+                  <p className="text-gray-600 mt-1">
+                    Created on {formatDate(course?.createdAt || "")}
+                  </p>
+                  <p className="text-gray-600">
+                    Last updated on {formatDate(course?.updatedAt || "")}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="max-w-4xl">
+            {/* Chapter list header */}
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-xl font-bold text-gray-900">
+                Course Content
+              </h2>
+              <div className="flex items-center space-x-4">
+                <span className="text-sm text-gray-600">
+                  {course?.chapters?.length || 0} chapters •{" "}
+                  {course?.durationYears || 0}{" "}
+                  {course?.durationYears === 1 ? "year" : "years"} of curriculum
+                </span>
+                <button
+                  className="inline-flex items-center px-3 py-1.5 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200"
+                  onClick={() => router.push(`/courses/${course?.id}/chapters`)}
+                >
+                  <Plus size={16} className="mr-1.5" />
+                  Add Chapter
+                </button>
+              </div>
+            </div>
+
+            {/* Year navigation */}
+            {course?.durationYears &&
+            course.durationYears > 0 &&
+            course?.chapters &&
+            course.chapters.length > 0 ? (
+              <div className="mb-6 bg-gray-50 rounded-lg p-4 border border-gray-200">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-sm font-medium text-gray-700 mr-2">
+                    Jump to year:
+                  </span>
+                  {[...Array(course.durationYears)].map((_, index) => {
+                    const yearNumber = index + 1;
+                    const chaptersInYear =
+                      course.chapters?.filter(
+                        (ch) => ch.courseYear === yearNumber
+                      ) || [];
+
+                    return (
+                      <button
+                        key={yearNumber}
+                        className="inline-flex items-center px-3 py-1.5 rounded text-sm font-medium bg-white border border-gray-200 text-blue-600 hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-blue-500 transition-all duration-200 shadow-sm"
+                        onClick={() => {
+                          document
+                            .getElementById(`year-${yearNumber}`)
+                            ?.scrollIntoView({
+                              behavior: "smooth",
+                              block: "start",
+                            });
+                        }}
+                      >
+                        Year {yearNumber}
+                        <span className="ml-1.5 bg-blue-100 text-blue-700 rounded-full px-1.5 py-0.5 text-xs">
+                          {chaptersInYear.length}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ) : null}
+
+            {/* Course content by year with accordion style */}
+            <div className="space-y-6">
+              {[...Array(course?.durationYears)].map((_, yearIndex) => {
+                const yearNumber = yearIndex + 1;
+                const chaptersInYear =
+                  course?.chapters?.filter(
+                    (ch) => ch.courseYear === yearNumber
+                  ) || [];
+
+                if (chaptersInYear.length === 0) {
+                  return null;
+                }
+
+                return (
+                  <div
+                    key={yearNumber}
+                    id={`year-${yearNumber}`}
+                    className="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm"
+                  >
+                    <div className="bg-gray-50 p-4 border-b border-gray-200">
+                      <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+                        Year {yearNumber}
+                        <span className="ml-2 bg-blue-100 text-blue-700 rounded-full px-2 py-0.5 text-xs">
+                          {chaptersInYear.length}{" "}
+                          {chaptersInYear.length === 1 ? "chapter" : "chapters"}
+                        </span>
+                      </h3>
+                    </div>
+
+                    <div className="divide-y divide-gray-200">
+                      {chaptersInYear
+                        .sort((a, b) => a.orderIndex - b.orderIndex)
+                        .map((chapter) => (
+                          <div
+                            key={chapter.id}
+                            className="hover:bg-gray-50 transition-colors duration-150"
+                          >
+                            <button
+                              className="w-full p-4 flex items-start text-left"
+                              onClick={() =>
+                                router.push(
+                                  `/courses/${course?.id}/chapters/${chapter.id}`
+                                )
+                              }
+                            >
+                              <div className="flex-shrink-0 mr-4 flex flex-col items-center">
+                                <div className="bg-blue-100 text-blue-700 rounded-full h-8 w-8 flex items-center justify-center">
+                                  {chapter.orderIndex}
+                                </div>
+                              </div>
+
+                              <div className="flex-1">
+                                <div className="flex flex-col md:flex-row md:items-center md:justify-between">
+                                  <h4 className="font-medium text-gray-900 text-base group-hover:text-blue-600 flex items-center">
+                                    {chapter.title}
+                                  </h4>
+                                  <div className="flex items-center space-x-2 mt-2 md:mt-0">
+                                    {chapter.videos &&
+                                      chapter.videos.length > 0 && (
+                                        <span className="inline-flex items-center text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                                          <Video size={12} className="mr-1" />
+                                          {chapter.videos.length}{" "}
+                                          {chapter.videos.length === 1
+                                            ? "video"
+                                            : "videos"}
+                                        </span>
+                                      )}
+                                    {chapter.exam && (
+                                      <span className="inline-flex items-center text-xs text-green-600 bg-green-50 px-2 py-1 rounded">
+                                        <FileText size={12} className="mr-1" />
+                                        Exam
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                                <p className="text-sm text-gray-600 mt-1 line-clamp-2">
+                                  {chapter.description}
+                                </p>
+                              </div>
+
+                              <div className="flex-shrink-0 ml-4 self-center">
+                                <ArrowRight
+                                  size={16}
+                                  className="text-gray-400"
+                                />
+                              </div>
+                            </button>
+                          </div>
+                        ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Empty state for no chapters */}
+            {(!course?.chapters || course.chapters.length === 0) && (
+              <div className="text-center py-16 bg-white border border-gray-200 rounded-lg shadow-sm">
+                <BookOpen size={64} className="text-gray-300 mx-auto mb-6" />
+                <h3 className="text-xl font-medium text-gray-900 mb-3">
+                  No Chapters Yet
+                </h3>
+                <p className="text-gray-600 mb-8 max-w-md mx-auto">
+                  Get started by creating your first chapter for this course.
+                </p>
+                <button
+                  className="inline-flex items-center px-5 py-3 border border-transparent rounded-md shadow-sm text-base font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200"
+                  onClick={() => router.push(`/courses/${course?.id}/chapters`)}
+                >
+                  <Plus size={18} className="mr-2" />
+                  Create First Chapter
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+      </main>
 
       {/* Edit Course Modal */}
       {course && (
