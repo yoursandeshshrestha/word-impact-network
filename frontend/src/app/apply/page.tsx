@@ -204,7 +204,7 @@ const ApplyPage = () => {
                   onChange={handleChange}
                   required
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-100 focus:border-blue-500 focus:outline-none transition-all duration-200"
-                  placeholder="John Doe"
+                  placeholder="for example: Sandesh Shrestha"
                 />
               </div>
 
@@ -219,7 +219,7 @@ const ApplyPage = () => {
                   onChange={handleChange}
                   required
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-100 focus:border-blue-500 focus:outline-none transition-all duration-200"
-                  placeholder="your@email.com"
+                  placeholder="for example: sandeshshrestha@gmail.com"
                 />
               </div>
 
@@ -266,7 +266,7 @@ const ApplyPage = () => {
                   onChange={handleChange}
                   required
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-100 focus:border-blue-500 focus:outline-none transition-all duration-200"
-                  placeholder="+1 (234) 567-8901"
+                  placeholder="+91 8597831451"
                 />
               </div>
 
@@ -281,7 +281,7 @@ const ApplyPage = () => {
                   onChange={handleChange}
                   required
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-100 focus:border-blue-500 focus:outline-none transition-all duration-200"
-                  placeholder="United States"
+                  placeholder="India"
                 />
               </div>
 
@@ -303,13 +303,13 @@ const ApplyPage = () => {
                   onChange={handleChange}
                   required
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-100 focus:border-blue-500 focus:outline-none transition-all duration-200"
-                  placeholder="Bachelor of Science in Computer Science"
+                  placeholder="10th pass, 12th pass, graduation, post graduation, etc."
                 />
               </div>
 
               <div className="md:col-span-2">
                 <label className="block text-gray-700 font-medium mb-2">
-                  Desired Degree <span className="text-red-500">*</span>
+                  Desired Course <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
@@ -318,7 +318,7 @@ const ApplyPage = () => {
                   onChange={handleChange}
                   required
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-100 focus:border-blue-500 focus:outline-none transition-all duration-200"
-                  placeholder="Master of Business Administration"
+                  placeholder="what course you want to study"
                 />
               </div>
 
@@ -374,7 +374,7 @@ const ApplyPage = () => {
                   value={formData.referredBy}
                   onChange={handleChange}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-100 focus:border-blue-500 focus:outline-none transition-all duration-200"
-                  placeholder="Jane Smith"
+                  placeholder="for example: Ps. Amitabh Ghosh "
                 />
               </div>
 
@@ -388,7 +388,7 @@ const ApplyPage = () => {
                   value={formData.referrerContact}
                   onChange={handleChange}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-100 focus:border-blue-500 focus:outline-none transition-all duration-200"
-                  placeholder="jane.smith@example.com or phone number"
+                  placeholder="for example: +91 8597831451"
                 />
               </div>
 
