@@ -24,9 +24,9 @@ const CTA = () => {
               Be A Mission Partner
             </h2>
             <p className="text-lg md:text-xl text-purple-100 max-w-xl mb-6">
-              Join us in empowering pastors and church leaders across the
-              Himalayan region. Your partnership makes a lasting difference in
-              communities worldwide.
+              some text will be added here, for example:
+              <br />
+              word impact network is a non-profit organization.
             </p>
 
             <div className="flex flex-wrap justify-center md:justify-start gap-4">
