@@ -7,6 +7,9 @@ import loadingReducer from "./features/loadingSlice";
 import { persistStore, persistReducer } from "redux-persist";
 import storage from "redux-persist/lib/storage";
 import chaptersReducer from "./features/chaptersSlice";
+import videosReducer from "./features/videosSlice";
+import examsReducer from "./features/examsSlice";
+
 const persistConfig = {
   key: "root",
   storage,
@@ -27,6 +30,8 @@ export const store = configureStore({
     courses: coursesReducer,
     loading: loadingReducer,
     chapters: chaptersReducer,
+    videos: videosReducer,
+    exams: examsReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
