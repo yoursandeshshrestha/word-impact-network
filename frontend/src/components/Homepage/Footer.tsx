@@ -32,10 +32,7 @@ const Footer = () => {
             </h3>
             <ul className="space-y-2">
               <li>
-                <Link
-                  href="/faqs"
-                  className="text-gray-700 hover:text-gray-800"
-                >
+                <Link href="/faq" className="text-gray-700 hover:text-gray-800">
                   FAQs
                 </Link>
               </li>
