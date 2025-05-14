@@ -13,8 +13,8 @@ const Footer = () => {
             <h3 className="text-gray-800 font-bold text-lg mb-4">CONTACT</h3>
             <div className="text-gray-700">
               <p className="mb-2">Word Impact Network</p>
-              <p className="mb-2">+1 443 255 3599</p>
-              <p className="mb-2">9876 Belair Rd Perry Hall, MD 21128</p>
+              <p className="mb-2">+91 8597831451</p>
+              <p className="mb-2">Sabak more, Siliguri, West Bengal, India</p>
               <Link
                 href="mailto:info@hida.education"
                 className="flex items-center text-gray-600 hover:text-gray-800"
@@ -129,8 +129,7 @@ const Footer = () => {
       {/* Copyright Bar */}
       <div className="bg-gray-100 py-4">
         <div className="container mx-auto text-center text-gray-700 text-sm px-4">
-          © All rights Reserved | Word Impact Network | Website By Sandesh
-          Shrestha
+          © All rights Reserved | Word Impact Network
         </div>
       </div>
     </footer>
