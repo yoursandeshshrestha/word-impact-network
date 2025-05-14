@@ -7,30 +7,33 @@ const Testimonials = () => {
   // Testimonials data
   const testimonials = [
     {
-      text: "INBST has offered online learning since 2020. WIN will improve impact for Nepalese students across college. Based on my years with INBST, I'm confident it will serve as more helpful. Best wishes to the team.",
-      name: "Ps. Yubraj Pradhan",
-      location: "Banepa, Nepal",
+      text: "Dummy text for testing, please ignore, real text will be added soon",
+      name: "Ps. Amitabh Ghosh",
+      location: "Kolkata, India",
       image: testimonial1,
       bgColor: "bg-[#2c3e50]",
     },
     {
-      text: "As a Nepali pastor in the US, I'm excited for WIN. INBST training improved me, and now HDA will offer even better resources. Thank you, INBST, for following in Nepali Christian leaders!",
-      name: "Ps. Subash Luhagun",
-      location: "United States",
+      text: "Dummy text for testing, please ignore, real text will be added soon",
+
+      name: "Ps. Sameeran Mondal",
+      location: "Delhi, India",
       image: testimonial1,
       bgColor: "bg-[#7a9e7e]",
     },
     {
-      text: "My three years with INBST have been enriching, thanks to the dedicated teachers and curriculum. I truly believe the Word Impact Network (WIN) will further empower Nepali church leaders worldwide.",
-      name: "Ps. Sona Chhetri",
-      location: "Gangtok, India",
+      text: "Dummy text for testing, please ignore, real text will be added soon",
+
+      name: "Ps. Priya Das",
+      location: "Mumbai, India",
       image: testimonial1,
       bgColor: "bg-[#b7773a]",
     },
     {
-      text: "I'm excited for the launch of the Word Impact Network (WIN) after seeing INBST's great work for Nepali-speaking church leaders. This program will empower and strengthen congregations.",
-      name: "Eld. Krishna Sharma",
-      location: "Kathmandu, Nepal",
+      text: "Dummy text for testing, please ignore, real text will be added soon",
+
+      name: "Eld. Ranjan Chakraborty",
+      location: "Chennai, India",
       image: testimonial1,
       bgColor: "bg-[#2c3e50]",
     },
