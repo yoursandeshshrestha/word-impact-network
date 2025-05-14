@@ -25,24 +25,24 @@ const AcademicProgram: React.FC = () => {
               </div>
               <h3 className="text-2xl font-bold mb-3 tracking-wide">Year 1</h3>
               <p className="text-center text-gray-200 mb-6 font-medium text-lg">
-                Biblical Foundations
+                some text will be added here.
               </p>
               <ul className="space-y-3 text-base font-medium flex-grow">
                 <li className="flex items-center">
                   <span className="w-2 h-2 bg-white rounded-full mr-3"></span>
-                  Introduction to the Bible
+                  Chapter name 1
                 </li>
                 <li className="flex items-center">
                   <span className="w-2 h-2 bg-white rounded-full mr-3"></span>
-                  Systematic Theology I
+                  Chapter name 2
                 </li>
                 <li className="flex items-center">
                   <span className="w-2 h-2 bg-white rounded-full mr-3"></span>
-                  Christian Ethics
+                  Chapter name 3
                 </li>
                 <li className="flex items-center">
                   <span className="w-2 h-2 bg-white rounded-full mr-3"></span>
-                  Spiritual Formation
+                  Chapter name 4
                 </li>
               </ul>
             </div>
@@ -56,24 +56,24 @@ const AcademicProgram: React.FC = () => {
               </div>
               <h3 className="text-2xl font-bold mb-3 tracking-wide">Year 2</h3>
               <p className="text-center text-gray-200 mb-6 font-medium text-lg">
-                Christian Leadership
+                some text will be added here.
               </p>
               <ul className="space-y-3 text-base font-medium flex-grow">
                 <li className="flex items-center">
                   <span className="w-2 h-2 bg-white rounded-full mr-3"></span>
-                  Church History
+                  Chapter name 1
                 </li>
                 <li className="flex items-center">
                   <span className="w-2 h-2 bg-white rounded-full mr-3"></span>
-                  Pastoral Ministry
+                  Chapter name 2
                 </li>
                 <li className="flex items-center">
                   <span className="w-2 h-2 bg-white rounded-full mr-3"></span>
-                  Leadership Principles
+                  Chapter name 3
                 </li>
                 <li className="flex items-center">
                   <span className="w-2 h-2 bg-white rounded-full mr-3"></span>
-                  Biblical Counseling
+                  Chapter name 4
                 </li>
               </ul>
             </div>
@@ -87,24 +87,24 @@ const AcademicProgram: React.FC = () => {
               </div>
               <h3 className="text-2xl font-bold mb-3 tracking-wide">Year 3</h3>
               <p className="text-center text-gray-200 mb-6 font-medium text-lg">
-                Ministry Development
+                some text will be added here.
               </p>
               <ul className="space-y-3 text-base font-medium flex-grow">
                 <li className="flex items-center">
                   <span className="w-2 h-2 bg-white rounded-full mr-3"></span>
-                  Homiletics
+                  Chapter name 1
                 </li>
                 <li className="flex items-center">
                   <span className="w-2 h-2 bg-white rounded-full mr-3"></span>
-                  Mission and Evangelism
+                  Chapter name 2
                 </li>
                 <li className="flex items-center">
                   <span className="w-2 h-2 bg-white rounded-full mr-3"></span>
-                  Church Planting
+                  Chapter name 3
                 </li>
                 <li className="flex items-center">
                   <span className="w-2 h-2 bg-white rounded-full mr-3"></span>
-                  Discipleship
+                  Chapter name 4
                 </li>
               </ul>
             </div>
@@ -118,24 +118,24 @@ const AcademicProgram: React.FC = () => {
               </div>
               <h3 className="text-2xl font-bold mb-3 tracking-wide">Year 4</h3>
               <p className="text-center text-gray-200 mb-6 font-medium text-lg">
-                Practical Application
+                some text will be added here.
               </p>
               <ul className="space-y-3 text-base font-medium flex-grow">
                 <li className="flex items-center">
                   <span className="w-2 h-2 bg-white rounded-full mr-3"></span>
-                  Ministry Internship
+                  Chapter name 1
                 </li>
                 <li className="flex items-center">
                   <span className="w-2 h-2 bg-white rounded-full mr-3"></span>
-                  Capstone Project
+                  Chapter name 2
                 </li>
                 <li className="flex items-center">
                   <span className="w-2 h-2 bg-white rounded-full mr-3"></span>
-                  Advanced Leadership
+                  Chapter name 3
                 </li>
                 <li className="flex items-center">
                   <span className="w-2 h-2 bg-white rounded-full mr-3"></span>
-                  Cross-cultural Ministry
+                  Chapter name 4
                 </li>
               </ul>
             </div>
