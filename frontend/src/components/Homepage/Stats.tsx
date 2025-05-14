@@ -20,7 +20,7 @@ const Stats = () => {
               <Award className="w-8 h-8 text-gray-600" />
             </div>
             <div className="text-3xl font-bold text-gray-800">
-              668<span className="text-gray-500">+</span>
+              0<span className="text-gray-500">+</span>
             </div>
             <div className="text-gray-600 mt-2 font-medium">
               Certificate Distributed
@@ -32,7 +32,7 @@ const Stats = () => {
               <GraduationCap className="w-8 h-8 text-gray-600" />
             </div>
             <div className="text-3xl font-bold text-gray-800">
-              354<span className="text-gray-500">+</span>
+              0<span className="text-gray-500">+</span>
             </div>
             <div className="text-gray-600 mt-2 font-medium">
               Total Graduates
@@ -44,7 +44,7 @@ const Stats = () => {
               <Globe className="w-8 h-8 text-gray-600" />
             </div>
             <div className="text-3xl font-bold text-gray-800">
-              29<span className="text-gray-500">+</span>
+              0<span className="text-gray-500">+</span>
             </div>
             <div className="text-gray-600 mt-2 font-medium">
               Countries & Territories
@@ -56,7 +56,7 @@ const Stats = () => {
               <Handshake className="w-8 h-8 text-gray-600" />
             </div>
             <div className="text-3xl font-bold text-gray-800">
-              250<span className="text-gray-500">+</span>
+              0<span className="text-gray-500">+</span>
             </div>
             <div className="text-gray-600 mt-2 font-medium">
               Partnership with local Churches
@@ -68,7 +68,7 @@ const Stats = () => {
               <BookOpen className="w-8 h-8 text-gray-600" />
             </div>
             <div className="text-3xl font-bold text-gray-800">
-              50<span className="text-gray-500">+</span>
+              0<span className="text-gray-500">+</span>
             </div>
             <div className="text-gray-600 mt-2 font-medium">Courses Taught</div>
           </div>
