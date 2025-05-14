@@ -25,7 +25,7 @@ const questionSchema = Joi.object({
     otherwise: Joi.allow(null),
   }),
   points: Joi.number().default(1).min(1),
-});
+}).unknown(false);
 
 // Validate exam request
 export const validateExam = (req: Request, res: Response, next: NextFunction) => {
