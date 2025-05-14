@@ -1,6 +1,7 @@
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import { RootState } from "../store";
 import { getAuthToken } from "@/utils/auth";
+import { Question } from "./examsSlice";
 
 export interface Video {
   id: string;
@@ -10,10 +11,14 @@ export interface Video {
 }
 
 export interface Exam {
+  id: string;
   title: string;
-  description: string;
+  description: string | null;
   passingScore: number;
-  timeLimit: number;
+  timeLimit: number | null;
+  createdAt: string;
+  updatedAt: string;
+  questions?: Question[];
 }
 
 export interface Chapter {
