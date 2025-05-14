@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
@@ -52,7 +54,7 @@ const Header: React.FC = () => {
               </li>
               <li className="relative group">
                 <Link
-                  href="/academics"
+                  href="/"
                   className="text-gray-800 hover:text-indigo-700 transition-colors flex items-center font-semibold"
                 >
                   ACADEMICS
@@ -75,25 +77,25 @@ const Header: React.FC = () => {
                   <div className="absolute -top-4 left-0 right-0 h-4"></div>
                   <div className="py-2">
                     <Link
-                      href="/first-year"
+                      href="/academic"
                       className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                     >
                       First Year
                     </Link>
                     <Link
-                      href="/second-year"
+                      href="/academic"
                       className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                     >
                       Second Year
                     </Link>
                     <Link
-                      href="/third-year"
+                      href="/academic"
                       className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                     >
                       Third Year
                     </Link>
                     <Link
-                      href="/fourth-year"
+                      href="/academic"
                       className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                     >
                       Fourth Year
@@ -103,7 +105,7 @@ const Header: React.FC = () => {
               </li>
               <li className="relative group">
                 <Link
-                  href="/about"
+                  href="/"
                   className="text-gray-800 hover:text-indigo-700 transition-colors flex items-center font-semibold"
                 >
                   ABOUT
@@ -126,7 +128,7 @@ const Header: React.FC = () => {
                   <div className="absolute -top-4 left-0 right-0 h-4"></div>
                   <div className="py-2">
                     <Link
-                      href="/about-win"
+                      href="/about-win-impact-network"
                       className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                     >
                       About WIN
@@ -148,7 +150,7 @@ const Header: React.FC = () => {
               </li>
               <li className="relative group">
                 <Link
-                  href="/leadership"
+                  href="/"
                   className="text-gray-800 hover:text-indigo-700 transition-colors flex items-center font-semibold"
                 >
                   LEADERSHIP
