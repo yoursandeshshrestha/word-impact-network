@@ -4,8 +4,15 @@ import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useChapter } from "@/hooks/useChapter";
 import { useCourse } from "@/hooks/useCourses";
+import { useVideo } from "@/hooks/useVideo";
+import { useExam } from "@/hooks/useExam";
+import { Video as VideoIcon } from "lucide-react";
 import ChapterModal from "@/components/chapter/ChapterModel";
 import DeleteChapterModal from "@/components/chapter/DeleteChapterModel";
+import VideoModal from "@/components/videos/VideoModel";
+import DeleteVideoModal from "@/components/videos/DeleteVideoModal";
+import VideoPlayer from "@/components/videos/VideoPlayer";
+import VideoCard from "@/components/videos/VideoCard";
 import Loading from "@/components/common/Loading";
 import NoDataFound from "@/components/common/NoDataFound";
 import { toast } from "sonner";
@@ -14,7 +21,6 @@ import {
   BookOpen,
   Edit,
   Trash2,
-  Video,
   Award,
   Calendar,
   Hash,
@@ -26,12 +32,28 @@ import {
 } from "lucide-react";
 import { formatDate } from "@/utils/formatters";
 import Link from "next/link";
-import { ChapterFormData } from "@/components/chapter/ChapterForm";
+import { Chapter } from "@/redux/features/chaptersSlice";
+import { Video as VideoType } from "@/redux/features/videosSlice";
+import { Exam } from "@/redux/features/examsSlice";
+
 interface ChapterDetailPageProps {
   params: {
     id: string; // courseId
     chapterId: string;
   };
+}
+
+// Define ChapterFormData type
+interface ChapterFormData {
+  title: string;
+  description: string;
+  courseYear: number;
+  orderIndex: number;
+}
+
+// Ensure the chapter object includes an exam property of type Exam
+interface ChapterWithExam extends Chapter {
+  exam?: Exam;
 }
 
 const ChapterDetailPage: React.FC<ChapterDetailPageProps> = ({ params }) => {
@@ -40,34 +62,88 @@ const ChapterDetailPage: React.FC<ChapterDetailPageProps> = ({ params }) => {
 
   const {
     chapter,
-    loading,
-    error,
-    success,
-    message,
+    loading: chapterLoading,
+    error: chapterError,
+    success: chapterSuccess,
+    message: chapterMessage,
     fetchChapterById,
     editChapter,
     removeChapter,
-    reset,
-  } = useChapter();
+    reset: resetChapter,
+  } = useChapter() as {
+    chapter: ChapterWithExam;
+    loading: boolean;
+    error: string | null;
+    success: boolean;
+    message: string;
+    fetchChapterById: (id: string) => void;
+    editChapter: (id: string, data: ChapterWithExam) => void;
+    removeChapter: (id: string) => void;
+    reset: () => void;
+  };
 
   const { course, loading: courseLoading, fetchCourseById } = useCourse();
+
+  const {
+    videos,
+    loading: videoLoading,
+    error: videoError,
+    success: videoSuccess,
+    message: videoMessage,
+    uploadProgress,
+    isUploading,
+    fetchVideosByChapter,
+    uploadVideo,
+    editVideo,
+    removeVideo,
+    reset: resetVideo,
+    clearVideosList,
+  } = useVideo();
+
+  const {
+    loading: examLoading,
+    error: examError,
+    success: examSuccess,
+    message: examMessage,
+    createNewExam,
+    removeExam,
+    reset: resetExam,
+  } = useExam();
 
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("videos"); // 'videos' or 'exam'
 
+  // Video-specific state
+  const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
+  const [isVideoPlayerOpen, setIsVideoPlayerOpen] = useState(false);
+  const [isDeleteVideoModalOpen, setIsDeleteVideoModalOpen] = useState(false);
+  const [videoToEdit, setVideoToEdit] = useState<VideoType | null>(null);
+  const [videoToDelete, setVideoToDelete] = useState<{
+    id: string;
+    title: string;
+  } | null>(null);
+  const [videoToPlay, setVideoToPlay] = useState<VideoType | null>(null);
+
   useEffect(() => {
     fetchChapterById(chapterId);
     fetchCourseById(courseId);
+    fetchVideosByChapter(chapterId);
+
+    // Cleanup when component unmounts
+    return () => {
+      clearVideosList();
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [chapterId, courseId]);
 
   useEffect(() => {
-    if (success && message) {
-      toast.success(message);
+    // Handle chapter-related success/error
+    if (chapterSuccess && chapterMessage) {
+      toast.success(chapterMessage);
 
       // If chapter was deleted, navigate back to chapters page
-      if (message.toLowerCase().includes("delete")) {
+      if (chapterMessage.toLowerCase().includes("delete")) {
         router.push(`/courses/${courseId}/chapters`);
         return;
       }
@@ -77,30 +153,79 @@ const ChapterDetailPage: React.FC<ChapterDetailPageProps> = ({ params }) => {
       setIsDeleteModalOpen(false);
 
       // Reset status in Redux
-      reset();
+      resetChapter();
 
       // Refresh the chapter
       fetchChapterById(chapterId);
     }
 
-    if (error) {
-      toast.error(error);
-      reset();
+    if (chapterError) {
+      toast.error(chapterError);
+      resetChapter();
+    }
+
+    // Handle video-related success/error
+    if (videoSuccess && videoMessage) {
+      toast.success(videoMessage);
+
+      // Close video modals
+      setIsVideoModalOpen(false);
+      setIsDeleteVideoModalOpen(false);
+      setVideoToEdit(null);
+      setVideoToDelete(null);
+
+      // Reset status in Redux
+      resetVideo();
+
+      // Refresh videos
+      fetchVideosByChapter(chapterId);
+    }
+
+    if (videoError) {
+      toast.error(videoError);
+      resetVideo();
+    }
+
+    // Handle exam-related success/error
+    if (examSuccess && examMessage) {
+      toast.success(examMessage);
+      resetExam();
+
+      // Refresh the chapter to get the updated exam status
+      fetchChapterById(chapterId);
+    }
+
+    if (examError) {
+      toast.error(examError);
+      resetExam();
     }
   }, [
-    success,
-    message,
-    error,
-    reset,
+    chapterSuccess,
+    chapterMessage,
+    chapterError,
+    videoSuccess,
+    videoMessage,
+    videoError,
+    examSuccess,
+    examMessage,
+    examError,
+    resetChapter,
+    resetVideo,
+    resetExam,
     courseId,
     chapterId,
     fetchChapterById,
+    fetchVideosByChapter,
     router,
   ]);
 
   const handleEditChapter = (chapterData: ChapterFormData) => {
     if (chapter) {
-      editChapter(chapterId, chapterData);
+      const updatedChapter: ChapterWithExam = {
+        ...chapter,
+        ...chapterData,
+      };
+      editChapter(chapterId, updatedChapter);
     }
   };
 
@@ -110,27 +235,68 @@ const ChapterDetailPage: React.FC<ChapterDetailPageProps> = ({ params }) => {
     }
   };
 
+  // Video management handlers
   const handleAddVideo = () => {
-    // Will be implemented later
-    toast.info("Video upload functionality will be implemented soon");
+    setVideoToEdit(null);
+    setIsVideoModalOpen(true);
   };
 
+  const handleEditVideo = (video: VideoType) => {
+    setVideoToEdit(video);
+    setIsVideoModalOpen(true);
+  };
+
+  const handleDeleteVideo = (id: string) => {
+    const video = videos.find((v) => v.id === id);
+    if (video) {
+      setVideoToDelete({ id, title: video.title });
+      setIsDeleteVideoModalOpen(true);
+    }
+  };
+
+  const handlePlayVideo = (video: VideoType) => {
+    setVideoToPlay(video);
+    setIsVideoPlayerOpen(true);
+  };
+
+  const handleUploadVideo = (formData: FormData) => {
+    uploadVideo(chapterId, formData);
+  };
+
+  const handleUpdateVideo = (formData: FormData) => {
+    if (videoToEdit) {
+      editVideo(videoToEdit.id, formData);
+    }
+  };
+
+  const handleDeleteVideoConfirm = () => {
+    if (videoToDelete) {
+      removeVideo(videoToDelete.id);
+    }
+  };
+
+  // Exam management handlers
   const handleAddExam = () => {
-    // Will be implemented later
-    toast.info("Exam creation functionality will be implemented soon");
+    // Create a basic exam with default values
+    createNewExam(chapterId, {
+      title: `${chapter?.title || "Chapter"} Exam`,
+      description: `Exam for ${chapter?.title || "this chapter"}`,
+      passingScore: 70, // Default passing score
+      timeLimit: 60, // Default time limit in minutes
+    });
   };
 
-  if (loading || courseLoading) {
+  if (chapterLoading || courseLoading) {
     return <Loading />;
   }
 
-  if (error || !chapter) {
+  if (chapterError || !chapter) {
     return (
       <NoDataFound message="Chapter not found or you don't have access to it." />
     );
   }
 
-  const videoCount = chapter.videos?.length || 0;
+  const videoCount = videos.length;
   const hasExam = !!chapter.exam;
 
   return (
@@ -164,7 +330,7 @@ const ChapterDetailPage: React.FC<ChapterDetailPageProps> = ({ params }) => {
                   Order {chapter.orderIndex}
                 </span>
                 <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                  <Video size={12} className="mr-1" />
+                  <VideoIcon size={12} className="mr-1" />
                   {videoCount} Video{videoCount !== 1 ? "s" : ""}
                 </span>
                 <span
@@ -217,7 +383,7 @@ const ChapterDetailPage: React.FC<ChapterDetailPageProps> = ({ params }) => {
                   : "text-gray-500 hover:text-gray-700 hover:bg-gray-100"
               } cursor-pointer transition-colors duration-200`}
             >
-              <Video size={16} className="mr-2" />
+              <VideoIcon size={16} className="mr-2" />
               Videos
             </button>
             <button
@@ -240,19 +406,22 @@ const ChapterDetailPage: React.FC<ChapterDetailPageProps> = ({ params }) => {
             <div>
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-lg font-medium text-gray-900 flex items-center">
-                  <Video size={18} className="mr-2 text-indigo-600" />
+                  <VideoIcon size={18} className="mr-2 text-indigo-600" />
                   Videos
                 </h2>
                 <button
                   onClick={handleAddVideo}
                   className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 cursor-pointer transition-colors duration-200"
+                  disabled={isUploading}
                 >
                   <PlusCircle size={16} className="mr-2" />
                   Add Video
                 </button>
               </div>
 
-              {videoCount === 0 ? (
+              {videoLoading && <Loading />}
+
+              {!videoLoading && videoCount === 0 ? (
                 <div className="bg-gray-50 rounded-lg p-8 text-center">
                   <Play size={48} className="mx-auto text-gray-400 mb-4" />
                   <h3 className="text-lg font-medium text-gray-900 mb-2">
@@ -271,13 +440,21 @@ const ChapterDetailPage: React.FC<ChapterDetailPageProps> = ({ params }) => {
                   </button>
                 </div>
               ) : (
-                // Video list will be implemented later
-                <div className="bg-gray-50 rounded-lg p-8 text-center">
-                  <Video size={48} className="mx-auto text-gray-400 mb-4" />
-                  <p className="text-gray-500">
-                    Video management functionality will be implemented soon.
-                  </p>
-                </div>
+                !videoLoading && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {[...videos]
+                      .sort((a, b) => a.orderIndex - b.orderIndex)
+                      .map((video) => (
+                        <VideoCard
+                          key={video.id}
+                          video={video}
+                          onEdit={handleEditVideo}
+                          onDelete={handleDeleteVideo}
+                          onPlay={handlePlayVideo}
+                        />
+                      ))}
+                  </div>
+                )
               )}
             </div>
           )}
@@ -293,6 +470,7 @@ const ChapterDetailPage: React.FC<ChapterDetailPageProps> = ({ params }) => {
                   <button
                     onClick={handleAddExam}
                     className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 cursor-pointer transition-colors duration-200"
+                    disabled={examLoading}
                   >
                     <PlusCircle size={16} className="mr-2" />
                     Create Exam
@@ -300,7 +478,9 @@ const ChapterDetailPage: React.FC<ChapterDetailPageProps> = ({ params }) => {
                 )}
               </div>
 
-              {!hasExam ? (
+              {examLoading && <Loading />}
+
+              {!examLoading && !hasExam ? (
                 <div className="bg-gray-50 rounded-lg p-8 text-center">
                   <MessageCircle
                     size={48}
@@ -310,25 +490,82 @@ const ChapterDetailPage: React.FC<ChapterDetailPageProps> = ({ params }) => {
                     No Exam Created Yet
                   </h3>
                   <p className="text-gray-500 mb-4">
-                    Create an exam to test students&apos; knowledge after
-                    completing this chapter.
+                    Create an exam to test students knowledge after completing
+                    this chapter.
                   </p>
                   <button
                     onClick={handleAddExam}
                     className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 cursor-pointer transition-colors duration-200"
+                    disabled={examLoading}
                   >
                     <Award size={16} className="mr-2" />
                     Create Exam
                   </button>
                 </div>
               ) : (
-                // Exam management will be implemented later
-                <div className="bg-gray-50 rounded-lg p-8 text-center">
-                  <Award size={48} className="mx-auto text-gray-400 mb-4" />
-                  <p className="text-gray-500">
-                    Exam management functionality will be implemented soon.
-                  </p>
-                </div>
+                !examLoading &&
+                hasExam && (
+                  <div className="bg-white border border-gray-200 rounded-lg p-6">
+                    <div className="flex justify-between items-start mb-4">
+                      <div>
+                        <h3 className="text-lg font-semibold text-gray-900 mb-1">
+                          {chapter.exam?.title || "Chapter Exam"}
+                        </h3>
+                        <p className="text-gray-600 text-sm mb-2">
+                          {chapter.exam?.description ||
+                            "Test your knowledge of this chapter"}
+                        </p>
+                        <div className="flex flex-wrap gap-2 mt-2">
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                            <Clock size={12} className="mr-1" />
+                            {chapter.exam?.timeLimit
+                              ? `${chapter.exam.timeLimit} minutes`
+                              : "No time limit"}
+                          </span>
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                            Passing Score: {chapter.exam?.passingScore || 0}%
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex space-x-2">
+                        <button
+                          onClick={() =>
+                            router.push(
+                              `/courses/${courseId}/chapters/${chapterId}/exam/${chapter.exam?.id}`
+                            )
+                          }
+                          className="inline-flex items-center px-3 py-2 border border-indigo-600 text-sm font-medium rounded-md text-indigo-600 bg-white hover:bg-indigo-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 cursor-pointer transition-colors duration-200"
+                        >
+                          <Award size={16} className="mr-2" />
+                          Manage Exam
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="border-t border-gray-200 pt-4 mt-4">
+                      <div className="flex justify-between items-center text-sm text-gray-500">
+                        <span>
+                          {chapter.exam?.questions?.length || 0} question
+                          {(chapter.exam?.questions?.length || 0) !== 1
+                            ? "s"
+                            : ""}
+                        </span>
+                        <button
+                          onClick={() => {
+                            if (chapter.exam) {
+                              removeExam(chapter.exam.id);
+                            }
+                          }}
+                          className="text-red-600 hover:text-red-800 inline-flex items-center cursor-pointer transition-colors duration-200"
+                          disabled={examLoading}
+                        >
+                          <Trash2 size={14} className="mr-1" />
+                          Delete Exam
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )
               )}
             </div>
           )}
@@ -343,7 +580,7 @@ const ChapterDetailPage: React.FC<ChapterDetailPageProps> = ({ params }) => {
         initialData={chapter}
         courseId={courseId}
         maxCourseYears={course?.durationYears || 1}
-        isLoading={loading}
+        isLoading={chapterLoading}
         mode="edit"
       />
 
@@ -353,8 +590,53 @@ const ChapterDetailPage: React.FC<ChapterDetailPageProps> = ({ params }) => {
         onClose={() => setIsDeleteModalOpen(false)}
         onConfirm={handleDeleteChapter}
         title={chapter.title}
-        isLoading={loading}
+        isLoading={chapterLoading}
       />
+
+      {/* Video Modal (Add/Edit) */}
+      <VideoModal
+        isOpen={isVideoModalOpen}
+        onClose={() => {
+          if (!isUploading) {
+            setIsVideoModalOpen(false);
+            setVideoToEdit(null);
+          }
+        }}
+        onSubmit={videoToEdit ? handleUpdateVideo : handleUploadVideo}
+        initialData={
+          videoToEdit
+            ? {
+                title: videoToEdit.title,
+                description: videoToEdit.description,
+                orderIndex: videoToEdit.orderIndex,
+              }
+            : null
+        }
+        isLoading={videoLoading}
+        uploadProgress={uploadProgress}
+        isUploading={isUploading}
+        mode={videoToEdit ? "edit" : "create"}
+      />
+
+      {/* Delete Video Modal */}
+      <DeleteVideoModal
+        isOpen={isDeleteVideoModalOpen}
+        onClose={() => setIsDeleteVideoModalOpen(false)}
+        onConfirm={handleDeleteVideoConfirm}
+        title={videoToDelete?.title || ""}
+        isLoading={videoLoading}
+      />
+
+      {/* Video Player */}
+      {isVideoPlayerOpen && videoToPlay && (
+        <VideoPlayer
+          video={videoToPlay}
+          onClose={() => {
+            setIsVideoPlayerOpen(false);
+            setVideoToPlay(null);
+          }}
+        />
+      )}
     </div>
   );
 };
