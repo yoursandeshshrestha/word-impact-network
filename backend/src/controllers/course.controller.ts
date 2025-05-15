@@ -111,6 +111,10 @@ export const deleteCourse = catchAsync(async (req: Request, res: Response) => {
 
   const { id } = req.params;
 
+  if (!id) {
+    throw new AppError('Course ID is required', 400, ErrorTypes.VALIDATION);
+  }
+
   await deleteCourseById(id);
 
   sendSuccess(res, 200, 'Course deleted successfully', { id });
