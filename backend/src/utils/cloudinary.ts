@@ -1,6 +1,10 @@
 import { v2 as cloudinary } from 'cloudinary';
 import { logger } from './logger';
 import { AppError, ErrorTypes } from './appError';
+import { randomUUID } from 'crypto';
+import * as fs from 'fs';
+import * as os from 'os';
+import * as path from 'path';
 
 // Validate required environment variables
 const requiredEnvVars = ['CLOUDINARY_CLOUD_NAME', 'CLOUDINARY_API_KEY', 'CLOUDINARY_API_SECRET'];
@@ -21,72 +25,206 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-// Helper to sanitize file names for Cloudinary public_id
-function sanitizeFileName(fileName: string): string {
-  // Only allow alphanumeric, dash, and underscore
-  // Remove any path, just keep the base name
-  const base = fileName.split('/').pop()?.split('\\').pop() || fileName;
-  // Remove extension for public_id (Cloudinary will add it based on the file type)
-  const name = base.replace(/\.[^/.]+$/, '');
-  // Only allow safe characters
-  return name.replace(/[^a-zA-Z0-9-_]/g, '');
+// Size threshold for large files (30MB)
+const LARGE_FILE_THRESHOLD = 30 * 1024 * 1024;
+
+interface CloudinaryUploadResult {
+  public_id: string;
+  secure_url: string;
+  resource_type: string;
+  // Add other properties if needed
 }
 
 /**
- * Upload a file to Cloudinary
+ * Helper to generate a safe, unique filename for Cloudinary
+ * Uses only letters and includes UUID for uniqueness
+ */
+function generateSafeFileName(originalName?: string): string {
+  // Create a UUID and remove dashes to use as unique identifier
+  const uuid = randomUUID().replace(/-/g, '');
+
+  if (!originalName) {
+    return `file${uuid}`;
+  }
+
+  try {
+    // Extract just the base name without extension or paths
+    const base = originalName.split('/').pop()?.split('\\').pop() || originalName;
+    const nameWithoutExt = base.replace(/\.[^/.]+$/, '');
+
+    // Sanitize: Only keep letters (a-z, A-Z)
+    const lettersOnly = nameWithoutExt.replace(/[^a-zA-Z]/g, '').substring(0, 20); // Limit length to 20 characters
+
+    // Combine letters-only prefix with UUID
+    return lettersOnly ? `${lettersOnly}${uuid}` : `file${uuid}`;
+  } catch (error) {
+    logger.warn('Error generating safe filename, using UUID', {
+      originalName,
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return `file${uuid}`;
+  }
+}
+
+/**
+ * Sanitize folder path for Cloudinary
+ * Only allows letters, numbers, and underscores in folder names
+ */
+function sanitizeFolderPath(folder: string): string {
+  if (!folder) return 'uploads';
+
+  // Process each folder segment individually
+  const sanitizedParts = folder
+    .trim()
+    .replace(/^\/+|\/+$/g, '') // Remove leading/trailing slashes
+    .split('/')
+    .map((segment) => {
+      // Only keep letters, numbers, and underscores for each folder segment
+      return segment
+        .replace(/[^a-zA-Z0-9_]/g, '_')
+        .replace(/_+/g, '_') // Replace multiple underscores with a single one
+        .replace(/^_|_$/g, ''); // Trim leading/trailing underscores
+    })
+    .filter((segment) => segment.length > 0); // Remove empty segments
+
+  // Limit folder depth (max 3 levels deep)
+  if (sanitizedParts.length > 3) {
+    return sanitizedParts.slice(0, 3).join('/');
+  }
+
+  return sanitizedParts.join('/') || 'uploads';
+}
+
+/**
+ * Writes buffer to a temporary file
+ * @param buffer The buffer to write
+ * @returns Path to the temporary file
+ */
+async function writeBufferToTempFile(buffer: Buffer): Promise<string> {
+  const tempDir = os.tmpdir();
+  const tempFilePath = path.join(tempDir, `upload_${Date.now()}_${randomUUID()}`);
+
+  return new Promise<string>((resolve, reject) => {
+    fs.writeFile(tempFilePath, buffer, (err) => {
+      if (err) {
+        reject(err);
+      } else {
+        resolve(tempFilePath);
+      }
+    });
+  });
+}
+
+/**
+ * Remove temporary file
+ * @param filePath Path to the temporary file
+ */
+async function removeTempFile(filePath: string): Promise<void> {
+  return new Promise<void>((resolve, reject) => {
+    fs.unlink(filePath, (err) => {
+      if (err) {
+        logger.warn('Failed to remove temporary file', { filePath, error: err.message });
+      }
+      // Always resolve, even if deleting fails
+      resolve();
+    });
+  });
+}
+
+/**
+ * Upload a file to Cloudinary with support for large files
  * @param file The file buffer to upload
- * @param folder The folder to upload to
- * @param fileName The filename to use for the uploaded file
- * @returns The Cloudinary upload response
+ * @param folder The folder to upload to (optional)
+ * @param fileName The original filename (optional)
+ * @returns The Cloudinary secure URL
  */
 export const uploadToCloudinary = async (
   file: Buffer,
-  folder: string = 'win/documents',
+  folder?: string,
   fileName?: string,
 ): Promise<string> => {
+  let tempFilePath: string | null = null;
+
   try {
-    logger.info('Uploading file to Cloudinary', { folder, fileName });
+    // Generate a completely sanitized folder and filename
+    const safeFolder = folder ? sanitizeFolderPath(folder) : 'win_documents';
+    const safeFileName = generateSafeFileName(fileName);
 
-    // Sanitize the fileName for Cloudinary public_id
-    let safeFileName = fileName ? sanitizeFileName(fileName) : undefined;
-
-    // Convert buffer to base64
-    const base64File = `data:application/octet-stream;base64,${file.toString('base64')}`;
-
-    const result = await cloudinary.uploader.upload(base64File, {
-      folder,
-      resource_type: 'auto',
-      access_mode: 'public',
-      overwrite: true,
-      public_id: safeFileName ? `${folder}/${safeFileName}` : undefined,
-      type: 'upload',
-      chunk_size: 6000000,
-      eager: [
-        { width: 300, height: 300, crop: 'pad', audio_codec: 'none' },
-        { width: 160, height: 100, crop: 'crop', gravity: 'south', audio_codec: 'none' },
-      ],
-      eager_async: true,
-      eager_notification_url: process.env.CLOUDINARY_NOTIFICATION_URL,
+    logger.info('Starting file upload to Cloudinary', {
+      fileSize: file.length,
+      safeFolder,
+      safeFileName,
     });
+
+    // Check if this is a large file
+    const isLargeFile = file.length > LARGE_FILE_THRESHOLD;
+
+    let uploadResult: CloudinaryUploadResult;
+
+    if (isLargeFile) {
+      // For large files, write to temp file and use Cloudinary's upload_large API
+      logger.info('Using large file upload method', { fileSize: file.length });
+
+      tempFilePath = await writeBufferToTempFile(file);
+
+      uploadResult = await new Promise<CloudinaryUploadResult>((resolve, reject) => {
+        const uploadStream = cloudinary.uploader.upload_large(
+          tempFilePath as string,
+          {
+            folder: safeFolder,
+            public_id: safeFileName,
+            resource_type: 'auto',
+            chunk_size: 6000000,
+          },
+          (error, result) => {
+            if (error || !result) {
+              reject(new AppError('Failed to upload file', 500, ErrorTypes.SERVER));
+            } else {
+              resolve(result);
+            }
+          },
+        );
+      });
+    } else {
+      // For smaller files, use the standard base64 upload
+      const base64File = `data:application/octet-stream;base64,${file.toString('base64')}`;
+
+      uploadResult = await cloudinary.uploader.upload(base64File, {
+        folder: safeFolder,
+        public_id: safeFileName,
+        resource_type: 'auto',
+        chunk_size: 6000000,
+      });
+    }
 
     logger.info('File uploaded successfully to Cloudinary', {
-      public_id: result.public_id,
-      url: result.secure_url,
+      public_id: uploadResult.public_id,
+      url: uploadResult.secure_url,
+      resource_type: uploadResult.resource_type,
+      fileSize: file.length,
     });
 
-    return result.secure_url;
+    if (!uploadResult) {
+      throw new AppError('Failed to upload file', 500, ErrorTypes.SERVER);
+    }
+
+    return uploadResult.secure_url;
   } catch (error) {
     logger.error('Error uploading file to Cloudinary', {
       error: error instanceof Error ? error.message : String(error),
       details: error instanceof Error ? error.stack : JSON.stringify(error),
+      fileSize: file.length,
       folder,
       fileName,
     });
-    throw new AppError(
-      error instanceof Error ? error.message : 'Failed to upload file',
-      500,
-      ErrorTypes.SERVER,
-    );
+    throw new AppError('Failed to upload file', 500, ErrorTypes.SERVER);
+  } finally {
+    // Clean up the temporary file if it was created
+    if (tempFilePath) {
+      await removeTempFile(tempFilePath).catch((err) => {
+        logger.warn('Error removing temp file', { tempFilePath, error: err.message });
+      });
+    }
   }
 };
 
