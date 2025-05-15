@@ -21,16 +21,25 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 
-interface ExamManagementPageProps {
-  params: {
-    id: string; // courseId
-    chapterId: string;
-    examId: string;
-  };
+// Define the params type with the properties we need
+type ExamPageParams = {
+  id: string; // courseId
+  chapterId: string;
+  examId: string;
+};
+
+// Define the proper page props interface for pages protected by middleware
+interface PageProps {
+  params: Promise<ExamPageParams>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }
 
-const ExamManagementPage: React.FC<ExamManagementPageProps> = ({ params }) => {
-  const { id: courseId, chapterId, examId } = params;
+export default function ExamManagementPage({
+  params,
+}: PageProps) {
+  const [resolvedParams, setResolvedParams] = useState<ExamPageParams | null>(
+    null
+  );
 
   const {
     exam,
@@ -57,10 +66,17 @@ const ExamManagementPage: React.FC<ExamManagementPageProps> = ({ params }) => {
     text: string;
   } | null>(null);
 
+  // Resolve the params promise
   useEffect(() => {
-    fetchExamById(examId);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [examId]);
+    params.then(setResolvedParams);
+  }, [params]);
+
+  // Fetch exam data once params are resolved
+  useEffect(() => {
+    if (resolvedParams) {
+      fetchExamById(resolvedParams.examId);
+    }
+  }, [resolvedParams, fetchExamById]);
 
   useEffect(() => {
     if (success && message) {
@@ -77,14 +93,28 @@ const ExamManagementPage: React.FC<ExamManagementPageProps> = ({ params }) => {
       reset();
 
       // Refresh exam data
-      fetchExamById(examId);
+      if (resolvedParams) {
+        fetchExamById(resolvedParams.examId);
+      }
     }
 
     if (error) {
       toast.error(error);
       reset();
     }
-  }, [success, message, error, reset, examId, fetchExamById]);
+  }, [success, message, error, reset, resolvedParams, fetchExamById]);
+
+  if (!resolvedParams || (loading && !exam)) {
+    return <Loading />;
+  }
+
+  if (error || !exam) {
+    return (
+      <NoDataFound message="Exam not found or you don't have access to it." />
+    );
+  }
+
+  const { id: courseId, chapterId, examId } = resolvedParams;
 
   const handleEditExam = (examData: Exam) => {
     if (exam) {
@@ -124,16 +154,6 @@ const ExamManagementPage: React.FC<ExamManagementPageProps> = ({ params }) => {
       setIsDeleteQuestionModalOpen(true);
     }
   };
-
-  if (loading && !exam) {
-    return <Loading />;
-  }
-
-  if (error || !exam) {
-    return (
-      <NoDataFound message="Exam not found or you don't have access to it." />
-    );
-  }
 
   return (
     <div className="p-6">
@@ -292,6 +312,4 @@ const ExamManagementPage: React.FC<ExamManagementPageProps> = ({ params }) => {
       />
     </div>
   );
-};
-
-export default ExamManagementPage;
+}
