@@ -160,7 +160,11 @@ export async function fetchChapterById(id: string) {
             orderIndex: 'asc',
           },
         },
-        exam: true,
+        exam: {
+          include: {
+            questions: true,
+          },
+        },
       },
     });
 
