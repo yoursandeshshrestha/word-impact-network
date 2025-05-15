@@ -6,6 +6,7 @@ import {
   verifyPasswordReset,
   requestPasswordReset,
   getAllStudentsController,
+  getAdminDashboard,
 } from '../controllers/admin.controller';
 import { validateAdminLogin, validateAdminRegister } from '../validations/admin.validation';
 import { authenticate, authorize } from '@/middlewares/auth.middleware';
@@ -23,5 +24,7 @@ router.post('/verify-password-reset', authenticate, verifyPasswordReset);
 
 router.post('/broadcast', authenticate, authorize([UserRole.ADMIN]), sendBroadcastController);
 router.get('/students', authenticate, authorize([UserRole.ADMIN]), getAllStudentsController);
+
+router.get('/dashboard', authenticate, authorize([UserRole.ADMIN]), getAdminDashboard);
 
 export default router;
