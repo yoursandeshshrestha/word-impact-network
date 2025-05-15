@@ -9,7 +9,7 @@ import storage from "redux-persist/lib/storage";
 import chaptersReducer from "./features/chaptersSlice";
 import videosReducer from "./features/videosSlice";
 import examsReducer from "./features/examsSlice";
-
+import dashboardReducer from "./features/dashboardSlice";
 const persistConfig = {
   key: "root",
   storage,
@@ -32,6 +32,7 @@ export const store = configureStore({
     chapters: chaptersReducer,
     videos: videosReducer,
     exams: examsReducer,
+    dashboard: dashboardReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
