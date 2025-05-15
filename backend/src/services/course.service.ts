@@ -258,17 +258,170 @@ export async function updateCourseById(
  */
 export async function deleteCourseById(id: string) {
   try {
-    logger.info('Deleting course', { courseId: id });
+    logger.info('Starting course deletion process', { courseId: id });
 
-    // Soft delete by setting isActive to false
-    await prisma.course.update({
+    // Check if course exists
+    const course = await prisma.course.findUnique({
       where: { id },
-      data: { isActive: false },
+      include: {
+        chapters: {
+          include: {
+            exam: true,
+            videos: true,
+            chapterProgresses: true,
+          },
+        },
+        enrollments: true,
+        yearCertifications: true,
+      },
     });
 
-    logger.info('Course deleted successfully', { courseId: id });
+    if (!course) {
+      logger.warn('Course not found for deletion', { courseId: id });
+      throw new AppError('Course not found', 404, ErrorTypes.NOT_FOUND);
+    }
+
+    // Use a transaction to ensure all related data is properly handled
+    await prisma.$transaction(async (prismaTransaction) => {
+      // 1. Delete all year certifications for this course
+      if (course.yearCertifications.length > 0) {
+        logger.info('Deleting year certifications for course', {
+          courseId: id,
+          count: course.yearCertifications.length,
+        });
+
+        await prismaTransaction.yearCertification.deleteMany({
+          where: { courseId: id },
+        });
+      }
+
+      // 2. Delete all enrollments for this course
+      if (course.enrollments.length > 0) {
+        logger.info('Deleting course enrollments', {
+          courseId: id,
+          count: course.enrollments.length,
+        });
+
+        await prismaTransaction.courseEnrollment.deleteMany({
+          where: { courseId: id },
+        });
+      }
+
+      // 3. Process each chapter and its related entities
+      for (const chapter of course.chapters) {
+        // 3.1 Delete chapter progresses
+        if (chapter.chapterProgresses.length > 0) {
+          logger.info('Deleting chapter progresses', {
+            chapterId: chapter.id,
+            count: chapter.chapterProgresses.length,
+          });
+
+          await prismaTransaction.chapterProgress.deleteMany({
+            where: { chapterId: chapter.id },
+          });
+        }
+
+        // 3.2 Delete exam and related entities if exists
+        if (chapter.exam) {
+          logger.info('Processing exam deletion', { examId: chapter.exam.id });
+
+          // Delete exam attempts and their answers
+          const examAttempts = await prismaTransaction.examAttempt.findMany({
+            where: { examId: chapter.exam.id },
+            include: { answers: true },
+          });
+
+          for (const attempt of examAttempts) {
+            // Delete answers for this attempt
+            if (attempt.answers.length > 0) {
+              logger.info('Deleting exam attempt answers', {
+                attemptId: attempt.id,
+                count: attempt.answers.length,
+              });
+
+              await prismaTransaction.answer.deleteMany({
+                where: { examAttemptId: attempt.id },
+              });
+            }
+          }
+
+          // Delete all exam attempts for this exam
+          logger.info('Deleting exam attempts', {
+            examId: chapter.exam.id,
+            count: examAttempts.length,
+          });
+
+          await prismaTransaction.examAttempt.deleteMany({
+            where: { examId: chapter.exam.id },
+          });
+
+          // Delete all questions for this exam
+          await prismaTransaction.question.deleteMany({
+            where: { examId: chapter.exam.id },
+          });
+
+          // Delete the exam itself
+          logger.info('Deleting exam', { examId: chapter.exam.id });
+          await prismaTransaction.exam.delete({
+            where: { id: chapter.exam.id },
+          });
+        }
+
+        // 3.3 Delete video progresses and videos for this chapter
+        if (chapter.videos.length > 0) {
+          // Delete video progresses for each video
+          for (const video of chapter.videos) {
+            logger.info('Deleting video progresses', { videoId: video.id });
+            await prismaTransaction.videoProgress.deleteMany({
+              where: { videoId: video.id },
+            });
+          }
+
+          // Delete all videos for this chapter
+          logger.info('Deleting videos', {
+            chapterId: chapter.id,
+            count: chapter.videos.length,
+          });
+
+          await prismaTransaction.video.deleteMany({
+            where: { chapterId: chapter.id },
+          });
+        }
+      }
+
+      // 4. Delete all chapters for this course
+      logger.info('Deleting chapters', {
+        courseId: id,
+        count: course.chapters.length,
+      });
+
+      await prismaTransaction.chapter.deleteMany({
+        where: { courseId: id },
+      });
+
+      // 5. Finally, delete the course itself
+      // Option 1: Hard delete - completely removes the course from the database
+      logger.info('Hard deleting course', { courseId: id });
+      await prismaTransaction.course.delete({
+        where: { id },
+      });
+
+      // Option 2: Soft delete - if you prefer soft deletion instead of the hard delete above
+      // logger.info('Soft deleting course', { courseId: id });
+      // await prismaTransaction.course.update({
+      //   where: { id },
+      //   data: {
+      //     isActive: false,
+      //     // You can also add fields like deletedAt or updatedBy if needed
+      //     // deletedAt: new Date(),
+      //   }
+      // });
+    });
+
+    logger.info('Course and all related data deleted successfully', { courseId: id });
+    return { success: true };
   } catch (error) {
-    logger.error('Error deleting course', {
+    logger.error('Error in deleteCourseById', {
       courseId: id,
       error: error instanceof Error ? error.message : String(error),
     });
