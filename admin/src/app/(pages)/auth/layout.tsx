@@ -1,7 +1,7 @@
 "use client";
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { getAuthToken } from "@/src/utils/auth";
+// import { useEffect, useState } from "react";
+// import { useRouter } from "next/navigation";
+// import { getAuthToken } from "@/src/utils/auth";
 
 export default function AuthLayout({
   children,
