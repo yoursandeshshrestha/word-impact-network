@@ -15,7 +15,6 @@ export default function ProtectedLayout({
 
   useEffect(() => {
     const userInfo = getUserInfo();
-    console.log("User info from cookies:", userInfo);
 
     if (userInfo) {
       setUserName(userInfo.fullName);
