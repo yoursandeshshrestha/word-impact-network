@@ -1,4 +1,4 @@
-import { PrismaClient, UserRole, ApplicationStatus } from '@prisma/client';
+import { PrismaClient, UserRole, ApplicationStatus, PaymentStatus } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import { sendAdminPasswordResetVerificationEmail, sendAdminWelcomeEmail } from './email.service';
 import { AppError, ErrorTypes } from '../utils/appError';
@@ -450,6 +450,184 @@ export async function updateApplicationStatus(
   } catch (error) {
     logger.error('Error updating application status', {
       applicationId,
+      error: error instanceof Error ? error.message : String(error),
+    });
+    throw error;
+  }
+}
+
+// Get admin dashboard statistics
+export async function getAdminDashboardStats() {
+  try {
+    logger.info('Fetching admin dashboard statistics');
+
+    // Get counts for various entities
+    const [
+      totalStudents,
+      totalCourses,
+      totalChapters,
+      totalVideos,
+      totalExams,
+      totalApplications,
+      pendingApplications,
+      approvedApplications,
+      rejectedApplications,
+      studentsWithPendingPayment,
+      totalPayments,
+      totalRevenueResult,
+      recentStudentRegistrations,
+      recentApplications,
+      courseEnrollmentStats,
+      mostWatchedVideos,
+    ] = await Promise.all([
+      // Basic counts
+      prisma.student.count(),
+      prisma.course.count(),
+      prisma.chapter.count(),
+      prisma.video.count(),
+      prisma.exam.count(),
+
+      // Application stats
+      prisma.application.count(),
+      prisma.application.count({ where: { status: ApplicationStatus.PENDING } }),
+      prisma.application.count({ where: { status: ApplicationStatus.APPROVED } }),
+      prisma.application.count({ where: { status: ApplicationStatus.REJECTED } }),
+
+      // Payment stats
+      prisma.student.count({ where: { paymentStatus: PaymentStatus.PENDING } }),
+      prisma.payment.count(),
+      prisma.$queryRaw<
+        { total: number }[]
+      >`SELECT SUM(amount::numeric) as total FROM payments WHERE status = 'PAID'`,
+
+      // Recent activity
+      prisma.student.findMany({
+        take: 5,
+        orderBy: { createdAt: 'desc' },
+        select: {
+          id: true,
+          fullName: true,
+          createdAt: true,
+          user: { select: { email: true } },
+        },
+      }),
+
+      prisma.application.findMany({
+        take: 5,
+        orderBy: { appliedAt: 'desc' },
+        select: {
+          id: true,
+          fullName: true,
+          email: true,
+          status: true,
+          appliedAt: true,
+        },
+      }),
+
+      // Course enrollment statistics
+      prisma.courseEnrollment.groupBy({
+        by: ['courseId'],
+        _count: { id: true },
+        orderBy: { _count: { id: 'desc' } },
+      }),
+
+      // Most watched videos
+      prisma.videoProgress.groupBy({
+        by: ['videoId'],
+        _count: { id: true },
+        orderBy: { _count: { id: 'desc' } },
+        take: 5,
+      }),
+    ]);
+
+    // Get course details for the enrollment stats
+    const courseIds = courseEnrollmentStats.map((stat) => stat.courseId);
+    const courses = await prisma.course.findMany({
+      where: { id: { in: courseIds } },
+      select: { id: true, title: true },
+    });
+
+    // Get video details for most watched videos
+    const videoIds = mostWatchedVideos.map((stat) => stat.videoId);
+    const videos = await prisma.video.findMany({
+      where: { id: { in: videoIds } },
+      select: {
+        id: true,
+        title: true,
+        chapterId: true,
+        chapter: { select: { title: true, courseId: true, course: { select: { title: true } } } },
+      },
+    });
+
+    // Map the course title to enrollment stats
+    const enrollmentStats = courseEnrollmentStats.map((stat) => {
+      const course = courses.find((c) => c.id === stat.courseId);
+      return {
+        courseId: stat.courseId,
+        courseTitle: course?.title || 'Unknown Course',
+        enrollmentCount: stat._count.id,
+      };
+    });
+
+    // Map video details to most watched videos
+    const popularVideos = mostWatchedVideos.map((stat) => {
+      const video = videos.find((v) => v.id === stat.videoId);
+      return {
+        videoId: stat.videoId,
+        videoTitle: video?.title || 'Unknown Video',
+        chapterTitle: video?.chapter.title || 'Unknown Chapter',
+        courseTitle: video?.chapter.course.title || 'Unknown Course',
+        watchCount: stat._count.id,
+      };
+    });
+
+    const totalRevenue = totalRevenueResult[0]?.total || 0;
+
+    logger.info('Admin dashboard statistics retrieved successfully');
+
+    return {
+      counts: {
+        students: totalStudents,
+        courses: totalCourses,
+        chapters: totalChapters,
+        videos: totalVideos,
+        exams: totalExams,
+      },
+      applications: {
+        total: totalApplications,
+        pending: pendingApplications,
+        approved: approvedApplications,
+        rejected: rejectedApplications,
+      },
+      payments: {
+        studentsWithPendingPayment,
+        totalPayments,
+        totalRevenue,
+      },
+      recentActivity: {
+        newStudents: recentStudentRegistrations.map((student) => ({
+          id: student.id,
+          name: student.fullName,
+          email: student.user.email,
+          registeredAt: student.createdAt,
+        })),
+        newApplications: recentApplications.map((app) => ({
+          id: app.id,
+          name: app.fullName,
+          email: app.email,
+          status: app.status,
+          appliedAt: app.appliedAt,
+        })),
+      },
+      courseStats: {
+        popularCourses: enrollmentStats,
+      },
+      videoStats: {
+        popularVideos,
+      },
+    };
+  } catch (error) {
+    logger.error('Error in getAdminDashboardStats', {
       error: error instanceof Error ? error.message : String(error),
     });
     throw error;
