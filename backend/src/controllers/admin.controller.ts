@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import {
   completePasswordReset,
   createAdmin,
+  getAdminDashboardStats,
   getAdminProfileById,
   getAllStudentsWithSearch,
   initiatePasswordReset,
@@ -127,3 +128,16 @@ export const getAllStudentsController = catchAsync(async (req: Request, res: Res
     },
   });
 });
+
+// Get admin dashboard statistics
+export const getAdminDashboard = catchAsync(async (req: Request, res: Response) => {
+  if (!req.user) {
+    throw new AppError('Authentication required', 401, ErrorTypes.AUTHENTICATION);
+  }
+
+  // Get dashboard statistics
+  const dashboardStats = await getAdminDashboardStats();
+
+  sendSuccess(res, 200, 'Dashboard statistics retrieved successfully', dashboardStats);
+});
+  
