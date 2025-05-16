@@ -415,3 +415,199 @@ export async function markMessageAsRead(messageId: string, userId: string) {
     throw error;
   }
 }
+
+// Send a message from admin to a student
+export async function sendAdminMessage(adminId: string, studentId: string, content: string) {
+  try {
+    logger.info('Admin sending message to student', { adminId, studentId });
+
+    // Validate message content
+    if (!content || content.trim() === '') {
+      throw new AppError('Message content cannot be empty', 400, ErrorTypes.VALIDATION);
+    }
+
+    // Check if admin exists and has admin role
+    const admin = await prisma.user.findUnique({
+      where: { id: adminId },
+      include: {
+        admin: true,
+      },
+    });
+
+    if (!admin || admin.role !== UserRole.ADMIN) {
+      logger.warn('Message send failed - sender is not an admin', {
+        adminId,
+        senderRole: admin?.role,
+      });
+      throw new AppError(
+        'Only admins can send messages through this endpoint',
+        403,
+        ErrorTypes.AUTHORIZATION,
+      );
+    }
+
+    // Check if student exists
+    const student = await prisma.user.findUnique({
+      where: { id: studentId },
+      include: {
+        student: true,
+      },
+    });
+
+    if (!student || student.role !== UserRole.STUDENT) {
+      logger.warn('Message send failed - recipient is not a student', {
+        studentId,
+        recipientRole: student?.role,
+      });
+      throw new AppError('Recipient must be a student', 404, ErrorTypes.NOT_FOUND);
+    }
+
+    // Create the message
+    const message = await prisma.message.create({
+      data: {
+        content,
+        sender: {
+          connect: { id: adminId },
+        },
+        recipient: {
+          connect: { id: studentId },
+        },
+        isRead: false,
+      },
+      include: {
+        sender: {
+          select: {
+            id: true,
+            email: true,
+            role: true,
+            admin: {
+              select: {
+                id: true,
+                fullName: true,
+              },
+            },
+          },
+        },
+        recipient: {
+          select: {
+            id: true,
+            email: true,
+            role: true,
+            student: {
+              select: {
+                id: true,
+                fullName: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    // Create a notification for the student
+    const notification = await prisma.notification.create({
+      data: {
+        title: 'New Message from Admin',
+        content: `You have received a new message from ${admin.admin?.fullName || 'Admin'}`,
+        user: {
+          connect: { id: studentId },
+        },
+      },
+    });
+
+    // Format sender and recipient names for the response
+    const formattedMessage = {
+      id: message.id,
+      content: message.content,
+      isRead: message.isRead,
+      createdAt: message.createdAt,
+      updatedAt: message.updatedAt,
+      sender: {
+        id: message.sender.id,
+        email: message.sender.email,
+        role: message.sender.role,
+        fullName: message.sender.admin?.fullName || 'Admin',
+      },
+      recipient: {
+        id: message.recipient.id,
+        email: message.recipient.email,
+        role: message.recipient.role,
+        fullName: message.recipient.student?.fullName || 'Student',
+      },
+    };
+
+    // Send real-time notification if the Socket.IO server is available
+    // and the recipient is online
+    if ((global as any).io) {
+      const io = (global as any).io;
+
+      // Attempt to send message via WebSocket
+      const delivered = sendMessageToUser(io, studentId, SocketEvents.NEW_MESSAGE, {
+        message: formattedMessage,
+        notification: {
+          id: notification.id,
+          title: notification.title,
+          content: notification.content,
+          createdAt: notification.createdAt,
+        },
+      });
+
+      if (delivered) {
+        logger.info('Real-time message notification delivered', {
+          messageId: message.id,
+          recipientId: studentId,
+        });
+      }
+    }
+
+    logger.info('Admin message sent successfully', {
+      messageId: message.id,
+      senderId: adminId,
+      recipientId: studentId,
+    });
+
+    return formattedMessage;
+  } catch (error) {
+    logger.error('Error in sendAdminMessage', {
+      adminId,
+      studentId,
+      error: error instanceof Error ? error.message : String(error),
+    });
+    throw error;
+  }
+}
+
+// Get unread messages count for a user
+export async function getUnreadMessagesCount(userId: string) {
+  try {
+    logger.info('Fetching unread messages count', { userId });
+
+    // Check if user exists
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      logger.warn('Get unread count failed - user not found', { userId });
+      throw new AppError('User not found', 404, ErrorTypes.NOT_FOUND);
+    }
+
+    // Get unread count
+    const unreadCount = await prisma.message.count({
+      where: {
+        recipientId: userId,
+        isRead: false,
+      },
+    });
+
+    logger.info('Unread messages count retrieved successfully', { userId, unreadCount });
+
+    return { unreadCount };
+  } catch (error) {
+    logger.error('Error in getUnreadMessagesCount', {
+      userId,
+      error: error instanceof Error ? error.message : String(error),
+    });
+    throw error;
+  }
+}
