@@ -51,15 +51,7 @@ export const validateMessage = (req: Request, _res: Response, next: NextFunction
 // Validate message filter parameters
 export const validateMessageFilter = (req: Request, _res: Response, next: NextFunction) => {
   try {
-    // Convert query parameters to the right types
-    if (req.query.page) {
-      req.query.page = parseInt(req.query.page as string) as any;
-    }
-
-    if (req.query.limit) {
-      req.query.limit = parseInt(req.query.limit as string) as any;
-    }
-
+    // Instead of modifying req.query, store the validated values separately
     const { error, value } = messageFilterSchema.validate(req.query, { abortEarly: false });
 
     if (error) {
@@ -68,8 +60,38 @@ export const validateMessageFilter = (req: Request, _res: Response, next: NextFu
       throw new AppError(errorMessage, 400, ErrorTypes.VALIDATION);
     }
 
-    // Apply validated and defaulted values
-    req.query = value;
+    // Store the validated values in a custom property instead of overwriting req.query
+    (req as any).validatedQuery = value;
+
+    next();
+  } catch (error) {
+    next(error);
+  }
+};
+
+const adminMessageSchema = Joi.object({
+  content: Joi.string().trim().required().min(1).max(2000).messages({
+    'string.empty': 'Message content cannot be empty',
+    'string.min': 'Message content must be at least 1 character',
+    'string.max': 'Message content cannot exceed 2000 characters',
+    'any.required': 'Message content is required',
+  }),
+  recipientId: Joi.string().required().messages({
+    'string.empty': 'Recipient ID cannot be empty',
+    'any.required': 'Recipient ID is required',
+  }),
+});
+
+// Validate admin message creation
+export const validateAdminMessage = (req: Request, _res: Response, next: NextFunction) => {
+  try {
+    const { error } = adminMessageSchema.validate(req.body, { abortEarly: false });
+
+    if (error) {
+      const errorMessage = error.details.map((detail) => detail.message).join(', ');
+      logger.warn('Admin message validation failed', { errors: errorMessage });
+      throw new AppError(errorMessage, 400, ErrorTypes.VALIDATION);
+    }
 
     next();
   } catch (error) {
