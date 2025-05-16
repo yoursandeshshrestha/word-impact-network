@@ -659,14 +659,14 @@ const Dashboard = () => {
         </div>
 
         {/* Payment Information */}
-        <div className="bg-white overflow-hidden shadow rounded-lg">
+        <div className="bg-white overflow-hidden shadow rounded-lg flex flex-col justify-between">
           <div className="px-6 py-4 border-b border-gray-200">
             <h2 className="text-lg font-semibold text-gray-900 flex items-center">
               <DollarSign className="h-5 w-5 mr-2 text-green-600" />
               Payment Information
             </h2>
           </div>
-          <div className="p-5">
+          <div className="p-5 flex-grow">
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               {/* Total Revenue */}
               <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-lg p-4 border border-green-200 flex items-center">
@@ -714,7 +714,7 @@ const Dashboard = () => {
               </div>
             </div>
           </div>
-          <div className="bg-gray-50 px-5 py-3 border-t border-gray-100">
+          <div className="bg-gray-50 px-5 py-3 border-t border-gray-100 mt-auto">
             <Link
               href="/payments"
               className="text-sm text-blue-700 font-medium hover:text-blue-900 flex items-center"
@@ -728,7 +728,7 @@ const Dashboard = () => {
       {/* Activity and Stats Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Recent Students */}
-        <div className="bg-white overflow-hidden shadow rounded-lg">
+        <div className="bg-white overflow-hidden shadow rounded-lg flex flex-col justify-between">
           <div className="px-5 py-4 border-b border-gray-200 flex justify-between items-center">
             <h3 className="text-lg font-medium text-gray-900 flex items-center">
               <Users className="h-5 w-5 mr-2 text-blue-600" />
@@ -739,7 +739,7 @@ const Dashboard = () => {
               {dashboardData.counts.students}
             </span>
           </div>
-          <div className="p-5">
+          <div className="p-5 flex-grow">
             {dashboardData.recentActivity.newStudents.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-8 text-gray-500">
                 <Users className="h-12 w-12 mb-3 opacity-30" />
@@ -752,7 +752,7 @@ const Dashboard = () => {
               <div className="space-y-1">{studentData}</div>
             )}
           </div>
-          <div className="bg-gray-50 px-5 py-3 border-t border-gray-100">
+          <div className="bg-gray-50 px-5 py-3 border-t border-gray-100 mt-auto">
             <Link
               href="/students"
               className="text-sm text-blue-700 font-medium hover:text-blue-900 flex items-center"
@@ -798,14 +798,14 @@ const Dashboard = () => {
         </div>
 
         {/* Popular Courses */}
-        <div className="bg-white overflow-hidden shadow rounded-lg">
+        <div className="bg-white overflow-hidden shadow rounded-lg flex flex-col justify-between">
           <div className="px-5 py-4 border-b border-gray-200">
             <h3 className="text-lg font-medium text-gray-900 flex items-center">
               <BookOpen className="h-5 w-5 mr-2 text-green-600" />
               Popular Courses
             </h3>
           </div>
-          <div className="p-5">
+          <div className="p-5 flex-grow">
             {!dashboardData.courseStats.popularCourses ||
             dashboardData.courseStats.popularCourses.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-8 text-gray-500">
@@ -826,7 +826,7 @@ const Dashboard = () => {
               />
             )}
           </div>
-          <div className="bg-gray-50 px-5 py-3 border-t border-gray-100">
+          <div className="bg-gray-50 px-5 py-3 border-t border-gray-100 mt-auto">
             <Link
               href="/courses"
               className="text-sm text-blue-700 font-medium hover:text-blue-900 flex items-center"
@@ -837,17 +837,17 @@ const Dashboard = () => {
         </div>
 
         {/* Popular Videos */}
-        <div className="bg-white overflow-hidden shadow rounded-lg">
+        <div className="bg-white overflow-hidden shadow rounded-lg flex flex-col justify-between ">
           <div className="px-5 py-4 border-b border-gray-200">
             <h3 className="text-lg font-medium text-gray-900 flex items-center">
               <Video className="h-5 w-5 mr-2 text-purple-600" />
               Most Watched Videos
             </h3>
           </div>
-          <div className="p-5">
+          <div className="p-5 flex-grow">
             {!dashboardData.videoStats.popularVideos ||
             dashboardData.videoStats.popularVideos.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-8 text-gray-500">
+              <div className="flex flex-col items-center justify-center py-8  h-full text-center text-gray-500">
                 <Video className="h-12 w-12 mb-3 opacity-30" />
                 <p className="text-sm font-medium">No video watch data yet</p>
                 <p className="text-xs">
@@ -863,7 +863,7 @@ const Dashboard = () => {
               />
             )}
           </div>
-          <div className="bg-gray-50 px-5 py-3 border-t border-gray-100">
+          <div className="bg-gray-50 px-5 py-3 border-t border-gray-100 mt-auto">
             <Link
               href="/videos"
               className="text-sm text-blue-700 font-medium hover:text-blue-900 flex items-center"
