@@ -34,9 +34,7 @@ interface PageProps {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }
 
-export default function ExamManagementPage({
-  params,
-}: PageProps) {
+export default function ExamManagementPage({ params }: PageProps) {
   const [resolvedParams, setResolvedParams] = useState<ExamPageParams | null>(
     null
   );
@@ -66,18 +64,23 @@ export default function ExamManagementPage({
     text: string;
   } | null>(null);
 
+  // Track if exam has been fetched
+  const [examFetched, setExamFetched] = useState(false);
+
   // Resolve the params promise
   useEffect(() => {
     params.then(setResolvedParams);
   }, [params]);
 
-  // Fetch exam data once params are resolved
+  // Fetch exam data once params are resolved - ONLY once
   useEffect(() => {
-    if (resolvedParams) {
+    if (resolvedParams && !examFetched) {
       fetchExamById(resolvedParams.examId);
+      setExamFetched(true);
     }
-  }, [resolvedParams, fetchExamById]);
+  }, [resolvedParams, fetchExamById, examFetched]);
 
+  // Handle success and error states
   useEffect(() => {
     if (success && message) {
       toast.success(message);
