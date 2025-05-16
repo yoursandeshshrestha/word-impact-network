@@ -2,6 +2,7 @@ import { Server as HttpServer } from 'http';
 import { Server as SocketIOServer, Socket } from 'socket.io';
 import { verifyToken } from '../utils/jwt';
 import { logger } from '../utils/logger';
+import { SocketEvents } from './types';
 
 // Connected users map: userId -> socketId
 const connectedUsers = new Map<string, string>();
@@ -19,14 +20,14 @@ export function initializeSocketIO(httpServer: HttpServer): SocketIOServer {
   // Authentication middleware
   io.use((socket: Socket, next) => {
     try {
-      const token = socket.handshake.auth.token;
+      const token = socket.handshake.auth.token || socket.handshake.query.token;
 
       if (!token) {
         logger.warn('Socket connection rejected - no token provided');
         return next(new Error('Authentication required'));
       }
 
-      const decoded = verifyToken(token);
+      const decoded = verifyToken(token as string);
 
       if (!decoded) {
         logger.warn('Socket connection rejected - invalid token');
@@ -60,15 +61,23 @@ export function initializeSocketIO(httpServer: HttpServer): SocketIOServer {
       logger.info('User connected to socket', { userId, socketId: socket.id });
 
       // Notify user that connection is established
-      socket.emit('connected', {
-        status: 'success',
-        message: 'Connected to messaging service',
+      socket.emit(SocketEvents.CONNECTED, {
+        type: SocketEvents.CONNECTED,
+        payload: {
+          status: 'success',
+          message: 'Connected to messaging service',
+        },
       });
 
       // Handle disconnection
       socket.on('disconnect', () => {
         connectedUsers.delete(userId);
         logger.info('User disconnected from socket', { userId, socketId: socket.id });
+      });
+
+      // Handle ping messages to keep connection alive
+      socket.on('ping', () => {
+        socket.emit('pong');
       });
     } catch (error) {
       logger.error('Socket connection error', {
