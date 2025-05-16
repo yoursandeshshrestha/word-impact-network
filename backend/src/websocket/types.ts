@@ -6,3 +6,8 @@ export enum SocketEvents {
   DISCONNECT = 'disconnect',
   ANNOUNCEMENT = 'announcement',
 }
+
+export interface WebSocketMessage {
+  type: string;
+  payload: any;
+}
