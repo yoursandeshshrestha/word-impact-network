@@ -5,6 +5,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { logout } from "@/utils/auth";
 import { useRouter } from "next/navigation";
+import { useAppSelector } from "@/hooks/hooks";
+import { selectUnreadCount } from "@/redux/features/messagesSlice";
 import {
   Home,
   BookOpen,
@@ -32,6 +34,9 @@ const Sidebar: React.FC<SidebarProps> = ({
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
 
+  // Get unread message count from Redux store
+  const unreadMessageCount = useAppSelector(selectUnreadCount);
+
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -45,6 +50,7 @@ const Sidebar: React.FC<SidebarProps> = ({
     router.push("/auth/login");
   };
 
+  // Create menu items with notification badge
   const menuItems = [
     {
       path: "/dashboard",
@@ -70,6 +76,12 @@ const Sidebar: React.FC<SidebarProps> = ({
       path: "/messages",
       name: "Messages",
       icon: <MessageSquare className="w-5 h-5" />,
+      badge:
+        unreadMessageCount > 0 ? (
+          <span className="ml-auto flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs font-medium text-white animate-pulse">
+            {unreadMessageCount > 99 ? "99+" : unreadMessageCount}
+          </span>
+        ) : null,
     },
     {
       path: "/analytics",
@@ -119,23 +131,28 @@ const Sidebar: React.FC<SidebarProps> = ({
         {/* Menu Items */}
         <div className="py-4 overflow-y-auto">
           <ul className="space-y-1 px-3">
-            {menuItems.map((item) => (
-              <li key={item.path}>
-                <Link
-                  href={item.path}
-                  className={`flex items-center p-3 text-gray-300 rounded-lg transition-colors ${
-                    pathname === item.path
-                      ? "bg-gray-700 text-white"
-                      : "hover:bg-gray-700 hover:text-white"
-                  }`}
-                >
-                  <span className="text-gray-400 group-hover:text-white">
-                    {item.icon}
-                  </span>
-                  <span className="ml-3 text-sm font-medium">{item.name}</span>
-                </Link>
-              </li>
-            ))}
+            {menuItems.map((item) => {
+              return (
+                <li key={item.path}>
+                  <Link
+                    href={item.path}
+                    className={`flex items-center p-3 text-gray-300 rounded-lg transition-colors ${
+                      pathname === item.path
+                        ? "bg-gray-700 text-white"
+                        : "hover:bg-gray-700 hover:text-white"
+                    }`}
+                  >
+                    <span className="text-gray-400 group-hover:text-white">
+                      {item.icon}
+                    </span>
+                    <span className="ml-3 text-sm font-medium">
+                      {item.name}
+                    </span>
+                    {item.badge}
+                  </Link>
+                </li>
+              );
+            })}
           </ul>
         </div>
 
