@@ -1,9 +1,11 @@
+// src/app/(pages)/(protected)/layout.tsx
 "use client";
 import React, { useEffect, useState } from "react";
 import Sidebar from "@/components/layout/Sidebar";
 import { getUserInfo } from "@/utils/auth";
 import Topbar from "@/components/layout/Topbar";
 import { Toaster } from "sonner";
+import { useWebSocketConnection } from "@/hooks/useWebSocketConnection";
 
 export default function ProtectedLayout({
   children,
@@ -12,6 +14,9 @@ export default function ProtectedLayout({
 }) {
   const [userName, setUserName] = useState("Admin User");
   const [userEmail, setUserEmail] = useState("admin@example.com");
+
+  // Initialize WebSocket connection
+  useWebSocketConnection();
 
   useEffect(() => {
     const userInfo = getUserInfo();
