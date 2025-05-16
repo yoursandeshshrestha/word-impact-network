@@ -1,6 +1,12 @@
 import { Request, Response } from 'express';
 import { PrismaClient, UserRole } from '@prisma/client';
-import { sendMessage, getUserMessages, markMessageAsRead } from '../services/message.service';
+import {
+  sendMessage,
+  getUserMessages,
+  markMessageAsRead,
+  sendAdminMessage,
+  getUnreadMessagesCount,
+} from '../services/message.service';
 import { sendSuccess } from '../utils/responseHandler';
 import { catchAsync } from '../utils/catchAsync';
 import { AppError, ErrorTypes } from '../utils/appError';
@@ -51,19 +57,11 @@ export const getMessagesController = catchAsync(async (req: Request, res: Respon
 
   const userId = req.user.userId;
 
-  // Extract query parameters with defaults
-  const filter = (req.query.filter as 'all' | 'sent' | 'received' | 'unread') || 'all';
-  const page = parseInt(req.query.page as string) || 1;
-  const limit = parseInt(req.query.limit as string) || 10;
-
-  // Validate page and limit
-  if (page < 1) {
-    throw new AppError('Page must be greater than 0', 400, ErrorTypes.VALIDATION);
-  }
-
-  if (limit < 1 || limit > 50) {
-    throw new AppError('Limit must be between 1 and 50', 400, ErrorTypes.VALIDATION);
-  }
+  // Use the validated query parameters
+  const validatedQuery = (req as any).validatedQuery || {};
+  const filter = validatedQuery.filter || 'all';
+  const page = validatedQuery.page || 1;
+  const limit = 100;
 
   // Get messages
   const result = await getUserMessages(userId, filter, page, limit);
@@ -90,4 +88,48 @@ export const markMessageAsReadController = catchAsync(async (req: Request, res: 
   const result = await markMessageAsRead(messageId, userId);
 
   sendSuccess(res, 200, 'Message marked as read', result);
+});
+
+// Send a message from admin to a student
+export const sendAdminMessageController = catchAsync(async (req: Request, res: Response) => {
+  // Ensure user is authenticated
+  if (!req.user) {
+    throw new AppError('Authentication required', 401, ErrorTypes.AUTHENTICATION);
+  }
+
+  const { recipientId, content } = req.body;
+  const senderId = req.user.userId;
+
+  // Ensure the sender is an admin
+  const user = await prisma.user.findUnique({
+    where: { id: senderId },
+  });
+
+  if (!user || user.role !== UserRole.ADMIN) {
+    throw new AppError(
+      'Only admins can send messages through this endpoint',
+      403,
+      ErrorTypes.AUTHORIZATION,
+    );
+  }
+
+  // Send the message to the student
+  const message = await sendAdminMessage(senderId, recipientId, content);
+
+  sendSuccess(res, 201, 'Message sent successfully', message);
+});
+
+// Get unread messages count
+export const getUnreadMessagesCountController = catchAsync(async (req: Request, res: Response) => {
+  // Ensure user is authenticated
+  if (!req.user) {
+    throw new AppError('Authentication required', 401, ErrorTypes.AUTHENTICATION);
+  }
+
+  const userId = req.user.userId;
+
+  // Get unread count
+  const result = await getUnreadMessagesCount(userId);
+
+  sendSuccess(res, 200, 'Unread messages count retrieved successfully', result);
 });
