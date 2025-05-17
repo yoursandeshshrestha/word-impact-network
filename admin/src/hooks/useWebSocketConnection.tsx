@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useCallback } from "react";
 import { useAppDispatch } from "./hooks";
 import { fetchUnreadCount } from "@/redux/features/messagesSlice";
 import { fetchNotifications } from "@/redux/features/notificationsSlice";
@@ -86,7 +86,7 @@ export const useWebSocketConnection = () => {
   const reconnectTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Function to attempt reconnection with exponential backoff
-  const scheduleReconnect = (attempt = 1) => {
+  const scheduleReconnect = useCallback((attempt = 1) => {
     if (reconnectTimerRef.current) {
       clearTimeout(reconnectTimerRef.current);
     }
@@ -106,11 +106,9 @@ export const useWebSocketConnection = () => {
         }
       }
     }, delay);
-  };
+  }, []);
 
   useEffect(() => {
-    console.log("Setting up WebSocket connection");
-
     // Fetch initial unread counts
     dispatch(fetchUnreadCount());
     dispatch(fetchNotifications({ page: 1, limit: 10 }));
@@ -180,8 +178,6 @@ export const useWebSocketConnection = () => {
 
     // Handle connection events
     const handleConnected = () => {
-      console.log("WebSocket connected successfully");
-      // Fetch latest data upon successful connection
       dispatch(fetchUnreadCount());
       dispatch(fetchNotifications({ page: 1, limit: 10 }));
     };
@@ -227,7 +223,6 @@ export const useWebSocketConnection = () => {
 
     // Clean up on unmount
     return () => {
-      console.log("Cleaning up WebSocket connection");
       document.removeEventListener("visibilitychange", handleVisibilityChange);
 
       // Remove event listeners
@@ -248,5 +243,5 @@ export const useWebSocketConnection = () => {
       // Disconnect WebSocket
       websocketService.disconnect();
     };
-  }, [dispatch]);
+  }, [dispatch, scheduleReconnect]);
 };
