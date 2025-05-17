@@ -1,4 +1,3 @@
-// src/app/(pages)/(protected)/layout.tsx
 "use client";
 import React, { useEffect, useState } from "react";
 import Sidebar from "@/components/layout/Sidebar";
@@ -6,6 +5,12 @@ import { getUserInfo } from "@/utils/auth";
 import Topbar from "@/components/layout/Topbar";
 import { Toaster } from "sonner";
 import { useWebSocketConnection } from "@/hooks/useWebSocketConnection";
+import dynamic from "next/dynamic";
+
+// Dynamically import the GlobalChat component with no SSR
+const GlobalChat = dynamic(() => import("@/components/chat/GlobalChat"), {
+  ssr: false,
+});
 
 export default function ProtectedLayout({
   children,
@@ -13,9 +18,8 @@ export default function ProtectedLayout({
   children: React.ReactNode;
 }) {
   const [userName, setUserName] = useState("Admin User");
-  const [userEmail, setUserEmail] = useState("admin@example.com");
 
-  // Initialize WebSocket connection
+  // Initialize WebSocket connection using your existing hook
   useWebSocketConnection();
 
   useEffect(() => {
@@ -23,14 +27,13 @@ export default function ProtectedLayout({
 
     if (userInfo) {
       setUserName(userInfo.fullName);
-      setUserEmail(userInfo.email);
     }
   }, []);
 
   return (
     <div className="flex h-screen bg-gray-50">
       <div className="fixed inset-y-0 left-0 w-64">
-        <Sidebar userName={userName} userEmail={userEmail} />
+        <Sidebar userName={userName} userEmail="admin@example.com" />
       </div>
       <div className="flex-1 ml-64">
         <Topbar userName={userName} userRole="Administrator" />
@@ -39,6 +42,8 @@ export default function ProtectedLayout({
         </main>
       </div>
       <Toaster position="top-right" richColors />
+      {/* Include GlobalChat component */}
+      <GlobalChat />
     </div>
   );
 }
