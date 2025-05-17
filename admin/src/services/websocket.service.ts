@@ -1,34 +1,42 @@
-// src/services/websocket.service.ts
-import { getAuthToken } from "@/utils/auth";
-import { store } from "@/redux/store";
 import { fetchUnreadCount } from "@/redux/features/messagesSlice";
+import { fetchNotifications } from "@/redux/features/notificationsSlice";
+import { store } from "@/redux/store";
+import { getAuthToken } from "@/utils/auth";
+import { io, Socket } from "socket.io-client";
 
 export enum SocketEvents {
   CONNECTED = "connected",
   NEW_MESSAGE = "new_message",
   MESSAGE_READ = "message_read",
+  NEW_NOTIFICATION = "new_notification",
+  NOTIFICATION_READ = "notification_read",
   ERROR = "error",
 }
 
 // Define a type for the event data
-interface WebSocketEventData {
+interface SocketEventData {
   type: string;
-  payload?: unknown; // Use a more specific type if possible
+  payload?: unknown;
 }
 
-class WebSocketService {
-  private socket: WebSocket | null = null;
-  private reconnectAttempts: number = 0;
-  private maxReconnectAttempts: number = 5;
-  private reconnectTimeout: NodeJS.Timeout | null = null;
-  private pingInterval: NodeJS.Timeout | null = null;
+class SocketIOService {
+  private socket: Socket | null = null;
+  private connected: boolean = false;
+  private connectionAttempts: number = 0;
+  private maxReconnectionAttempts: number = 10;
+  private reconnectTimer: NodeJS.Timeout | null = null;
 
-  // Initialize WebSocket connection
+  // Initialize Socket.IO connection
   connect(): void {
     try {
       const token = getAuthToken();
       if (!token) {
-        console.warn("WebSocket: No auth token available");
+        console.warn("Socket.IO: No auth token available");
+        return;
+      }
+
+      // Don't create a new connection if one already exists and is connected
+      if (this.socket && this.connected) {
         return;
       }
 
@@ -37,170 +45,169 @@ class WebSocketService {
 
       const apiUrl =
         process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8080";
-      // Convert http(s) URL to ws(s) URL
-      const wsUrl = `${apiUrl
-        .replace("http://", "ws://")
-        .replace("https://", "wss://")}/ws`;
 
-      console.log("WebSocket: Connecting to", wsUrl);
+      // Reset connection attempts on manual connect
+      this.connectionAttempts = 0;
 
-      // Create new WebSocket connection with auth token
-      this.socket = new WebSocket(`${wsUrl}?token=${token}`);
+      // Create Socket.IO connection with auth token
+      this.socket = io(apiUrl, {
+        auth: { token },
+        query: { token }, // Including in query for backward compatibility
+        reconnection: true,
+        reconnectionAttempts: 5,
+        reconnectionDelay: 1000,
+        reconnectionDelayMax: 30000,
+        timeout: 20000,
+        transports: ["websocket", "polling"], // Try WebSocket first, fall back to polling
+      });
 
       // Set up event handlers
-      this.socket.onopen = this.handleOpen.bind(this);
-      this.socket.onmessage = this.handleMessage.bind(this);
-      this.socket.onclose = this.handleClose.bind(this);
-      this.socket.onerror = this.handleError.bind(this);
+      this.setupEventHandlers();
     } catch (error) {
-      console.error("WebSocket: Connection error", error);
-      this.attemptReconnect();
+      console.error("Socket.IO: Connection error", error);
+      this.scheduleReconnect();
     }
   }
 
-  // Handle WebSocket open event
-  private handleOpen(): void {
-    console.log("WebSocket: Connection established successfully");
-    this.reconnectAttempts = 0;
+  // Set up Socket.IO event handlers
+  private setupEventHandlers(): void {
+    if (!this.socket) return;
 
-    // Start ping interval to keep connection alive
-    this.pingInterval = setInterval(() => {
-      this.ping();
-    }, 30000); // Ping every 30 seconds
-  }
+    // Connection successful
+    this.socket.on("connect", () => {
+      this.connected = true;
+      this.connectionAttempts = 0; // Reset attempts on successful connection
 
-  // Send ping to keep connection alive
-  private ping(): void {
-    if (this.socket?.readyState === WebSocket.OPEN) {
-      this.socket.send(JSON.stringify({ type: "ping" }));
-    }
-  }
+      // Fetch latest data on connection
+      store.dispatch(fetchUnreadCount());
+      store.dispatch(fetchNotifications({ page: 1, limit: 10 }));
+    });
 
-  // Handle WebSocket message event
-  private handleMessage(event: MessageEvent): void {
-    try {
-      const data = JSON.parse(event.data);
-      console.log("WebSocket: Message received:", data);
+    // Connection closed
+    this.socket.on("disconnect", (reason) => {
+      this.connected = false;
 
-      // Handle different event types
-      if (data.type === SocketEvents.NEW_MESSAGE) {
-        console.log("WebSocket: New message notification received");
-
-        // Update unread count in Redux store
-        store.dispatch(fetchUnreadCount());
-      } else if (data.type === SocketEvents.CONNECTED) {
-        console.log("WebSocket: Connected confirmation received");
-      } else if (data.type === "pong") {
-        console.log("WebSocket: Pong received");
+      // Auto-reconnect for certain disconnect reasons
+      if (
+        reason === "io server disconnect" ||
+        reason === "transport close" ||
+        reason === "transport error"
+      ) {
+        this.scheduleReconnect();
       }
-    } catch (error) {
-      console.error("WebSocket: Error parsing message", error);
+    });
+
+    // Connection error
+    this.socket.on("connect_error", () => {
+      this.connected = false;
+      this.scheduleReconnect();
+    });
+
+    // // Server confirmed connection
+    // this.socket.on(SocketEvents.CONNECTED, (data) => {
+    //   console.log("Socket.IO: Connected confirmation received", data);
+    // });
+
+    // New message received
+    this.socket.on(SocketEvents.NEW_MESSAGE, () => {
+      // console.log("Socket.IO: New message notification received", data);
+      // Update unread count in Redux store
+      store.dispatch(fetchUnreadCount());
+    });
+
+    // New notification received
+    this.socket.on(SocketEvents.NEW_NOTIFICATION, () => {
+      // Update notifications in Redux store
+      store.dispatch(
+        fetchNotifications({ page: 1, limit: 10, unreadOnly: false })
+      );
+    });
+
+    // Error event
+    this.socket.on(SocketEvents.ERROR, (error) => {
+      console.error("Socket.IO: Error event received", error);
+    });
+
+    // // Ping response (although Socket.IO handles this internally)
+    // this.socket.on("pong", () => {
+    //   console.log("Socket.IO: Pong received");
+    // });
+  }
+
+  // Schedule reconnection with exponential backoff
+  private scheduleReconnect(): void {
+    if (this.reconnectTimer) {
+      clearTimeout(this.reconnectTimer);
+    }
+
+    this.connectionAttempts++;
+
+    if (this.connectionAttempts <= this.maxReconnectionAttempts) {
+      // Exponential backoff: 2^attempts * 1000 ms, capped at 30 seconds
+      const delay = Math.min(
+        Math.pow(2, this.connectionAttempts) * 1000,
+        30000
+      );
+
+      this.reconnectTimer = setTimeout(() => {
+        this.connect();
+      }, delay);
     }
   }
 
-  // Handle WebSocket close event
-  private handleClose(event: CloseEvent): void {
-    console.log("WebSocket: Connection closed", event.code, event.reason);
-
-    // Clear ping interval
-    if (this.pingInterval) {
-      clearInterval(this.pingInterval);
-      this.pingInterval = null;
-    }
-
-    this.socket = null;
-
-    // Attempt to reconnect if it wasn't a normal closure
-    if (event.code !== 1000) {
-      this.attemptReconnect();
-    }
-  }
-
-  // Handle WebSocket error event
-  private handleError(event: Event): void {
-    console.error("WebSocket: Error occurred:", event);
-  }
-
-  // Attempt to reconnect with exponential backoff
-  private attemptReconnect(): void {
-    if (this.reconnectAttempts >= this.maxReconnectAttempts) {
-      console.log("WebSocket: Maximum reconnection attempts reached");
-      return;
-    }
-
-    this.reconnectAttempts++;
-
-    const delay = Math.min(1000 * Math.pow(2, this.reconnectAttempts), 30000);
-    console.log(
-      `WebSocket: Attempting to reconnect in ${delay}ms (attempt ${this.reconnectAttempts})`
-    );
-
-    if (this.reconnectTimeout) {
-      clearTimeout(this.reconnectTimeout);
-    }
-
-    this.reconnectTimeout = setTimeout(() => {
-      this.connect();
-    }, delay);
-  }
-
-  // Send a message through the WebSocket
-  sendMessage(type: string, data: unknown): void {
-    if (this.socket?.readyState === WebSocket.OPEN) {
-      this.socket.send(JSON.stringify({ type, data }));
+  // Send a message through Socket.IO
+  sendMessage(event: string, data: unknown): void {
+    if (this.socket && this.connected) {
+      this.socket.emit(event, { type: event, data });
     } else {
-      console.warn("WebSocket: Cannot send message, connection not open");
+      console.warn("Socket.IO: Cannot send message, connection not open");
+      // Try to reconnect
+      if (!this.connected) {
+        this.connect();
+      }
     }
   }
 
-  // Disconnect WebSocket
+  // Disconnect Socket.IO
   disconnect(): void {
+    // Clear any pending reconnect timer
+    if (this.reconnectTimer) {
+      clearTimeout(this.reconnectTimer);
+      this.reconnectTimer = null;
+    }
+
     if (this.socket) {
-      this.socket.close();
+      this.socket.disconnect();
       this.socket = null;
-    }
-
-    if (this.pingInterval) {
-      clearInterval(this.pingInterval);
-      this.pingInterval = null;
-    }
-
-    if (this.reconnectTimeout) {
-      clearTimeout(this.reconnectTimeout);
-      this.reconnectTimeout = null;
+      this.connected = false;
     }
   }
 
-  // Check if WebSocket is connected
+  // Check if Socket.IO is connected
   isConnected(): boolean {
-    return this.socket !== null && this.socket.readyState === WebSocket.OPEN;
+    return this.socket !== null && this.connected;
   }
 
-  // Update 'on' method with specific type
-  on(event: string, listener: (data: WebSocketEventData) => void): void {
+  // Register event listener
+  on(event: string, listener: (data: SocketEventData) => void): void {
     if (this.socket) {
-      this.socket.addEventListener("message", (e: MessageEvent) => {
-        const data: WebSocketEventData = JSON.parse(e.data);
-        if (data.type === event) {
-          listener(data);
-        }
-      });
+      this.socket.on(event, listener);
     }
   }
 
-  // Update 'off' method to accept event type and listener
-  off(event: string, listener: (data: WebSocketEventData) => void): void {
+  // Remove event listener
+  off(event: string, listener: (data: SocketEventData) => void): void {
     if (this.socket) {
-      this.socket.removeEventListener("message", (e: MessageEvent) => {
-        const data: WebSocketEventData = JSON.parse(e.data);
-        if (data.type === event) {
-          listener(data);
-        }
-      });
+      this.socket.off(event, listener);
     }
+  }
+
+  // Force a refresh of the notification data
+  refreshNotifications(): void {
+    store.dispatch(fetchNotifications({ page: 1, limit: 10 }));
   }
 }
 
 // Create a singleton instance
-const websocketService = new WebSocketService();
-export default websocketService;
+const socketService = new SocketIOService();
+export default socketService;
