@@ -11,6 +11,7 @@ import videosReducer from "./features/videosSlice";
 import examsReducer from "./features/examsSlice";
 import dashboardReducer from "./features/dashboardSlice";
 import messagesReducer from "./features/messagesSlice";
+import notificationsReducer from "./features/notificationsSlice";
 
 const persistConfig = {
   key: "root",
@@ -36,6 +37,7 @@ export const store = configureStore({
     exams: examsReducer,
     dashboard: dashboardReducer,
     messages: messagesReducer,
+    notifications: notificationsReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
