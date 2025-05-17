@@ -5,14 +5,12 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { logout } from "@/utils/auth";
 import { useRouter } from "next/navigation";
-import { useAppSelector } from "@/hooks/hooks";
-import { selectUnreadCount } from "@/redux/features/messagesSlice";
+
 import {
   Home,
   BookOpen,
   Users,
   FileText,
-  MessageSquare,
   BarChart2,
   Settings,
   LogOut,
@@ -33,9 +31,6 @@ const Sidebar: React.FC<SidebarProps> = ({
   const router = useRouter();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
-
-  // Get unread message count from Redux store
-  const unreadMessageCount = useAppSelector(selectUnreadCount);
 
   useEffect(() => {
     setMounted(true);
@@ -72,17 +67,7 @@ const Sidebar: React.FC<SidebarProps> = ({
       name: "Applications",
       icon: <FileText className="w-5 h-5" />,
     },
-    {
-      path: "/messages",
-      name: "Messages",
-      icon: <MessageSquare className="w-5 h-5" />,
-      badge:
-        unreadMessageCount > 0 ? (
-          <span className="ml-auto flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs font-medium text-white animate-pulse">
-            {unreadMessageCount > 99 ? "99+" : unreadMessageCount}
-          </span>
-        ) : null,
-    },
+
     {
       path: "/analytics",
       name: "Analytics",
@@ -148,7 +133,6 @@ const Sidebar: React.FC<SidebarProps> = ({
                     <span className="ml-3 text-sm font-medium">
                       {item.name}
                     </span>
-                    {item.badge}
                   </Link>
                 </li>
               );
