@@ -17,8 +17,8 @@ export interface Message {
   createdAt: string;
   updatedAt: string;
   sender: User;
-  recipient: User;
-  direction: "sent" | "received";
+  isFromUser?: boolean; // For student-admin conversation
+  direction?: "sent" | "received"; // For backward compatibility
 }
 
 export interface PaginationInfo {
@@ -28,14 +28,33 @@ export interface PaginationInfo {
   pageSize: number;
 }
 
+export interface Conversation {
+  partner: User;
+  lastMessage: {
+    id: string;
+    content: string;
+    createdAt: string;
+    isFromUser: boolean;
+  } | null;
+  unreadCount: number;
+}
+
 export interface MessageResponse {
   messages: Message[];
   pagination: PaginationInfo;
   unreadCount: number;
+  conversations?: Conversation[];
+}
+
+export interface ConversationResponse {
+  partner: User;
+  messages: Message[];
+  pagination: PaginationInfo;
 }
 
 interface MessageState {
   messages: Message[];
+  conversations: Conversation[];
   pagination: PaginationInfo | null;
   unreadCount: number;
   selectedStudent: User | null;
@@ -47,6 +66,7 @@ interface MessageState {
 
 const initialState: MessageState = {
   messages: [],
+  conversations: [],
   pagination: null,
   unreadCount: 0,
   selectedStudent: null,
@@ -57,30 +77,22 @@ const initialState: MessageState = {
 };
 
 // Async thunks
-export const fetchMessages = createAsyncThunk(
-  "messages/fetchMessages",
-  async (
-    params: { page?: number; filter?: string } = {},
-    { rejectWithValue }
-  ) => {
-    const { page = 1, filter = "all" } = params;
-
+export const fetchConversations = createAsyncThunk(
+  "messages/fetchConversations",
+  async (_, { rejectWithValue }) => {
     try {
       const apiUrl =
         process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8080/api/v1";
 
-      const response = await fetch(
-        `${apiUrl}/messages?page=${page}&filter=${filter}`,
-        {
-          headers: {
-            Authorization: `Bearer ${getAuthToken()}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
+      const response = await fetch(`${apiUrl}/messages/conversations`, {
+        headers: {
+          Authorization: `Bearer ${getAuthToken()}`,
+          "Content-Type": "application/json",
+        },
+      });
 
       if (!response.ok) {
-        let errorMessage = "Failed to fetch messages";
+        let errorMessage = "Failed to fetch conversations";
         try {
           const errorData = await response.json();
           errorMessage = errorData?.message || errorMessage;
@@ -91,9 +103,54 @@ export const fetchMessages = createAsyncThunk(
       }
 
       const data = await response.json();
-      return data.data as MessageResponse;
+      return data.data;
     } catch (error) {
-      console.error("Error fetching messages:", error);
+      console.error("Error fetching conversations:", error);
+      return rejectWithValue((error as Error).message);
+    }
+  }
+);
+
+export const fetchConversationMessages = createAsyncThunk(
+  "messages/fetchConversationMessages",
+  async (
+    params: { partnerId: string; page?: number; limit?: number },
+    { rejectWithValue }
+  ) => {
+    const { partnerId, page = 1, limit = 20 } = params;
+
+    try {
+      const apiUrl =
+        process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8080/api/v1";
+
+      const response = await fetch(
+        `${apiUrl}/messages/conversations/${partnerId}?page=${page}&limit=${limit}`,
+        {
+          headers: {
+            Authorization: `Bearer ${getAuthToken()}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (!response.ok) {
+        let errorMessage = "Failed to fetch conversation messages";
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData?.message || errorMessage;
+        } catch {
+          errorMessage = response.statusText || errorMessage;
+        }
+        throw new Error(errorMessage);
+      }
+
+      const data = await response.json();
+      return {
+        data: data.data as ConversationResponse,
+        partnerId,
+      };
+    } catch (error) {
+      console.error("Error fetching conversation messages:", error);
       return rejectWithValue((error as Error).message);
     }
   }
@@ -130,7 +187,7 @@ export const sendMessage = createAsyncThunk(
       }
 
       const data = await response.json();
-      return data;
+      return { data: data, recipientId: messageData.recipientId };
     } catch (error) {
       console.error("Error sending message:", error);
       return rejectWithValue((error as Error).message);
@@ -138,23 +195,26 @@ export const sendMessage = createAsyncThunk(
   }
 );
 
-export const markMessageAsRead = createAsyncThunk(
-  "messages/markAsRead",
-  async (messageId: string, { rejectWithValue }) => {
+export const markConversationAsRead = createAsyncThunk(
+  "messages/markConversationAsRead",
+  async (partnerId: string, { rejectWithValue }) => {
     try {
       const apiUrl =
         process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8080/api/v1";
 
-      const response = await fetch(`${apiUrl}/messages/${messageId}/read`, {
-        method: "PUT",
-        headers: {
-          Authorization: `Bearer ${getAuthToken()}`,
-          "Content-Type": "application/json",
-        },
-      });
+      const response = await fetch(
+        `${apiUrl}/messages/conversations/${partnerId}/read`,
+        {
+          method: "PUT",
+          headers: {
+            Authorization: `Bearer ${getAuthToken()}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
 
       if (!response.ok) {
-        let errorMessage = "Failed to mark message as read";
+        let errorMessage = "Failed to mark conversation as read";
         try {
           const errorData = await response.json();
           errorMessage = errorData?.message || errorMessage;
@@ -165,9 +225,9 @@ export const markMessageAsRead = createAsyncThunk(
       }
 
       const data = await response.json();
-      return { messageId, data };
+      return { partnerId, data: data.data };
     } catch (error) {
-      console.error("Error marking message as read:", error);
+      console.error("Error marking conversation as read:", error);
       return rejectWithValue((error as Error).message);
     }
   }
@@ -233,18 +293,40 @@ const messagesSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      // Fetch messages
-      .addCase(fetchMessages.pending, (state) => {
+      // Fetch conversations
+      .addCase(fetchConversations.pending, (state) => {
         state.isLoading = true;
         state.error = null;
       })
-      .addCase(fetchMessages.fulfilled, (state, action) => {
+      .addCase(fetchConversations.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.messages = action.payload.messages;
-        state.pagination = action.payload.pagination;
-        state.unreadCount = action.payload.unreadCount;
+        state.conversations = action.payload.conversations;
+        state.unreadCount = action.payload.totalUnreadCount || 0;
       })
-      .addCase(fetchMessages.rejected, (state, action) => {
+      .addCase(fetchConversations.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload as string;
+      })
+
+      // Fetch conversation messages
+      .addCase(fetchConversationMessages.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(fetchConversationMessages.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.messages = action.payload.data.messages;
+        state.pagination = action.payload.data.pagination;
+
+        // Set selected student if it's not already set
+        if (
+          !state.selectedStudent ||
+          state.selectedStudent.id !== action.payload.partnerId
+        ) {
+          state.selectedStudent = action.payload.data.partner;
+        }
+      })
+      .addCase(fetchConversationMessages.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload as string;
       })
@@ -259,8 +341,24 @@ const messagesSlice = createSlice({
       .addCase(sendMessage.fulfilled, (state, action) => {
         state.isLoading = false;
         state.success = true;
-        state.message = action.payload.message || "Message sent successfully";
-        // Don't modify the messages array here - we'll fetch fresh messages
+        state.message =
+          action.payload.data.message || "Message sent successfully";
+
+        // Update the conversation with this student if it exists
+        const studentId = action.payload.recipientId;
+        const conversationIndex = state.conversations.findIndex(
+          (conv) => conv.partner.id === studentId
+        );
+
+        if (conversationIndex !== -1) {
+          // Update the last message in the conversation
+          state.conversations[conversationIndex].lastMessage = {
+            id: action.payload.data.data?.id || "temp-id",
+            content: action.payload.data.data?.content || "",
+            createdAt: new Date().toISOString(),
+            isFromUser: true,
+          };
+        }
       })
       .addCase(sendMessage.rejected, (state, action) => {
         state.isLoading = false;
@@ -268,28 +366,45 @@ const messagesSlice = createSlice({
         state.success = false;
       })
 
-      // Mark message as read
-      .addCase(markMessageAsRead.pending, (state) => {
-        state.isLoading = true;
+      // Mark conversation as read
+      .addCase(markConversationAsRead.pending, (state) => {
         state.error = null;
       })
-      .addCase(markMessageAsRead.fulfilled, (state, action) => {
-        state.isLoading = false;
-        // Update the read status in the messages array
-        const messageIndex = state.messages.findIndex(
-          (msg) => msg.id === action.payload.messageId
+      .addCase(markConversationAsRead.fulfilled, (state, action) => {
+        // Update unread count for this conversation
+        const conversationIndex = state.conversations.findIndex(
+          (conv) => conv.partner.id === action.payload.partnerId
         );
-        if (messageIndex !== -1) {
-          state.messages[messageIndex].isRead = true;
-          if (state.unreadCount > 0) {
-            state.unreadCount -= 1;
+
+        if (conversationIndex !== -1) {
+          state.conversations[conversationIndex].unreadCount = 0;
+        }
+
+        // Update isRead flag for all messages from this student
+        state.messages.forEach((msg) => {
+          if (
+            (msg.sender.id === action.payload.partnerId ||
+              (msg.sender.role === "STUDENT" &&
+                state.selectedStudent?.id === action.payload.partnerId)) &&
+            !msg.isRead
+          ) {
+            msg.isRead = true;
           }
+        });
+
+        // Update global unread count
+        if (
+          action.payload.data.markedAsRead &&
+          state.unreadCount >= action.payload.data.markedAsRead
+        ) {
+          state.unreadCount -= action.payload.data.markedAsRead;
         }
       })
-      .addCase(markMessageAsRead.rejected, (state, action) => {
-        state.isLoading = false;
+      .addCase(markConversationAsRead.rejected, (state, action) => {
         state.error = action.payload as string;
       })
+
+      // Fetch unread count
       .addCase(fetchUnreadCount.fulfilled, (state, action) => {
         state.unreadCount = action.payload;
       });
@@ -298,6 +413,8 @@ const messagesSlice = createSlice({
 
 // Selectors
 export const selectMessages = (state: RootState) => state.messages.messages;
+export const selectConversations = (state: RootState) =>
+  state.messages.conversations;
 export const selectPagination = (state: RootState) => state.messages.pagination;
 export const selectUnreadCount = (state: RootState) =>
   state.messages.unreadCount;
@@ -315,7 +432,6 @@ export const {
   clearMessagesState,
   addNewMessage,
   incrementUnreadCount,
-  
 } = messagesSlice.actions;
 
 export default messagesSlice.reducer;
