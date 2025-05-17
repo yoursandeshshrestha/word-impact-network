@@ -2,15 +2,16 @@ import { Request, Response } from 'express';
 import { PrismaClient, UserRole } from '@prisma/client';
 import {
   sendMessage,
-  getUserMessages,
-  markMessageAsRead,
   sendAdminMessage,
   getUnreadMessagesCount,
+  getConversations,
+  getConversationMessages,
+  markConversationAsRead,
+  getStudentAdminConversation,
 } from '../services/message.service';
 import { sendSuccess } from '../utils/responseHandler';
 import { catchAsync } from '../utils/catchAsync';
 import { AppError, ErrorTypes } from '../utils/appError';
-import { logger } from '../utils/logger';
 
 const prisma = new PrismaClient();
 
@@ -46,48 +47,6 @@ export const sendMessageController = catchAsync(async (req: Request, res: Respon
   const message = await sendMessage(senderId, content);
 
   sendSuccess(res, 201, 'Message sent successfully', message);
-});
-
-// Get all messages for a user
-export const getMessagesController = catchAsync(async (req: Request, res: Response) => {
-  // Ensure user is authenticated
-  if (!req.user) {
-    throw new AppError('Authentication required', 401, ErrorTypes.AUTHENTICATION);
-  }
-
-  const userId = req.user.userId;
-
-  // Use the validated query parameters
-  const validatedQuery = (req as any).validatedQuery || {};
-  const filter = validatedQuery.filter || 'all';
-  const page = validatedQuery.page || 1;
-  const limit = 100;
-
-  // Get messages
-  const result = await getUserMessages(userId, filter, page, limit);
-
-  sendSuccess(res, 200, 'Messages retrieved successfully', result);
-});
-
-// Mark a message as read
-export const markMessageAsReadController = catchAsync(async (req: Request, res: Response) => {
-  // Ensure user is authenticated
-  if (!req.user) {
-    throw new AppError('Authentication required', 401, ErrorTypes.AUTHENTICATION);
-  }
-
-  const { id: messageId } = req.params;
-  const userId = req.user.userId;
-
-  // Validate messageId
-  if (!messageId) {
-    throw new AppError('Message ID is required', 400, ErrorTypes.VALIDATION);
-  }
-
-  // Mark the message as read
-  const result = await markMessageAsRead(messageId, userId);
-
-  sendSuccess(res, 200, 'Message marked as read', result);
 });
 
 // Send a message from admin to a student
@@ -133,3 +92,86 @@ export const getUnreadMessagesCountController = catchAsync(async (req: Request, 
 
   sendSuccess(res, 200, 'Unread messages count retrieved successfully', result);
 });
+
+// Get all conversations for a user
+export const getConversationsController = catchAsync(async (req: Request, res: Response) => {
+  // Ensure user is authenticated
+  if (!req.user) {
+    throw new AppError('Authentication required', 401, ErrorTypes.AUTHENTICATION);
+  }
+
+  const userId = req.user.userId;
+
+  // Get conversations
+  const conversations = await getConversations(userId);
+
+  sendSuccess(res, 200, 'Conversations retrieved successfully', { conversations });
+});
+
+// Get messages for a specific conversation
+export const getConversationMessagesController = catchAsync(async (req: Request, res: Response) => {
+  // Ensure user is authenticated
+  if (!req.user) {
+    throw new AppError('Authentication required', 401, ErrorTypes.AUTHENTICATION);
+  }
+
+  const userId = req.user.userId;
+  const { partnerId } = req.params;
+
+  // Use validated query parameters (these are set by the validation middleware)
+  const validatedQuery = (req as any).validatedQuery || {};
+  const page = validatedQuery.page || 1;
+  const limit = validatedQuery.limit || 20;
+
+  // Get conversation messages
+  const result = await getConversationMessages(userId, partnerId, page, limit);
+
+  sendSuccess(res, 200, 'Conversation messages retrieved successfully', result);
+});
+
+// Mark all messages in a conversation as read
+export const markConversationAsReadController = catchAsync(async (req: Request, res: Response) => {
+  // Ensure user is authenticated
+  if (!req.user) {
+    throw new AppError('Authentication required', 401, ErrorTypes.AUTHENTICATION);
+  }
+
+  const userId = req.user.userId;
+  const { partnerId } = req.params;
+
+  // Mark conversation as read
+  const result = await markConversationAsRead(userId, partnerId);
+
+  sendSuccess(res, 200, 'Conversation marked as read', result);
+});
+
+// Get the student-admin conversation (for students)
+export const getStudentAdminConversationController = catchAsync(
+  async (req: Request, res: Response) => {
+    // Ensure user is authenticated
+    if (!req.user) {
+      throw new AppError('Authentication required', 401, ErrorTypes.AUTHENTICATION);
+    }
+
+    const userId = req.user.userId;
+
+    // Ensure the user is a student
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user || user.role !== UserRole.STUDENT) {
+      throw new AppError('Only students can access this endpoint', 403, ErrorTypes.AUTHORIZATION);
+    }
+
+    // Use validated query parameters (these are set by the validation middleware)
+    const validatedQuery = (req as any).validatedQuery || {};
+    const page = validatedQuery.page || 1;
+    const limit = validatedQuery.limit || 20;
+
+    // Get student-admin conversation
+    const result = await getStudentAdminConversation(userId, page, limit);
+
+    sendSuccess(res, 200, 'Admin conversation retrieved successfully', result);
+  },
+);
