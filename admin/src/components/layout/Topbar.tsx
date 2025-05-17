@@ -2,7 +2,8 @@
 
 import React, { useEffect, useState, useRef } from "react";
 import Link from "next/link";
-import { Bell, MessageSquare, Settings, User, LogOut, Key } from "lucide-react";
+import { Settings, User, LogOut, Key } from "lucide-react";
+import NotificationDropdown from "@/components/ui/NotificationDropdown";
 
 interface TopbarProps {
   userName: string;
@@ -45,20 +46,9 @@ const Topbar: React.FC<TopbarProps> = ({ userName, userRole }) => {
   return (
     <header className="sticky top-0 z-30 w-full bg-white border-b border-gray-100 flex items-center justify-end h-16 px-8 shadow-sm font-sans">
       <div className="flex items-center gap-8">
-        {/* Message Icon with badge */}
-        <button className="relative group focus:outline-none">
-          <MessageSquare className="h-6 w-6 text-gray-500 group-hover:text-blue-600 transition-colors" />
-          <span className="absolute -top-1 -right-2 bg-red-500 text-white text-[10px] rounded-full px-1.5 py-0.5 font-bold shadow-md border-2 border-white">
-            3
-          </span>
-        </button>
-        {/* Notification Icon with badge */}
-        <button className="relative group focus:outline-none">
-          <Bell className="h-6 w-6 text-gray-500 group-hover:text-blue-600 transition-colors" />
-          <span className="absolute -top-1 -right-2 bg-red-500 text-white text-[10px] rounded-full px-1.5 py-0.5 font-bold shadow-md border-2 border-white">
-            3
-          </span>
-        </button>
+        {/* Notification Dropdown Component */}
+        <NotificationDropdown />
+
         {/* User Info with Dropdown */}
         <div className="relative" ref={dropdownRef}>
           <div
