@@ -7,6 +7,7 @@ import chapterRoutes from '@/routes/chapter.routes';
 import videoRoutes from '@/routes/video.routes';
 import examRoutes from '@/routes/exam.routes';
 import messageRoutes from '@/routes/message.routes';
+import notificationRoutes from '@/routes/notification.routes';
 const router: Router = express.Router();
 
 // admin routes
@@ -32,5 +33,8 @@ router.use('/exams', examRoutes);
 
 // message routes
 router.use('/messages', messageRoutes);
+
+// notification routes
+router.use('/notifications', notificationRoutes);
 
 export default router;
