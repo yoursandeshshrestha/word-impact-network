@@ -1,13 +1,16 @@
 import { useCallback } from "react";
 import { useAppDispatch, useAppSelector } from "./hooks";
 import {
-  fetchMessages,
+  fetchConversations,
+  fetchConversationMessages,
+  fetchUnreadCount as fetchUnreadCountAction,
   sendMessage,
-  markMessageAsRead,
+  markConversationAsRead,
   setSelectedStudent,
   clearSelectedStudent,
   clearMessagesState,
   selectMessages,
+  selectConversations,
   selectPagination,
   selectUnreadCount,
   selectSelectedStudent,
@@ -21,6 +24,7 @@ import {
 export const useMessages = () => {
   const dispatch = useAppDispatch();
   const messages = useAppSelector(selectMessages);
+  const conversations = useAppSelector(selectConversations);
   const pagination = useAppSelector(selectPagination);
   const unreadCount = useAppSelector(selectUnreadCount);
   const selectedStudent = useAppSelector(selectSelectedStudent);
@@ -29,10 +33,20 @@ export const useMessages = () => {
   const success = useAppSelector(selectSuccess);
   const statusMessage = useAppSelector(selectMessage);
 
-  // Fetch messages (with pagination and optional filter)
-  const getMessages = useCallback(
-    (page: number = 1, filter: string = "all") => {
-      return dispatch(fetchMessages({ page, filter }));
+  // Fetch just the unread count
+  const fetchUnreadCount = useCallback(() => {
+    return dispatch(fetchUnreadCountAction());
+  }, [dispatch]);
+
+  // Fetch all conversations
+  const getConversations = useCallback(() => {
+    return dispatch(fetchConversations());
+  }, [dispatch]);
+
+  // Fetch messages for a specific conversation
+  const getConversationMessages = useCallback(
+    (partnerId: string, page: number = 1, limit: number = 20) => {
+      return dispatch(fetchConversationMessages({ partnerId, page, limit }));
     },
     [dispatch]
   );
@@ -45,10 +59,10 @@ export const useMessages = () => {
     [dispatch]
   );
 
-  // Mark a message as read
-  const readMessage = useCallback(
-    (messageId: string) => {
-      return dispatch(markMessageAsRead(messageId));
+  // Mark all messages in a conversation as read
+  const readConversation = useCallback(
+    (partnerId: string) => {
+      return dispatch(markConversationAsRead(partnerId));
     },
     [dispatch]
   );
@@ -74,6 +88,7 @@ export const useMessages = () => {
   return {
     // State
     messages,
+    conversations,
     pagination,
     unreadCount,
     selectedStudent,
@@ -83,9 +98,11 @@ export const useMessages = () => {
     statusMessage,
 
     // Actions
-    getMessages,
+    fetchUnreadCount,
+    getConversations,
+    getConversationMessages,
     createMessage,
-    readMessage,
+    readConversation,
     selectStudent,
     clearStudent,
     clearStatus,
