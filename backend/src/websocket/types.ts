@@ -5,6 +5,9 @@ export enum SocketEvents {
   MESSAGE_READ = 'message_read',
   DISCONNECT = 'disconnect',
   ANNOUNCEMENT = 'announcement',
+  NOTIFICATION = 'notification',
+  NOTIFICATION_READ = 'notification_read',
+  NOTIFICATION_READ_ALL = 'notification_read_all',
 }
 
 export interface WebSocketMessage {
