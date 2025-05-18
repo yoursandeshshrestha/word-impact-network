@@ -3,12 +3,14 @@ import multer from 'multer';
 import {
   enrollInCourse,
   getCourses,
+  getFullCourseContent,
   getStudentChapterProgress,
   getStudentExamDetails,
   getStudentExamResult,
   getStudentProfile,
   getStudentProgress,
   loginStudentController,
+  previewCourses,
   registerStudent,
   startStudentExamAttempt,
   submitStudentExamAttempt,
@@ -78,5 +80,11 @@ router.post(
   submitStudentExamAttempt,
 );
 router.get('/exam-attempts/:attemptId/result', authenticate, getStudentExamResult);
+
+// Preview courses - public access
+router.get('/courses/preview', previewCourses);
+
+// Authorized route for enrolled students to access full course content
+router.get('/courses/:courseId/content', authenticate, getFullCourseContent);
 
 export default router;
