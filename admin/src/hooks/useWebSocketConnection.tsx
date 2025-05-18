@@ -2,7 +2,7 @@ import { useEffect, useRef, useCallback } from "react";
 import { useAppDispatch } from "./hooks";
 import { fetchUnreadCount } from "@/redux/features/messagesSlice";
 import { fetchNotifications } from "@/redux/features/notificationsSlice";
-import websocketService, { SocketEvents } from "@/services/websocket.service";
+import websocketService, { SocketEvents } from "@/services/SocketIOService";
 import { toast } from "sonner";
 
 // Define the types for message and new message data
