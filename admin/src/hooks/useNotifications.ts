@@ -41,6 +41,7 @@ export const useNotifications = () => {
       );
       setNotifications([...existingNotifications, ...storeNotifications]);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [storeNotifications, pagination.currentPage]);
 
   // Load notifications with pagination support
