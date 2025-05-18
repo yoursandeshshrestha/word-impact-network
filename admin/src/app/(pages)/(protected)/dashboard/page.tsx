@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState } from "react";
-import { useAuth } from "@/hooks/useAuth";
 import { useDashboard } from "@/hooks/useDashboard";
 import {
   BookOpen,
@@ -106,9 +105,6 @@ interface ActivityItem {
 
 // Dashboard Component
 const Dashboard = () => {
-  // Auth hook to ensure user is logged in
-  useAuth(true);
-
   // Use the dashboard hook
   const { dashboardData, isLoading, error, refreshDashboard } = useDashboard();
 
