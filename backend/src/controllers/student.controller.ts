@@ -2,8 +2,10 @@ import { Request, Response } from 'express';
 import {
   enrollStudentInCourse,
   getChapterProgress,
+  getEnrolledCourseContent,
   getExamAttemptResult,
   getExamDetails,
+  getPreviewCourses,
   getStudentEnrolledCourses,
   getStudentLearningProgress,
   getStudentProfileByUserId,
@@ -16,12 +18,13 @@ import {
 } from '../services/student.service';
 import { sendSuccess } from '../utils/responseHandler';
 import { catchAsync } from '../utils/catchAsync';
-import { ApplicationStatus, Gender, PaymentStatus } from '@prisma/client';
+import { ApplicationStatus, Gender, PaymentStatus, UserRole } from '@prisma/client';
 import { generateToken } from '@/utils/jwt';
 import { ErrorTypes } from '@/utils/appError';
 import { AppError } from '@/utils/appError';
 import { logger } from '@/utils/logger';
 import prisma from '@/config/prisma';
+import { createNotification } from '@/services/notification.service';
 
 // Register a new student
 export const registerStudent = catchAsync(async (req: Request, res: Response) => {
@@ -65,6 +68,30 @@ export const registerStudent = catchAsync(async (req: Request, res: Response) =>
     referrerContact,
     agreesToTerms === 'true' || agreesToTerms === true,
   );
+
+  // Create notifications for all admins
+  try {
+    // Find all admin users
+    const adminUsers = await prisma.user.findMany({
+      where: { role: UserRole.ADMIN },
+    });
+
+    // Create a notification for each admin
+    for (const admin of adminUsers) {
+      await createNotification(
+        admin.id,
+        'New Student Registration',
+        `${fullName} has submitted a new student application from ${country}.`,
+        true, // Send as real-time notification
+      );
+    }
+  } catch (error) {
+    // Log error but don't fail the registration process
+    logger.error('Failed to create admin notifications for new student', {
+      studentId: student.id,
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
 
   sendSuccess(res, 201, 'Student registered successfully. Your application is pending approval.', {
     id: student.id,
@@ -598,4 +625,66 @@ export const getStudentExamResult = catchAsync(async (req: Request, res: Respons
     : `Your score was ${resultData.result.score}%. The passing score is ${resultData.exam.passingScore}%`;
 
   sendSuccess(res, 200, message, resultData);
+});
+
+      
+// Preview courses - public access
+export const previewCourses = catchAsync(async (req: Request, res: Response) => {
+  // Get query parameters for filtering/pagination
+  const { page = '1', limit = '10', search = '' } = req.query;
+  
+  // Convert to numbers
+  const pageNum = parseInt(page as string, 10);
+  const limitNum = parseInt(limit as string, 10);
+  
+  // Call service function
+  const previewData = await getPreviewCourses(pageNum, limitNum, search as string);
+
+  sendSuccess(res, 200, 'Courses preview retrieved successfully', previewData);
+});
+
+// Get full course content - for enrolled students only
+export const getFullCourseContent = catchAsync(async (req: Request, res: Response) => {
+  // Ensure user is authenticated and get userId
+  if (!req.user || !req.user.userId) {
+    throw new AppError('Authentication required', 401, ErrorTypes.AUTHENTICATION);
+  }
+
+  const { courseId } = req.params;
+
+  // Validate courseId
+  if (!courseId) {
+    throw new AppError('Course ID is required', 400, ErrorTypes.VALIDATION);
+  }
+
+  // Find the student ID from the user ID
+  const student = await prisma.student.findFirst({
+    where: { userId: req.user.userId },
+  });
+
+  if (!student) {
+    logger.warn('Course content fetch failed - student not found', { userId: req.user.userId });
+    throw new AppError('Student not found', 404, ErrorTypes.NOT_FOUND);
+  }
+
+  // Ensure student's application is approved
+  if (student.applicationStatus !== ApplicationStatus.APPROVED) {
+    logger.warn('Course content fetch failed - student application not approved', {
+      studentId: student.id,
+      applicationStatus: student.applicationStatus,
+    });
+
+    let errorMessage = 'Your application needs to be approved to access course content';
+
+    if (student.applicationStatus === ApplicationStatus.REJECTED) {
+      errorMessage = 'Your application has been rejected. Please contact support.';
+    }
+
+    throw new AppError(errorMessage, 403, ErrorTypes.AUTHORIZATION);
+  }
+
+  // Call service function
+  const courseContent = await getEnrolledCourseContent(student.id, courseId);
+
+  sendSuccess(res, 200, 'Course content retrieved successfully', courseContent);
 });
