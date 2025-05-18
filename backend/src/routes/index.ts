@@ -8,6 +8,8 @@ import videoRoutes from '@/routes/video.routes';
 import examRoutes from '@/routes/exam.routes';
 import messageRoutes from '@/routes/message.routes';
 import notificationRoutes from '@/routes/notification.routes';
+import analyticsRoutes from '@/routes/analytics.routes';
+
 const router: Router = express.Router();
 
 // admin routes
@@ -36,5 +38,8 @@ router.use('/messages', messageRoutes);
 
 // notification routes
 router.use('/notifications', notificationRoutes);
+
+// analytics routes
+router.use('/analytics', analyticsRoutes);
 
 export default router;
