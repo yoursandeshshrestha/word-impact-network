@@ -53,6 +53,10 @@ export const getAllCourses = catchAsync(async (req: Request, res: Response) => {
  * @access Public
  */
 export const getCourseById = catchAsync(async (req: Request, res: Response) => {
+  if (!req.user) {
+    throw new AppError('Authentication required', 401, ErrorTypes.AUTHENTICATION);
+  }
+
   const { id } = req.params;
 
   const course = await fetchCourseById(id);
