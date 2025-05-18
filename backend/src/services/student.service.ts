@@ -2294,17 +2294,17 @@ export async function getExamAttemptResult(studentId: string, attemptId: string)
             questions: true,
             chapter: {
               include: {
-                course: true
-              }
-            }
-          }
+                course: true,
+              },
+            },
+          },
         },
         answers: {
           include: {
-            question: true
-          }
-        }
-      }
+            question: true,
+          },
+        },
+      },
     });
 
     if (!examAttempt) {
@@ -2313,10 +2313,10 @@ export async function getExamAttemptResult(studentId: string, attemptId: string)
     }
 
     if (examAttempt.studentId !== studentId) {
-      logger.warn('Fetch exam result failed - attempt does not belong to student', { 
-        attemptId, 
-        studentId, 
-        attemptStudentId: examAttempt.studentId 
+      logger.warn('Fetch exam result failed - attempt does not belong to student', {
+        attemptId,
+        studentId,
+        attemptStudentId: examAttempt.studentId,
       });
       throw new AppError('This exam attempt does not belong to you', 403, ErrorTypes.AUTHORIZATION);
     }
@@ -2325,16 +2325,16 @@ export async function getExamAttemptResult(studentId: string, attemptId: string)
     if (!examAttempt.endTime) {
       logger.warn('Fetch exam result failed - attempt not yet completed', { attemptId });
       throw new AppError(
-        'This exam attempt has not been submitted yet', 
-        400, 
-        ErrorTypes.VALIDATION
+        'This exam attempt has not been submitted yet',
+        400,
+        ErrorTypes.VALIDATION,
       );
     }
 
     // Format the answers for the response
-    const answersWithDetails = examAttempt.answers.map(answer => {
-      const question = examAttempt.exam.questions.find(q => q.id === answer.questionId);
-      
+    const answersWithDetails = examAttempt.answers.map((answer) => {
+      const question = examAttempt.exam.questions.find((q) => q.id === answer.questionId);
+
       return {
         questionId: answer.questionId,
         questionText: question?.text || '',
@@ -2344,52 +2344,52 @@ export async function getExamAttemptResult(studentId: string, attemptId: string)
         points: answer.points,
         maxPoints: question?.points || 0,
         correctAnswer: question?.correctAnswer || null,
-        options: question?.options || null
+        options: question?.options || null,
       };
     });
 
     // Calculate statistics for answer types
     const objectiveQuestions = answersWithDetails.filter(
-      a => a.questionType === 'multiple_choice' || a.questionType === 'true_false'
+      (a) => a.questionType === 'multiple_choice' || a.questionType === 'true_false',
     );
-    
-    const correctAnswers = objectiveQuestions.filter(a => a.isCorrect === true).length;
-    const incorrectAnswers = objectiveQuestions.filter(a => a.isCorrect === false).length;
-    const essayQuestions = answersWithDetails.filter(a => a.questionType === 'essay').length;
+
+    const correctAnswers = objectiveQuestions.filter((a) => a.isCorrect === true).length;
+    const incorrectAnswers = objectiveQuestions.filter((a) => a.isCorrect === false).length;
+    const essayQuestions = answersWithDetails.filter((a) => a.questionType === 'essay').length;
 
     // Calculate time spent on the exam
     const startTime = examAttempt.startTime;
     const endTime = examAttempt.endTime;
     const timeTakenMinutes = Math.round((endTime.getTime() - startTime.getTime()) / 1000 / 60);
-    
+
     // Format dates for display
     const formattedStartTime = startTime.toISOString();
     const formattedEndTime = endTime.toISOString();
-    
+
     // Check if the student has any other attempts at this exam
     const otherAttempts = await prisma.examAttempt.findMany({
       where: {
         studentId,
         examId: examAttempt.examId,
-        id: { not: attemptId }
+        id: { not: attemptId },
       },
       orderBy: {
-        startTime: 'desc'
+        startTime: 'desc',
       },
       select: {
         id: true,
         startTime: true,
         endTime: true,
         score: true,
-        isPassed: true
-      }
+        isPassed: true,
+      },
     });
 
-    logger.info('Exam result retrieved successfully', { 
-      attemptId, 
-      studentId, 
-      score: examAttempt.score, 
-      isPassed: examAttempt.isPassed 
+    logger.info('Exam result retrieved successfully', {
+      attemptId,
+      studentId,
+      score: examAttempt.score,
+      isPassed: examAttempt.isPassed,
     });
 
     // Construct response
@@ -2402,13 +2402,13 @@ export async function getExamAttemptResult(studentId: string, attemptId: string)
         passingScore: examAttempt.exam.passingScore,
         timeLimit: examAttempt.exam.timeLimit,
         totalQuestions: examAttempt.exam.questions.length,
-        totalPoints: examAttempt.exam.questions.reduce((sum, q) => sum + q.points, 0)
+        totalPoints: examAttempt.exam.questions.reduce((sum, q) => sum + q.points, 0),
       },
       courseContext: {
         courseId: examAttempt.exam.chapter.course.id,
         courseName: examAttempt.exam.chapter.course.title,
         chapterId: examAttempt.exam.chapter.id,
-        chapterTitle: examAttempt.exam.chapter.title
+        chapterTitle: examAttempt.exam.chapter.title,
       },
       result: {
         score: examAttempt.score,
@@ -2421,24 +2421,371 @@ export async function getExamAttemptResult(studentId: string, attemptId: string)
           correctAnswers,
           incorrectAnswers,
           essayQuestions,
-          objectiveScore: objectiveQuestions.length > 0 
-            ? Math.round((correctAnswers / objectiveQuestions.length) * 100) 
-            : 0
-        }
+          objectiveScore:
+            objectiveQuestions.length > 0
+              ? Math.round((correctAnswers / objectiveQuestions.length) * 100)
+              : 0,
+        },
       },
-      otherAttempts: otherAttempts.map(attempt => ({
+      otherAttempts: otherAttempts.map((attempt) => ({
         id: attempt.id,
         startTime: attempt.startTime.toISOString(),
         endTime: attempt.endTime?.toISOString() || null,
         score: attempt.score,
-        isPassed: attempt.isPassed
+        isPassed: attempt.isPassed,
       })),
-      answers: answersWithDetails
+      answers: answersWithDetails,
     };
   } catch (error) {
     logger.error('Error in getExamAttemptResult', {
       studentId,
       attemptId,
+      error: error instanceof Error ? error.message : String(error),
+    });
+    throw error;
+  }
+}
+
+// Preview courses service function
+export async function getPreviewCourses(page: number = 1, limit: number = 10, search: string = '') {
+  try {
+    logger.info('Fetching courses preview', { page, limit, search });
+
+    // Calculate skip for pagination
+    const skip = (page - 1) * limit;
+
+    // Fetch active courses with limited preview information
+    const courses = await prisma.course.findMany({
+      where: {
+        isActive: true,
+        ...(search
+          ? {
+              OR: [
+                { title: { contains: search, mode: 'insensitive' } },
+                { description: { contains: search, mode: 'insensitive' } },
+              ],
+            }
+          : {}),
+      },
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        durationYears: true,
+        coverImageUrl: true,
+        // Include a limited number of chapters with basic info only
+        chapters: {
+          take: 1, // Just the first chapter for preview
+          select: {
+            id: true,
+            title: true,
+            description: true,
+            // Include just one preview video if exists
+            videos: {
+              take: 1,
+              select: {
+                id: true,
+                title: true,
+                description: true,
+                duration: true,
+              },
+            },
+          },
+          orderBy: {
+            orderIndex: 'asc',
+          },
+        },
+        _count: {
+          select: {
+            chapters: true,
+            enrollments: true,
+          },
+        },
+      },
+      take: limit,
+      skip: skip,
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+
+    // Get total count for pagination
+    const totalCourses = await prisma.course.count({
+      where: {
+        isActive: true,
+        ...(search
+          ? {
+              OR: [
+                { title: { contains: search, mode: 'insensitive' } },
+                { description: { contains: search, mode: 'insensitive' } },
+              ],
+            }
+          : {}),
+      },
+    });
+
+    // Format preview response
+    const formattedCourses = courses.map((course) => ({
+      id: course.id,
+      title: course.title,
+      description: course.description,
+      durationYears: course.durationYears,
+      coverImageUrl: course.coverImageUrl,
+      totalChapters: course._count.chapters,
+      enrollmentCount: course._count.enrollments,
+      previewChapter: course.chapters[0]
+        ? {
+            title: course.chapters[0].title,
+            description: course.chapters[0].description,
+            previewVideo: course.chapters[0].videos[0]
+              ? {
+                  title: course.chapters[0].videos[0].title,
+                  description: course.chapters[0].videos[0].description,
+                  duration: course.chapters[0].videos[0].duration,
+                }
+              : null,
+          }
+        : null,
+    }));
+
+    logger.info('Courses preview fetched successfully', {
+      courseCount: courses.length,
+    });
+
+    return {
+      courses: formattedCourses,
+      pagination: {
+        currentPage: page,
+        totalPages: Math.ceil(totalCourses / limit),
+        totalItems: totalCourses,
+        itemsPerPage: limit,
+      },
+    };
+  } catch (error) {
+    logger.error('Error in getPreviewCourses', {
+      page,
+      limit,
+      search,
+      error: error instanceof Error ? error.message : String(error),
+    });
+    throw error;
+  }
+}
+
+// Get full course content service function
+export async function getEnrolledCourseContent(studentId: string, courseId: string) {
+  try {
+    logger.info('Fetching full course content', { studentId, courseId });
+
+    // Check if student exists
+    const student = await prisma.student.findUnique({
+      where: { id: studentId },
+    });
+
+    if (!student) {
+      logger.warn('Course content fetch failed - student not found', { studentId });
+      throw new AppError('Student not found', 404, ErrorTypes.NOT_FOUND);
+    }
+
+    // Check if student is enrolled in this course
+    const enrollment = await prisma.courseEnrollment.findFirst({
+      where: {
+        studentId,
+        courseId,
+        isActive: true,
+      },
+    });
+
+    if (!enrollment) {
+      logger.warn('Course content fetch failed - student not enrolled', {
+        studentId,
+        courseId,
+      });
+      throw new AppError('You are not enrolled in this course', 403, ErrorTypes.AUTHORIZATION);
+    }
+
+    // Get course details with all chapters, videos, and exam information
+    const course = await prisma.course.findUnique({
+      where: { id: courseId },
+      include: {
+        chapters: {
+          orderBy: {
+            orderIndex: 'asc',
+          },
+          include: {
+            videos: {
+              orderBy: {
+                orderIndex: 'asc',
+              },
+            },
+            exam: {
+              select: {
+                id: true,
+                title: true,
+                description: true,
+                passingScore: true,
+                timeLimit: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!course) {
+      logger.warn('Course content fetch failed - course not found', { courseId });
+      throw new AppError('Course not found', 404, ErrorTypes.NOT_FOUND);
+    }
+
+    // Get student's progress for all chapters in this course
+    const chapterProgressRecords = await prisma.chapterProgress.findMany({
+      where: {
+        studentId,
+        chapter: {
+          courseId,
+        },
+      },
+    });
+
+    // Get student's video progress for all videos in this course
+    const videoProgressRecords = await prisma.videoProgress.findMany({
+      where: {
+        studentId,
+        video: {
+          chapter: {
+            courseId,
+          },
+        },
+      },
+    });
+
+    // Get student's exam attempts for this course
+    const examAttempts = await prisma.examAttempt.findMany({
+      where: {
+        studentId,
+        exam: {
+          chapter: {
+            courseId,
+          },
+        },
+      },
+      orderBy: {
+        startTime: 'desc',
+      },
+    });
+
+    // Format the response with detailed information including progress
+    const formattedChapters = course.chapters.map((chapter) => {
+      // Find progress for this chapter
+      const chapterProgress = chapterProgressRecords.find((cp) => cp.chapterId === chapter.id);
+
+      // Format videos with progress
+      const formattedVideos = chapter.videos.map((video) => {
+        // Find progress for this video
+        const videoProgress = videoProgressRecords.find((vp) => vp.videoId === video.id);
+
+        return {
+          id: video.id,
+          title: video.title,
+          description: video.description,
+          duration: video.duration,
+          backblazeUrl: video.backblazeUrl,
+          orderIndex: video.orderIndex,
+          progress: videoProgress
+            ? {
+                watchedPercent: videoProgress.watchedPercent,
+                lastWatchedAt: videoProgress.lastWatchedAt,
+                isCompleted: videoProgress.watchedPercent === 100,
+              }
+            : {
+                watchedPercent: 0,
+                lastWatchedAt: null,
+                isCompleted: false,
+              },
+        };
+      });
+
+      // Find exam attempts for this chapter's exam
+      const chapterExamAttempts = chapter.exam
+        ? examAttempts.filter((attempt) => attempt.examId === chapter.exam?.id)
+        : [];
+
+      const bestExamScore =
+        chapterExamAttempts.length > 0
+          ? Math.max(...chapterExamAttempts.map((attempt) => attempt.score || 0))
+          : 0;
+
+      const hasPassedExam = chapterExamAttempts.some((attempt) => attempt.isPassed);
+
+      return {
+        id: chapter.id,
+        title: chapter.title,
+        description: chapter.description,
+        orderIndex: chapter.orderIndex,
+        courseYear: chapter.courseYear,
+        videos: formattedVideos,
+        exam: chapter.exam
+          ? {
+              ...chapter.exam,
+              attempts: chapterExamAttempts.length,
+              bestScore: bestExamScore,
+              passed: hasPassedExam,
+            }
+          : null,
+        progress: {
+          isCompleted: chapterProgress?.isCompleted || false,
+          completedAt: chapterProgress?.completedAt || null,
+          totalVideos: chapter.videos.length,
+          watchedVideos: formattedVideos.filter((v) => v.progress.isCompleted).length,
+        },
+      };
+    });
+
+    // Calculate overall course progress
+    const totalVideos = course.chapters.reduce((sum, chapter) => sum + chapter.videos.length, 0);
+    const watchedVideos = videoProgressRecords.filter((vp) => vp.watchedPercent === 100).length;
+    const videoProgress = totalVideos > 0 ? Math.round((watchedVideos / totalVideos) * 100) : 0;
+
+    const totalChapters = course.chapters.length;
+    const completedChapters = chapterProgressRecords.filter((cp) => cp.isCompleted).length;
+    const chapterProgress =
+      totalChapters > 0 ? Math.round((completedChapters / totalChapters) * 100) : 0;
+
+    // Calculate overall course progress as average of video and chapter progress
+    const overallProgress = Math.round((videoProgress + chapterProgress) / 2);
+
+    logger.info('Course content retrieved successfully', {
+      studentId,
+      courseId,
+    });
+
+    return {
+      course: {
+        id: course.id,
+        title: course.title,
+        description: course.description,
+        durationYears: course.durationYears,
+        coverImageUrl: course.coverImageUrl,
+      },
+      enrollment: {
+        enrollmentDate: enrollment.enrollmentDate,
+        isActive: enrollment.isActive,
+      },
+      progress: {
+        overallProgress,
+        videoProgress,
+        chapterProgress,
+        completedChapters,
+        totalChapters,
+        watchedVideos,
+        totalVideos,
+      },
+      chapters: formattedChapters,
+    };
+  } catch (error) {
+    logger.error('Error in getEnrolledCourseContent', {
+      studentId,
+      courseId,
       error: error instanceof Error ? error.message : String(error),
     });
     throw error;
