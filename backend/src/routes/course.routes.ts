@@ -30,7 +30,7 @@ router.post(
   createCourse,
 );
 router.get('/', getAllCourses);
-router.get('/:id', getCourseById);
+router.get('/:id', authenticate, requireAdmin, getCourseById);
 router.put(
   '/:id',
   authenticate,
