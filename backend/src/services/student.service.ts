@@ -2446,26 +2446,36 @@ export async function getExamAttemptResult(studentId: string, attemptId: string)
   }
 }
 
-// Preview courses service function
-export async function getPreviewCourses(page: number = 1, limit: number = 10, search: string = '') {
+export async function getPreviewCourse(courseId: string) {
   try {
-    logger.info('Fetching courses preview', { page, limit, search });
+    logger.info('Fetching course preview', { courseId });
 
-    // Calculate skip for pagination
-    const skip = (page - 1) * limit;
-
-    // Fetch active courses with limited preview information
-    const courses = await prisma.course.findMany({
+    // Check if the course exists and is active
+    const courseExists = await prisma.course.findFirst({
       where: {
-        isActive: true,
-        ...(search
-          ? {
-              OR: [
-                { title: { contains: search, mode: 'insensitive' } },
-                { description: { contains: search, mode: 'insensitive' } },
-              ],
-            }
-          : {}),
+        id: courseId,
+      },
+      select: { id: true, isActive: true },
+    });
+
+    // Handle course not found
+    if (!courseExists) {
+      const notFoundError = new Error('Course not found');
+      (notFoundError as any).statusCode = 404;
+      throw notFoundError;
+    }
+
+    // Handle inactive course
+    if (!courseExists.isActive) {
+      const inactiveError = new Error('This course is currently unavailable');
+      (inactiveError as any).statusCode = 403;
+      throw inactiveError;
+    }
+
+    // Fetch the specific course with preview information
+    const course = await prisma.course.findUnique({
+      where: {
+        id: courseId,
       },
       select: {
         id: true,
@@ -2473,100 +2483,108 @@ export async function getPreviewCourses(page: number = 1, limit: number = 10, se
         description: true,
         durationYears: true,
         coverImageUrl: true,
-        // Include a limited number of chapters with basic info only
+        // Get all chapters to count them, but limit preview data
         chapters: {
-          take: 1, // Just the first chapter for preview
+          orderBy: {
+            orderIndex: 'asc',
+          },
           select: {
             id: true,
             title: true,
             description: true,
-            // Include just one preview video if exists
+            courseYear: true,
+            // Include videos for the first chapter only
             videos: {
+              where: {
+                orderIndex: 1, // Just get the first video
+              },
               take: 1,
               select: {
                 id: true,
                 title: true,
                 description: true,
                 duration: true,
+                backblazeUrl: true,
               },
             },
           },
-          orderBy: {
-            orderIndex: 'asc',
-          },
+          take: 3, // Show preview of first 3 chapters
         },
+        createdAt: true,
         _count: {
           select: {
             chapters: true,
             enrollments: true,
           },
         },
-      },
-      take: limit,
-      skip: skip,
-      orderBy: {
-        createdAt: 'desc',
+        // Get information about the admin who created the course
+        createdBy: {
+          select: {
+            fullName: true,
+          },
+        },
       },
     });
 
-    // Get total count for pagination
-    const totalCourses = await prisma.course.count({
-      where: {
-        isActive: true,
-        ...(search
-          ? {
-              OR: [
-                { title: { contains: search, mode: 'insensitive' } },
-                { description: { contains: search, mode: 'insensitive' } },
-              ],
-            }
-          : {}),
-      },
+    if (!course) {
+      const notFoundError = new Error('Course not found');
+      (notFoundError as any).statusCode = 404;
+      throw notFoundError;
+    }
+
+    // Group chapters by year
+    const chaptersByYear = Array.from(
+      { length: course.durationYears },
+      (_, index) => index + 1,
+    ).map((year) => {
+      const yearChapters = course.chapters.filter((chapter) => chapter.courseYear === year);
+
+      return {
+        year,
+        chapterCount: yearChapters.length,
+        previewChapters: yearChapters.slice(0, 1).map((chapter) => ({
+          id: chapter.id,
+          title: chapter.title,
+          description: chapter.description,
+          previewVideo: chapter.videos[0] || null,
+        })),
+      };
     });
 
     // Format preview response
-    const formattedCourses = courses.map((course) => ({
+    const formattedCourse = {
       id: course.id,
       title: course.title,
       description: course.description,
       durationYears: course.durationYears,
-      coverImageUrl: course.coverImageUrl,
+      coverImageUrl: course.coverImageUrl || null,
       totalChapters: course._count.chapters,
       enrollmentCount: course._count.enrollments,
+      instructor: course.createdBy.fullName,
+      createdAt: course.createdAt,
+      yearlyStructure: chaptersByYear,
+      // Include a sample preview chapter if available
       previewChapter: course.chapters[0]
         ? {
+            id: course.chapters[0].id,
             title: course.chapters[0].title,
             description: course.chapters[0].description,
-            previewVideo: course.chapters[0].videos[0]
-              ? {
-                  title: course.chapters[0].videos[0].title,
-                  description: course.chapters[0].videos[0].description,
-                  duration: course.chapters[0].videos[0].duration,
-                }
-              : null,
+            previewVideo: course.chapters[0].videos[0] || null,
           }
         : null,
-    }));
+    };
 
-    logger.info('Courses preview fetched successfully', {
-      courseCount: courses.length,
+    logger.info('Course preview fetched successfully', {
+      courseId,
+      hasPreviewVideo: Boolean(course.chapters[0]?.videos[0]),
     });
 
-    return {
-      courses: formattedCourses,
-      pagination: {
-        currentPage: page,
-        totalPages: Math.ceil(totalCourses / limit),
-        totalItems: totalCourses,
-        itemsPerPage: limit,
-      },
-    };
+    return formattedCourse;
   } catch (error) {
-    logger.error('Error in getPreviewCourses', {
-      page,
-      limit,
-      search,
+    logger.error('Error in getPreviewCourse', {
+      courseId,
       error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
     });
     throw error;
   }
