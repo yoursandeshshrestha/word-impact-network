@@ -10,7 +10,7 @@ import {
   getStudentProfile,
   getStudentProgress,
   loginStudentController,
-  previewCourses,
+  previewCourse,
   registerStudent,
   startStudentExamAttempt,
   submitStudentExamAttempt,
@@ -82,7 +82,7 @@ router.post(
 router.get('/exam-attempts/:attemptId/result', authenticate, getStudentExamResult);
 
 // Preview courses - public access
-router.get('/courses/preview', previewCourses);
+router.get('/courses/:courseId/preview', previewCourse);
 
 // Authorized route for enrolled students to access full course content
 router.get('/courses/:courseId/content', authenticate, getFullCourseContent);
