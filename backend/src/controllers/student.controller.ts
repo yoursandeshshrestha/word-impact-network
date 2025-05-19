@@ -5,7 +5,7 @@ import {
   getEnrolledCourseContent,
   getExamAttemptResult,
   getExamDetails,
-  getPreviewCourses,
+  getPreviewCourse,
   getStudentEnrolledCourses,
   getStudentLearningProgress,
   getStudentProfileByUserId,
@@ -16,7 +16,7 @@ import {
   updateStudentProfileByUserId,
   updateVideoProgress,
 } from '../services/student.service';
-import { sendSuccess } from '../utils/responseHandler';
+import { sendError, sendSuccess } from '../utils/responseHandler';
 import { catchAsync } from '../utils/catchAsync';
 import { ApplicationStatus, Gender, PaymentStatus, UserRole } from '@prisma/client';
 import { generateToken } from '@/utils/jwt';
@@ -112,6 +112,13 @@ export const loginStudentController = catchAsync(async (req: Request, res: Respo
     userId: student.userId,
     email: student.email,
     role: student.role,
+  });
+
+  res.cookie('client-token-win', token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    maxAge: 24 * 60 * 60 * 1000,
+    sameSite: 'strict',
   });
 
   sendSuccess(res, 200, 'Login successful', {
@@ -627,20 +634,30 @@ export const getStudentExamResult = catchAsync(async (req: Request, res: Respons
   sendSuccess(res, 200, message, resultData);
 });
 
-      
-// Preview courses - public access
-export const previewCourses = catchAsync(async (req: Request, res: Response) => {
-  // Get query parameters for filtering/pagination
-  const { page = '1', limit = '10', search = '' } = req.query;
-  
-  // Convert to numbers
-  const pageNum = parseInt(page as string, 10);
-  const limitNum = parseInt(limit as string, 10);
-  
-  // Call service function
-  const previewData = await getPreviewCourses(pageNum, limitNum, search as string);
+export const previewCourse = catchAsync(async (req: Request, res: Response) => {
+  // Get the courseId from the route parameters
+  const { courseId } = req.params;
 
-  sendSuccess(res, 200, 'Courses preview retrieved successfully', previewData);
+  // Validate the courseId format
+  if (!courseId || typeof courseId !== 'string') {
+    return sendError(res, 400, 'Invalid course ID format');
+  }
+
+  try {
+    // Call service function to get a single course preview
+    const coursePreview = await getPreviewCourse(courseId);
+
+    // Return the course preview data
+    sendSuccess(res, 200, 'Course preview retrieved successfully', coursePreview);
+  } catch (error) {
+    // Handle specific error types that might be thrown from the service
+    if ((error as any).statusCode === 404) {
+      return sendError(res, 404, 'Course not found');
+    }
+
+    // Re-throw other errors to be caught by the global error handler
+    throw error;
+  }
 });
 
 // Get full course content - for enrolled students only
