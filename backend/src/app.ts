@@ -11,6 +11,7 @@ import routes from './routes';
 import corsOptions from './config/cors';
 import { errorHandler, notFoundHandler } from './middlewares/error.middleware';
 import { sendSuccess } from './utils/responseHandler';
+import validateToken from './utils/validateToken';
 
 const app: Application = express();
 dotenv.config();
@@ -48,6 +49,7 @@ initServices();
 
 // API Routes
 app.use(`${config.apiPrefix}`, routes);
+app.use(`${config.apiPrefix}`, validateToken);
 
 // Root route for base URL
 app.get('/', (_req: Request, res: Response) => {
