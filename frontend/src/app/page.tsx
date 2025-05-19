@@ -1,15 +1,13 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import Header from "@/src/components/Homepage/Header";
-import Hero from "@/src/components/Homepage/Hero";
-import Stats from "@/src/components/Homepage/Stats";
-import Testimonials from "@/src/components/Homepage/Testimonials";
-import CTA from "@/src/components/Homepage/CTA";
-import Footer from "@/src/components/Homepage/Footer";
-import ScrollTop from "@/src/components/Homepage/ScrollTop";
-import About from "@/src/components/Homepage/About";
-import AcademicProgram from "../components/Homepage/AcademicProgram";
+import Hero from "@/components/Homepage/Hero";
+import Stats from "@/components/Homepage/Stats";
+import Testimonials from "@/components/Homepage/Testimonials";
+import CTA from "@/components/Homepage/CTA";
+import ScrollTop from "@/components/Homepage/ScrollTop";
+import About from "@/components/Homepage/About";
+import AcademicProgram from "@/components/Homepage/AcademicProgram";
 const Index = () => {
   const [showScrollTop, setShowScrollTop] = useState(false);
 
@@ -27,7 +25,6 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-[#f0eee6]">
-      <Header />
       <main>
         <Hero />
         <About />
@@ -36,7 +33,6 @@ const Index = () => {
         <Testimonials />
         <CTA />
       </main>
-      <Footer />
       <ScrollTop showScrollTop={showScrollTop} scrollToTop={scrollToTop} />
     </div>
   );
