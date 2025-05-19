@@ -39,6 +39,13 @@ export const loginAdminController = catchAsync(async (req: Request, res: Respons
     role: admin.role,
   });
 
+  // res.cookie('authToken', token, {
+  //   httpOnly: true,
+  //   secure: process.env.NODE_ENV === 'production',
+  //   sameSite: 'strict',
+  //   maxAge: 24 * 60 * 60 * 1000,
+  // });
+
   sendSuccess(res, 200, 'Login successful', {
     admin: {
       id: admin.id,
@@ -140,4 +147,3 @@ export const getAdminDashboard = catchAsync(async (req: Request, res: Response) 
 
   sendSuccess(res, 200, 'Dashboard statistics retrieved successfully', dashboardStats);
 });
-  
