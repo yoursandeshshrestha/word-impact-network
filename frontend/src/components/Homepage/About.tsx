@@ -1,7 +1,7 @@
 import React from "react";
 import Link from "next/link";
 import Image from "next/image";
-import aboutImg from "@/public/graduation-image-two.jpg";
+import aboutImg from "@/assets/graduation-image-two.jpg";
 
 const About: React.FC = () => {
   return (
