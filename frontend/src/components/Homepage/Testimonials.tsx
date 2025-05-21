@@ -1,7 +1,7 @@
 import React from "react";
 import Image from "next/image";
 
-import testimonial1 from "@/public/graduation-cap-image.jpg";
+import testimonial1 from "@/assets/graduation-cap-image.jpg";
 
 const Testimonials = () => {
   // Testimonials data
