@@ -50,8 +50,7 @@ export const config = {
   matcher: [
     // Protected routes
     "/dashboard",
-    "/courses/:path*",
-    "/settings/:path*",
+      "/settings/:path*",
     "/analytics",
     "/applications/:path*",
     "/students",
