@@ -1,7 +1,7 @@
 import React from "react";
 import Image from "next/image";
 
-import heroBg from "@/public/graduation-cap-image.jpg";
+import heroBg from "@/assets/graduation-cap-image.jpg";
 
 const Hero: React.FC = () => {
   return (
