@@ -1,9 +1,9 @@
 "use client";
 
 import React from "react";
-import Header from "@/src/components/Homepage/Header";
-import Footer from "@/src/components/Homepage/Footer";
-import ScrollTop from "@/src/components/Homepage/ScrollTop";
+import Header from "@/components/Homepage/Header";
+import Footer from "@/components/Homepage/Footer";
+import ScrollTop from "@/components/Homepage/ScrollTop";
 
 const About: React.FC = () => {
   const [showScrollTop, setShowScrollTop] = React.useState(false);
