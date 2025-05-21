@@ -1,4 +1,3 @@
-// src/components/WebSocketMonitor.tsx
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
@@ -10,7 +9,7 @@ interface LogEntry {
 }
 
 const TEST_TOKEN =
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiIwZmNmMWQxZi0zZGQzLTQ1YzQtYTRlNi1jNzZjZmZiNWU3MjciLCJlbWFpbCI6ImNvbnRhY3R5b3VyYXJ5YW5AZ21haWwuY29tIiwicm9sZSI6IlNUVURFTlQiLCJpYXQiOjE3NDc1MDQ1ODUsImV4cCI6MTc0NzU5MDk4NX0.G2x8p_A2w9pd-8oyt9oL74FsEloJ14RjhM0YIKeR1t4";
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiIwZmNmMWQxZi0zZGQzLTQ1YzQtYTRlNi1jNzZjZmZiNWU3MjciLCJlbWFpbCI6ImNvbnRhY3R5b3VyYXJ5YW5AZ21haWwuY29tIiwicm9sZSI6IlNUVURFTlQiLCJpYXQiOjE3NDc2NTA0MjYsImV4cCI6MTc0NzczNjgyNn0.Y3mkhPAsYqcivtAc6qEs7b30GoTiCM70iYuGTzLQEn4";
 
 const WebSocketMonitor: React.FC = () => {
   const [logs, setLogs] = useState<LogEntry[]>([]);
