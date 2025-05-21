@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import logo from "@/public/logo-one.png";
+import logo from "@/assets/logo-one.png";
 
 const Header: React.FC = () => {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -219,13 +219,21 @@ const Header: React.FC = () => {
                   FAQ
                 </Link>
               </li>
+              <li>
+                <Link
+                  href="/courses"
+                  className="text-gray-800 uppercase hover:text-indigo-700 transition-colors font-semibold"
+                >
+                  Courses
+                </Link>
+              </li>
             </ul>
           </nav>
 
           {/* Authentication Links */}
           <div className="flex items-center space-x-4 flex-shrink-0">
             <Link
-              href="/login"
+              href="/auth/login"
               className="flex items-center text-gray-700 hover:text-indigo-700 transition-colors"
             >
               <div className="flex items-center justify-center w-8 h-8 rounded-full bg-gray-100">
@@ -249,7 +257,7 @@ const Header: React.FC = () => {
               <span className="ml-2 hidden md:inline font-medium">Login</span>
             </Link>
             <Link
-              href="/apply"
+              href="/auth/apply"
               className="bg-gray-800 hover:bg-gray-700 text-white px-6 py-2.5 rounded-md text-sm font-semibold transition-colors"
             >
               Apply
