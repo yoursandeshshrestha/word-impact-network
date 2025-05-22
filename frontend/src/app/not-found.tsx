@@ -3,6 +3,7 @@ import React, { useState, useEffect } from "react";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
+import notFoundImage from "@/assets/page-not-found.svg";
 
 const NotFound = () => {
   const [isVisible, setIsVisible] = useState(false);
@@ -58,7 +59,7 @@ const NotFound = () => {
           >
             <div className="relative z-10 flex flex-col items-center">
               <Image
-                src="/page-not-found.svg"
+                src={notFoundImage}
                 alt="Page not found illustration"
                 className="w-full h-auto max-w-md mx-auto"
                 width={1000}
