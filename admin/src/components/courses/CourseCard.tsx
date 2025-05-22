@@ -58,9 +58,10 @@ const CourseCard: React.FC<CourseCardProps> = ({
           </h3>
         </Link>
 
-        <p className="text-sm text-gray-600 mb-3 line-clamp-2">
-          {course.description}
-        </p>
+        <div
+          className="text-sm text-gray-600 mb-3 line-clamp-2 prose prose-sm max-w-none"
+          dangerouslySetInnerHTML={{ __html: course.description }}
+        />
 
         <div className="flex items-center text-sm text-gray-500 mb-3">
           <Calendar className="h-4 w-4 mr-1" />
@@ -75,7 +76,7 @@ const CourseCard: React.FC<CourseCardProps> = ({
         </div>
 
         {/* Footer always stays at the bottom */}
-        <div className="flex justify-between items-center mt-auto  border-t border-gray-100">
+        <div className="flex justify-between items-center mt-auto border-t border-gray-100 pt-3">
           <span className="text-sm text-gray-500">
             {course.createdBy?.fullName || "Unknown"}
           </span>
