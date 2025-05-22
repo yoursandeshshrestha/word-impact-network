@@ -82,7 +82,7 @@ export const createExam = createAsyncThunk(
       chapterId: string;
       examData: Omit<
         Exam,
-        "id" | "adminId" | "chapterId" | "createdAt" | "updatedAt"
+        "id" | "adminId" | "chapterId" | "createdAt" | "updatedAt" | "questions"
       >;
     },
     { rejectWithValue }
@@ -91,13 +91,21 @@ export const createExam = createAsyncThunk(
       const apiUrl =
         process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api/v1";
 
+      // Create a clean payload with only the allowed fields
+      const cleanPayload = {
+        title: examData.title,
+        description: examData.description,
+        passingScore: examData.passingScore,
+        timeLimit: examData.timeLimit,
+      };
+
       const response = await fetch(`${apiUrl}/exams/chapters/${chapterId}`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${getAuthToken()}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(examData),
+        body: JSON.stringify(cleanPayload),
       });
 
       const data = await response.json();
@@ -151,12 +159,44 @@ export const getExamById = createAsyncThunk(
 export const updateExam = createAsyncThunk(
   "exams/updateExam",
   async (
-    { id, examData }: { id: string; examData: Partial<Exam> },
+    {
+      id,
+      examData,
+    }: {
+      id: string;
+      examData: Partial<
+        Omit<
+          Exam,
+          | "id"
+          | "adminId"
+          | "chapterId"
+          | "createdAt"
+          | "updatedAt"
+          | "questions"
+        >
+      >;
+    },
     { rejectWithValue }
   ) => {
     try {
       const apiUrl =
         process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api/v1";
+
+      // Create a clean payload with only the allowed fields
+      const cleanPayload: Partial<{
+        title: string;
+        description: string | null;
+        passingScore: number;
+        timeLimit: number | null;
+      }> = {};
+
+      if (examData.title !== undefined) cleanPayload.title = examData.title;
+      if (examData.description !== undefined)
+        cleanPayload.description = examData.description;
+      if (examData.passingScore !== undefined)
+        cleanPayload.passingScore = examData.passingScore;
+      if (examData.timeLimit !== undefined)
+        cleanPayload.timeLimit = examData.timeLimit;
 
       const response = await fetch(`${apiUrl}/exams/${id}`, {
         method: "PUT",
@@ -164,7 +204,7 @@ export const updateExam = createAsyncThunk(
           Authorization: `Bearer ${getAuthToken()}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(examData),
+        body: JSON.stringify(cleanPayload),
       });
 
       const data = await response.json();
