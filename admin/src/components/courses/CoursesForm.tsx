@@ -1,6 +1,8 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { Course } from "@/redux/features/coursesSlice";
 import Image from "next/image";
+import imageCompression from "browser-image-compression";
+import { Editor } from "@tinymce/tinymce-react";
 import {
   Upload,
   X,
@@ -27,6 +29,7 @@ const CourseForm: React.FC<CourseFormProps> = ({
   onCancel,
   isLoading,
 }) => {
+  const editorRef = useRef<Editor | null>(null);
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -81,11 +84,21 @@ const CourseForm: React.FC<CourseFormProps> = ({
     }
   };
 
+  // Handle rich text editor content change
+  const handleEditorChange = (content: string) => {
+    setFormData((prev) => ({ ...prev, description: content }));
+
+    // Clear error when editor content is changed
+    if (errors.description) {
+      setErrors((prev) => ({ ...prev, description: "" }));
+    }
+  };
+
   const handleToggleActive = () => {
     setFormData((prev) => ({ ...prev, isActive: !prev.isActive }));
   };
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -99,27 +112,33 @@ const CourseForm: React.FC<CourseFormProps> = ({
       return;
     }
 
-    // Validate file size (max 2MB)
-    const maxSize = 2 * 1024 * 1024; // 2MB
-    if (file.size > maxSize) {
+    try {
+      // Compression options
+      const options = {
+        maxSizeMB: 1, // Max file size 1MB
+        maxWidthOrHeight: 1920, // Max width/height 1920px
+        useWebWorker: true, // Use web worker for better performance
+      };
+
+      // Compress the image
+      const compressedFile = await imageCompression(file, options);
+
+      // Create a preview
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setCoverImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(compressedFile);
+
+      setCoverImage(compressedFile);
+      setErrors((prev) => ({ ...prev, coverImage: "" }));
+    } catch (error) {
+      console.error("Error compressing image:", error);
       setErrors((prev) => ({
         ...prev,
-        coverImage: "Image size exceeds 2MB. Please upload a smaller image.",
+        coverImage: "Error compressing image. Please try again.",
       }));
-      return;
     }
-
-    setCoverImage(file);
-
-    // Create a preview
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setCoverImagePreview(reader.result as string);
-    };
-    reader.readAsDataURL(file);
-
-    // Clear any previous error
-    setErrors((prev) => ({ ...prev, coverImage: "" }));
   };
 
   const validateForm = () => {
@@ -137,8 +156,11 @@ const CourseForm: React.FC<CourseFormProps> = ({
       valid = false;
     }
 
-    // Validate description
-    if (!formData.description.trim()) {
+    // Validate description - check for empty HTML content
+    const descriptionContent = formData.description
+      .replace(/<(.|\n)*?>/g, "")
+      .trim();
+    if (!descriptionContent) {
       newErrors.description = "Description is required";
       valid = false;
     }
@@ -163,7 +185,7 @@ const CourseForm: React.FC<CourseFormProps> = ({
 
         // Add text fields
         formDataToSubmit.append("title", formData.title.trim());
-        formDataToSubmit.append("description", formData.description.trim());
+        formDataToSubmit.append("description", formData.description);
         formDataToSubmit.append(
           "durationYears",
           formData.durationYears.toString()
@@ -236,7 +258,7 @@ const CourseForm: React.FC<CourseFormProps> = ({
       <div>
         <label
           htmlFor="title"
-          className=" text-sm font-medium text-gray-700 flex items-center"
+          className="text-sm font-medium text-gray-700 flex items-center"
         >
           <Type size={16} className="mr-1" /> Title{" "}
           <span className="text-red-500 ml-1">*</span>
@@ -262,22 +284,58 @@ const CourseForm: React.FC<CourseFormProps> = ({
       <div>
         <label
           htmlFor="description"
-          className=" text-sm font-medium text-gray-700 flex items-center"
+          className="text-sm font-medium text-gray-700 flex items-center"
         >
           <FileText size={16} className="mr-1" /> Description{" "}
           <span className="text-red-500 ml-1">*</span>
         </label>
-        <textarea
-          id="description"
-          name="description"
-          rows={4}
-          value={formData.description}
-          onChange={handleChange}
-          className={`mt-1 block w-full rounded-md border ${
+
+        {/* Rich Text Editor */}
+        <div
+          className={`mt-1 border ${
             errors.description ? "border-red-500" : "border-gray-300"
-          } shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 cursor-text`}
-          placeholder="Enter course description"
-        />
+          } rounded-md overflow-hidden`}
+        >
+          <Editor
+            apiKey="hwqbciee1qbh3165r74nw7fwh4n3z4vq2l2043ic44b2gv43" // Replace with your TinyMCE API key
+            onInit={(evt, editor) => (editorRef.current = editor)}
+            initialValue={formData.description}
+            onEditorChange={handleEditorChange}
+            init={{
+              height: 300,
+              menubar: false,
+              plugins: [
+                "advlist",
+                "autolink",
+                "lists",
+                "link",
+                "image",
+                "charmap",
+                "preview",
+                "anchor",
+                "searchreplace",
+                "visualblocks",
+                "code",
+                "fullscreen",
+                "insertdatetime",
+                "media",
+                "table",
+                "code",
+                "help",
+                "wordcount",
+              ],
+              toolbar:
+                "undo redo | blocks | " +
+                "bold italic forecolor | alignleft aligncenter " +
+                "alignright alignjustify | bullist numlist outdent indent | " +
+                "removeformat | help",
+              content_style:
+                "body { font-family:Helvetica,Arial,sans-serif; font-size:14px }",
+              placeholder: "Enter course description",
+            }}
+          />
+        </div>
+
         {errors.description && (
           <p className="mt-1 text-sm text-red-500 flex items-center">
             <Info size={14} className="mr-1" /> {errors.description}
@@ -288,7 +346,7 @@ const CourseForm: React.FC<CourseFormProps> = ({
       <div>
         <label
           htmlFor="durationYears"
-          className=" text-sm font-medium text-gray-700 flex items-center"
+          className="text-sm font-medium text-gray-700 flex items-center"
         >
           <Calendar size={16} className="mr-1" /> Duration (Years){" "}
           <span className="text-red-500 ml-1">*</span>
@@ -315,7 +373,7 @@ const CourseForm: React.FC<CourseFormProps> = ({
       <div>
         <label
           htmlFor="coverImage"
-          className=" text-sm font-medium text-gray-700 flex items-center"
+          className="text-sm font-medium text-gray-700 flex items-center"
         >
           <BookOpen size={16} className="mr-1" /> Cover Image
         </label>
