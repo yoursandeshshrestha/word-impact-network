@@ -10,8 +10,10 @@
   },
   "dependencies": {
     "@reduxjs/toolkit": "^2.8.0",
+    "@tinymce/tinymce-react": "^6.1.0",
     "@types/js-cookie": "^3.0.6",
     "@types/nprogress": "^0.2.3",
+    "browser-image-compression": "^2.0.2",
     "date-fns": "^4.1.0",
     "dotenv": "^16.5.0",
     "install": "^0.13.0",
