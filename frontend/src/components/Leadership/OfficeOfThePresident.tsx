@@ -2,10 +2,9 @@
 
 import React, { useEffect, useState } from "react";
 import Image from "next/image";
-import Header from "@/src/components/Homepage/Header";
-import Footer from "@/src/components/Homepage/Footer";
-import ScrollTop from "@/src/components/Homepage/ScrollTop";
-import presidentImage from "@/public/sandesh.jpg"; // Replace with actual president image path
+
+import ScrollTop from "@/components/Homepage/ScrollTop";
+import presidentImage from "@/assets/sandesh.jpg"; // Replace with actual president image path
 
 const OfficeOfThePresident: React.FC = () => {
   const [showScrollTop, setShowScrollTop] = useState<boolean>(false);
@@ -29,7 +28,6 @@ const OfficeOfThePresident: React.FC = () => {
 
   return (
     <>
-      <Header />
       <main>
         {/* Hero Section with Purple Background */}
         <section className="bg-purple-900 text-white py-20 mt-28">
@@ -200,7 +198,6 @@ const OfficeOfThePresident: React.FC = () => {
         </section>
       </main>
 
-      <Footer />
       <ScrollTop showScrollTop={showScrollTop} scrollToTop={scrollToTop} />
     </>
   );
