@@ -2,17 +2,15 @@
 
 import React, { useEffect, useState } from "react";
 import Image, { StaticImageData } from "next/image";
-import Header from "@/src/components/Homepage/Header";
-import Footer from "@/src/components/Homepage/Footer";
-import ScrollTop from "@/src/components/Homepage/ScrollTop";
+import ScrollTop from "@/components/Homepage/ScrollTop";
 
 // Staff member images - replace with actual image paths
-import staffImage1 from "@/public/graduation-image-two.jpg";
-import staffImage2 from "@/public/graduation-image-two.jpg";
-import staffImage3 from "@/public/graduation-image-two.jpg";
-import staffImage4 from "@/public/graduation-image-two.jpg";
-import staffImage5 from "@/public/graduation-image-two.jpg";
-import staffImage6 from "@/public/graduation-image-two.jpg";
+import staffImage1 from "@/assets/graduation-image-two.jpg";
+import staffImage2 from "@/assets/graduation-image-two.jpg";
+import staffImage3 from "@/assets/graduation-image-two.jpg";
+import staffImage4 from "@/assets/graduation-image-two.jpg";
+import staffImage5 from "@/assets/graduation-image-two.jpg";
+import staffImage6 from "@/assets/graduation-image-two.jpg";
 
 // Staff member interface for type safety
 interface StaffMember {
@@ -91,7 +89,6 @@ const Staff: React.FC = () => {
 
   return (
     <>
-      <Header />
       <main>
         {/* Hero Section with Purple Background */}
         <section className="bg-purple-900 text-white py-20 mt-28">
@@ -222,7 +219,6 @@ const Staff: React.FC = () => {
         </section>
       </main>
 
-      <Footer />
       <ScrollTop showScrollTop={showScrollTop} scrollToTop={scrollToTop} />
     </>
   );
