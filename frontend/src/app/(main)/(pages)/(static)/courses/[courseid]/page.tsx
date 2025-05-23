@@ -24,6 +24,25 @@ import {
   Inbox,
 } from "lucide-react";
 import DOMPurify from "dompurify";
+import { isAuthenticated } from "@/common/services/auth";
+import { useRouter } from "next/navigation";
+import { useEnrollment } from "@/redux/features/enrollment/hooks/useEnrollment";
+import { toast } from "sonner";
+
+interface ApiError {
+  response?: {
+    status: number;
+    data?: {
+      success?: boolean;
+      error?: {
+        message: string;
+        code: string;
+        statusCode: number;
+      };
+      message?: string;
+    };
+  };
+}
 
 interface VideoData {
   id: string;
@@ -63,6 +82,8 @@ interface CourseData {
 const CourseDetailPage = () => {
   const { courseid } = useParams();
   const dispatch = useAppDispatch();
+  const router = useRouter();
+  const { enrollInCourse, loading: enrollmentLoading } = useEnrollment();
   const { currentCourse, status, error } = useAppSelector(
     (state) => state.publicCourses
   );
@@ -91,9 +112,88 @@ const CourseDetailPage = () => {
     return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
   };
 
-  const handleEnrollNow = () => {
-    alert("You've successfully enrolled in this course!");
-    // In a real implementation, you would call an API endpoint to enroll the user
+  const handleEnrollNow = async () => {
+    if (!isAuthenticated()) {
+      router.push("/auth/login");
+      return;
+    }
+
+    if (!courseid) return;
+
+    try {
+      const success = await enrollInCourse(courseid as string);
+
+      if (success) {
+        toast.success("Successfully enrolled in the course!");
+        router.push("/dashboard");
+      }
+    } catch (error: unknown) {
+      const apiError = error as ApiError;
+      const errorData = apiError?.response?.data;
+
+      if (errorData?.error) {
+        // Handle specific error cases
+        switch (errorData.error.code) {
+          case "DUPLICATE":
+            toast.error("You are already enrolled in this course", {
+              duration: 5000,
+              position: "top-center",
+            });
+            break;
+          case "NOT_FOUND":
+            if (errorData.error.message.includes("Student")) {
+              toast.error(
+                "Student account not found. Please contact support.",
+                {
+                  duration: 5000,
+                  position: "top-center",
+                }
+              );
+            } else {
+              toast.error("Course not found or is currently unavailable.", {
+                duration: 5000,
+                position: "top-center",
+              });
+            }
+            break;
+          case "AUTHORIZATION":
+            toast.error("You are not authorized to enroll in this course.", {
+              duration: 5000,
+              position: "top-center",
+            });
+            break;
+          case "PRECONDITION_FAILED":
+            toast.error(
+              "You need to complete the prerequisites before enrolling.",
+              {
+                duration: 5000,
+                position: "top-center",
+              }
+            );
+            break;
+          default:
+            toast.error(
+              errorData.error.message ||
+                "Failed to enroll in the course. Please try again.",
+              {
+                duration: 5000,
+                position: "top-center",
+              }
+            );
+        }
+      } else {
+        const errorMessage =
+          errorData?.message ||
+          (typeof errorData === "string"
+            ? errorData
+            : "Failed to enroll in the course. Please try again.");
+
+        toast.error(errorMessage, {
+          duration: 5000,
+          position: "top-center",
+        });
+      }
+    }
   };
 
   const handlePlayVideo = (videoUrl: string) => {
@@ -578,9 +678,23 @@ const CourseDetailPage = () => {
 
                 <button
                   onClick={handleEnrollNow}
-                  className="w-full bg-gray-800 hover:bg-gray-700 text-white py-3 rounded-md font-semibold transition-colors flex items-center justify-center mt-4"
+                  disabled={enrollmentLoading}
+                  className="w-full bg-gray-800 hover:bg-gray-700 text-white py-3 rounded-md font-semibold transition-colors flex items-center justify-center mt-4 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Enroll Now <ChevronRight className="w-5 h-5 ml-2" />
+                  {enrollmentLoading ? (
+                    <>
+                      <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                      Processing...
+                    </>
+                  ) : isAuthenticated() ? (
+                    <>
+                      Enroll Now <ChevronRight className="w-5 h-5 ml-2" />
+                    </>
+                  ) : (
+                    <>
+                      Login to Enroll <ChevronRight className="w-5 h-5 ml-2" />
+                    </>
+                  )}
                 </button>
 
                 <p className="text-center text-gray-500 text-sm">
