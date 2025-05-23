@@ -2,23 +2,21 @@
 
 import React, { useEffect, useState } from "react";
 import Image, { StaticImageData } from "next/image";
-import Header from "@/src/components/Homepage/Header";
-import Footer from "@/src/components/Homepage/Footer";
-import ScrollTop from "@/src/components/Homepage/ScrollTop";
+import ScrollTop from "@/components/Homepage/ScrollTop";
 
 // Ambassador images - replace with actual image paths
-import ambassadorImage1 from "@/public/graduation-image-two.jpg";
-import ambassadorImage2 from "@/public/graduation-image-two.jpg";
-import ambassadorImage3 from "@/public/graduation-image-two.jpg";
-import ambassadorImage4 from "@/public/graduation-image-two.jpg";
-import ambassadorImage5 from "@/public/graduation-image-two.jpg";
-import ambassadorImage6 from "@/public/graduation-image-two.jpg";
-import ambassadorImage7 from "@/public/graduation-image-two.jpg";
-import ambassadorImage8 from "@/public/graduation-image-two.jpg";
-import ambassadorImage9 from "@/public/graduation-image-two.jpg";
-import ambassadorImage10 from "@/public/graduation-image-two.jpg";
-import ambassadorImage11 from "@/public/graduation-image-two.jpg";
-import ambassadorImage12 from "@/public/graduation-image-two.jpg";
+import ambassadorImage1 from "@/assets/graduation-image-two.jpg";
+import ambassadorImage2 from "@/assets/graduation-image-two.jpg";
+import ambassadorImage3 from "@/assets/graduation-image-two.jpg";
+import ambassadorImage4 from "@/assets/graduation-image-two.jpg";
+import ambassadorImage5 from "@/assets/graduation-image-two.jpg";
+import ambassadorImage6 from "@/assets/graduation-image-two.jpg";
+import ambassadorImage7 from "@/assets/graduation-image-two.jpg";
+import ambassadorImage8 from "@/assets/graduation-image-two.jpg";
+import ambassadorImage9 from "@/assets/graduation-image-two.jpg";
+import ambassadorImage10 from "@/assets/graduation-image-two.jpg";
+import ambassadorImage11 from "@/assets/graduation-image-two.jpg";
+import ambassadorImage12 from "@/assets/graduation-image-two.jpg";
 
 // Ambassador interface for type safety
 interface Ambassador {
@@ -127,7 +125,6 @@ const Ambassadors: React.FC = () => {
 
   return (
     <>
-      <Header />
       <main>
         {/* Hero Section with Purple Background */}
         <section className="bg-purple-900 text-white py-20 mt-28">
@@ -266,7 +263,6 @@ const Ambassadors: React.FC = () => {
         </section>
       </main>
 
-      <Footer />
       <ScrollTop showScrollTop={showScrollTop} scrollToTop={scrollToTop} />
     </>
   );
