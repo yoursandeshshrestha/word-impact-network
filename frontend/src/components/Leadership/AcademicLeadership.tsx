@@ -2,17 +2,16 @@
 
 import React, { useEffect, useState } from "react";
 import Image, { StaticImageData } from "next/image";
-import Header from "@/src/components/Homepage/Header";
-import Footer from "@/src/components/Homepage/Footer";
-import ScrollTop from "@/src/components/Homepage/ScrollTop";
+
+import ScrollTop from "@/components/Homepage/ScrollTop";
 
 // Academic leader images - replace with actual image paths
-import leaderImage1 from "@/public/graduation-image-two.jpg";
-import leaderImage2 from "@/public/graduation-image-two.jpg";
-import leaderImage3 from "@/public/graduation-image-two.jpg";
-import leaderImage4 from "@/public/graduation-image-two.jpg";
-import leaderImage5 from "@/public/graduation-image-two.jpg";
-import leaderImage6 from "@/public/graduation-image-two.jpg";
+import leaderImage1 from "@/assets/graduation-image-two.jpg";
+import leaderImage2 from "@/assets/graduation-image-two.jpg";
+import leaderImage3 from "@/assets/graduation-image-two.jpg";
+import leaderImage4 from "@/assets/graduation-image-two.jpg";
+import leaderImage5 from "@/assets/graduation-image-two.jpg";
+import leaderImage6 from "@/assets/graduation-image-two.jpg";
 
 // Academic leader interface for type safety
 interface AcademicLeader {
@@ -98,7 +97,6 @@ const AcademicLeadership: React.FC = () => {
 
   return (
     <>
-      <Header />
       <main>
         {/* Hero Section with Purple Background */}
         <section className="bg-purple-900 text-white py-20 mt-28">
@@ -236,7 +234,6 @@ const AcademicLeadership: React.FC = () => {
         </section>
       </main>
 
-      <Footer />
       <ScrollTop showScrollTop={showScrollTop} scrollToTop={scrollToTop} />
     </>
   );
