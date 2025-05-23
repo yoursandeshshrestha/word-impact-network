@@ -1,8 +1,7 @@
 "use client";
 
 import React from "react";
-import Header from "@/components/Homepage/Header";
-import Footer from "@/components/Homepage/Footer";
+    
 import ScrollTop from "@/components/Homepage/ScrollTop";
 
 const About: React.FC = () => {
@@ -24,7 +23,6 @@ const About: React.FC = () => {
 
   return (
     <>
-      <Header />
       <main>
         {/* Hero Section with Purple Background */}
         <section className="bg-purple-900 text-white py-20 mt-28">
@@ -147,7 +145,6 @@ const About: React.FC = () => {
         </section>
       </main>
 
-      <Footer />
       <ScrollTop showScrollTop={showScrollTop} scrollToTop={scrollToTop} />
     </>
   );
