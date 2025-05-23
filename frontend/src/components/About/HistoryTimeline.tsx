@@ -2,9 +2,8 @@
 
 import React, { useEffect, useState } from "react";
 import Image from "next/image";
-import Header from "@/src/components/Homepage/Header";
-import Footer from "@/src/components/Homepage/Footer";
-import ScrollTop from "@/src/components/Homepage/ScrollTop";
+
+import ScrollTop from "@/components/Homepage/ScrollTop";
 import {
   Award,
   GraduationCap,
@@ -14,7 +13,7 @@ import {
   ChevronDown,
   ChevronUp,
 } from "lucide-react";
-import graduationImage from "@/public/graduation-image-two.jpg";
+import graduationImage from "@/assets/graduation-image-two.jpg";
 import { StaticImageData } from "next/image";
 
 // Timeline Event interface for type safety
@@ -129,7 +128,6 @@ const HistoryTimeline: React.FC = () => {
 
   return (
     <>
-      <Header />
       <main>
         {/* Hero Section with Purple Background - Matching homepage style */}
         <section className="bg-purple-900 text-white py-20 mt-28">
@@ -306,7 +304,6 @@ const HistoryTimeline: React.FC = () => {
         </section>
       </main>
 
-      <Footer />
       <ScrollTop showScrollTop={showScrollTop} scrollToTop={scrollToTop} />
     </>
   );
