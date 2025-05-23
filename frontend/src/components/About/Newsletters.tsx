@@ -1,9 +1,8 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import Header from "@/src/components/Homepage/Header";
-import Footer from "@/src/components/Homepage/Footer";
-import ScrollTop from "@/src/components/Homepage/ScrollTop";
+
+import ScrollTop from "@/components/Homepage/ScrollTop";
 import { Calendar, ChevronDown, ChevronUp, Download } from "lucide-react";
 
 // Newsletter interface for type safety
@@ -145,7 +144,6 @@ const Newsletters: React.FC = () => {
 
   return (
     <>
-      <Header />
       <main>
         {/* Hero Section with Purple Background - Matching homepage style */}
         <section className="bg-purple-900 text-white py-20 mt-28">
@@ -283,7 +281,6 @@ const Newsletters: React.FC = () => {
         </section>
       </main>
 
-      <Footer />
       <ScrollTop showScrollTop={showScrollTop} scrollToTop={scrollToTop} />
     </>
   );
