@@ -2,17 +2,16 @@
 
 import React, { useEffect, useState } from "react";
 import Image, { StaticImageData } from "next/image";
-import Header from "@/src/components/Homepage/Header";
-import Footer from "@/src/components/Homepage/Footer";
-import ScrollTop from "@/src/components/Homepage/ScrollTop";
+
+import ScrollTop from "@/components/Homepage/ScrollTop";
 
 // Director images - replace with actual image paths
-import directorImage1 from "@/public/sandesh.jpg";
-import directorImage2 from "@/public/sandesh.jpg";
-import directorImage3 from "@/public/sandesh.jpg";
-import directorImage4 from "@/public/sandesh.jpg";
-import directorImage5 from "@/public/sandesh.jpg";
-import directorImage6 from "@/public/sandesh.jpg";
+import directorImage1 from "@/assets/sandesh.jpg";
+import directorImage2 from "@/assets/sandesh.jpg";
+import directorImage3 from "@/assets/sandesh.jpg";
+import directorImage4 from "@/assets/sandesh.jpg";
+import directorImage5 from "@/assets/sandesh.jpg";
+import directorImage6 from "@/assets/sandesh.jpg";
 
 // Director interface for type safety
 interface Director {
@@ -87,7 +86,6 @@ const BoardOfDirectors: React.FC = () => {
 
   return (
     <>
-      <Header />
       <main>
         {/* Hero Section with Purple Background */}
         <section className="bg-purple-900 text-white py-20 mt-28">
@@ -219,7 +217,6 @@ const BoardOfDirectors: React.FC = () => {
         </section>
       </main>
 
-      <Footer />
       <ScrollTop showScrollTop={showScrollTop} scrollToTop={scrollToTop} />
     </>
   );
