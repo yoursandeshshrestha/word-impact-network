@@ -49,11 +49,8 @@ async function validateToken(token: string): Promise<boolean> {
 export const config = {
   matcher: [
     // Protected routes
-    "/dashboard",
-      "/settings/:path*",
-    "/analytics",
-    "/applications/:path*",
-    "/students",
+    "/dashboard/:path*",
+
     // Auth routes
     "/auth/:path*",
   ],
