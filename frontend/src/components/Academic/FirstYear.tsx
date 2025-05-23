@@ -1,9 +1,8 @@
 "use client";
 
 import React from "react";
-import Header from "@/src/components/Homepage/Header";
-import Footer from "@/src/components/Homepage/Footer";
-import ScrollTop from "@/src/components/Homepage/ScrollTop";
+
+import ScrollTop from "@/components/Homepage/ScrollTop";
 
 const FirstYear: React.FC = () => {
   const [showScrollTop, setShowScrollTop] = React.useState(false);
@@ -22,7 +21,6 @@ const FirstYear: React.FC = () => {
 
   return (
     <>
-      <Header />
       <main>
         {/* Hero Section */}
         <section className="bg-purple-900 text-white py-20 mt-28">
@@ -209,7 +207,6 @@ const FirstYear: React.FC = () => {
         </section>
       </main>
 
-      <Footer />
       <ScrollTop showScrollTop={showScrollTop} scrollToTop={scrollToTop} />
     </>
   );
