@@ -2,17 +2,16 @@
 
 import React, { useEffect, useState } from "react";
 import Image, { StaticImageData } from "next/image";
-import Header from "@/src/components/Homepage/Header";
-import Footer from "@/src/components/Homepage/Footer";
-import ScrollTop from "@/src/components/Homepage/ScrollTop";
+
+import ScrollTop from "@/components/Homepage/ScrollTop";
 
 // Counsel member images - replace with actual image paths
-import counselImage1 from "@/public/graduation-image-two.jpg";
-import counselImage2 from "@/public/graduation-image-two.jpg";
-import counselImage3 from "@/public/graduation-image-two.jpg";
-import counselImage4 from "@/public/graduation-image-two.jpg";
-import counselImage5 from "@/public/graduation-image-two.jpg";
-import counselImage6 from "@/public/graduation-image-two.jpg";
+import counselImage1 from "@/assets/graduation-image-two.jpg";
+import counselImage2 from "@/assets/graduation-image-two.jpg";
+import counselImage3 from "@/assets/graduation-image-two.jpg";
+import counselImage4 from "@/assets/graduation-image-two.jpg";
+import counselImage5 from "@/assets/graduation-image-two.jpg";
+  import counselImage6 from "@/assets/graduation-image-two.jpg";
 
 // Counsel member interface for type safety
 interface CounselMember {
@@ -91,7 +90,6 @@ const PresidentsCounsel: React.FC = () => {
 
   return (
     <>
-      <Header />
       <main>
         {/* Hero Section with Purple Background */}
         <section className="bg-purple-900 text-white py-20 mt-28">
@@ -224,7 +222,6 @@ const PresidentsCounsel: React.FC = () => {
         </section>
       </main>
 
-      <Footer />
       <ScrollTop showScrollTop={showScrollTop} scrollToTop={scrollToTop} />
     </>
   );
