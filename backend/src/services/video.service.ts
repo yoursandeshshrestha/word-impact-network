@@ -1,7 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 import { AppError, ErrorTypes } from '../utils/appError';
 import { logger } from '../utils/logger';
-import { uploadToCloudinary } from '../utils/cloudinary';
+import { uploadToBunny, deleteFromBunny } from '../utils/bunny';
 
 const prisma = new PrismaClient();
 
@@ -49,14 +49,15 @@ export async function createVideo(
       );
     }
 
-    // Create a unique public_id for the video in Cloudinary
+    // Create a safe title for the folder structure
     const safeTitle = title.toLowerCase().replace(/\s+/g, '-');
     const timestamp = Date.now();
 
-    // Upload video to Cloudinary
-    const cloudinaryUrl = await uploadToCloudinary(
+    // Upload video to Bunny CDN - all videos go to 'course-videos' folder
+    const bunnyUrl = await uploadToBunny(
       videoFile.buffer,
-      `win/courses/${chapter.course.id}/chapters/${chapterId}/videos/${safeTitle}-${timestamp}`,
+      `course-videos`,
+      `${safeTitle}-${timestamp}.mp4`,
     );
 
     // Create the video record in the database
@@ -66,7 +67,7 @@ export async function createVideo(
         description,
         orderIndex,
         duration,
-        backblazeUrl: cloudinaryUrl, // Using the existing field for Cloudinary URL
+        backblazeUrl: bunnyUrl, // Using the existing field for Bunny CDN URL
         chapterId,
       },
       include: {
@@ -230,11 +231,19 @@ export async function updateVideoById(
       const safeTitle = title.toLowerCase().replace(/\s+/g, '-');
       const timestamp = Date.now();
 
-      // Upload video to Cloudinary
-      filteredUpdateData.backblazeUrl = await uploadToCloudinary(
+      // Upload new video to Bunny CDN - all videos go to 'course-videos' folder
+      const newBunnyUrl = await uploadToBunny(
         videoFile.buffer,
-        `win/courses/${existingVideo.chapter.course.id}/chapters/${existingVideo.chapterId}/videos/${safeTitle}-${timestamp}`,
+        `course-videos`,
+        `${safeTitle}-${timestamp}.mp4`,
       );
+
+      // Delete old video from Bunny CDN (if it exists)
+      if (existingVideo.backblazeUrl) {
+        await deleteFromBunny(existingVideo.backblazeUrl);
+      }
+
+      filteredUpdateData.backblazeUrl = newBunnyUrl;
     }
 
     // If no fields to update, return the current video
@@ -278,13 +287,18 @@ export async function deleteVideoById(id: string) {
   try {
     logger.info('Deleting video', { videoId: id });
 
-    // Check if video exists
+    // Check if video exists and get the URL for deletion
     const video = await prisma.video.findUnique({
       where: { id },
     });
 
     if (!video) {
       throw new AppError('Video not found', 404, ErrorTypes.NOT_FOUND);
+    }
+
+    // Delete the video file from Bunny CDN if URL exists
+    if (video.backblazeUrl) {
+      await deleteFromBunny(video.backblazeUrl);
     }
 
     // Delete the video record from the database
