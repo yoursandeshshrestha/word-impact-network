@@ -4,6 +4,7 @@ import "./globals.css";
 import { LoadingProvider } from "@/common/contexts/LoadingContext";
 import { Toaster } from "sonner";
 import { ReduxProvider } from "@/redux/provider";
+import { UserProvider } from "./(no-layout)/dashboard/UserProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -28,12 +29,14 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <ReduxProvider>
-        <body
-          className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-        >
-          <Toaster position="top-right" expand={false} richColors />
-          <LoadingProvider>{children}</LoadingProvider>
-        </body>
+        <UserProvider>
+          <body
+            className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+          >
+            <Toaster position="top-right" expand={false} richColors />
+            <LoadingProvider>{children}</LoadingProvider>
+          </body>
+        </UserProvider>
       </ReduxProvider>
     </html>
   );
