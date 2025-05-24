@@ -88,7 +88,7 @@ const VideoForm: React.FC<VideoFormProps> = ({
     }
 
     // Validate file size (max 500MB)
-    const maxSize = 500 * 1024 * 1024; // 500MB
+    const maxSize = 5 * 1024 * 1024 * 1024; // 5GB
     if (file.size > maxSize) {
       setErrors((prev) => ({
         ...prev,
@@ -326,7 +326,7 @@ const VideoForm: React.FC<VideoFormProps> = ({
 
         <p className="mt-1 text-xs text-gray-500 flex items-center">
           <Info size={12} className="mr-1" />
-          Supported formats: MP4, WebM, OGG, QuickTime (max 500MB)
+          Supported formats: MP4, WebM, OGG, QuickTime (max 5GB)
         </p>
 
         {/* Upload progress bar */}
