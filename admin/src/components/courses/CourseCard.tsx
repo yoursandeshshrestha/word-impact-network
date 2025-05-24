@@ -1,9 +1,9 @@
 import React from "react";
-import { Course } from "@/redux/features/coursesSlice";
 import { formatDate } from "@/utils/formatters";
 import Link from "next/link";
 import Image from "next/image";
 import { Calendar, Clock, Edit, Trash2, File } from "lucide-react";
+import { Course } from "@/redux/features/coursesSlice";
 
 interface CourseCardProps {
   course: Course;
