@@ -4,4 +4,5 @@ export interface StudentProfileUpdateData {
   country?: string;
   dateOfBirth?: Date;
   gender?: 'MALE' | 'FEMALE' | 'OTHER';
+  academicQualification?: string;
 }
