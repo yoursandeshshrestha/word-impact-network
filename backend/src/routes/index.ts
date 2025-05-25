@@ -9,6 +9,7 @@ import examRoutes from '@/routes/exam.routes';
 import messageRoutes from '@/routes/message.routes';
 import notificationRoutes from '@/routes/notification.routes';
 import analyticsRoutes from '@/routes/analytics.routes';
+import myLearningRoutes from '@/routes/mylearning.routes';
 
 const router: Router = express.Router();
 
@@ -41,5 +42,8 @@ router.use('/notifications', notificationRoutes);
 
 // analytics routes
 router.use('/analytics', analyticsRoutes);
+
+// my learning routes
+router.use('/mylearning', myLearningRoutes);
 
 export default router;
