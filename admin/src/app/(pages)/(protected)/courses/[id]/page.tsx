@@ -28,13 +28,14 @@ import {
 } from "lucide-react";
 
 interface CourseDetailPageProps {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
 const CourseDetailPage: React.FC<CourseDetailPageProps> = ({ params }) => {
-  const { id } = params;
+  const unwrappedParams = React.use(params);
+  const { id } = unwrappedParams;
   const router = useRouter();
 
   const {
@@ -580,7 +581,7 @@ const CourseDetailPage: React.FC<CourseDetailPageProps> = ({ params }) => {
               {filteredChapters && filteredChapters.length > 0 ? (
                 <div className="bg-white border border-gray-100 rounded-xl overflow-hidden shadow-sm">
                   <div className="divide-y divide-gray-100">
-                    {filteredChapters
+                    {[...(filteredChapters || [])]
                       .sort((a, b) => {
                         // First sort by year
                         if (a.courseYear !== b.courseYear) {
