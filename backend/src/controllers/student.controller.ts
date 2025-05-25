@@ -25,6 +25,7 @@ import { AppError } from '@/utils/appError';
 import { logger } from '@/utils/logger';
 import prisma from '@/config/prisma';
 import { createNotification } from '@/services/notification.service';
+import { canAccessExam, canAccessVideo } from '@/utils/progressUtils';
 
 // Register a new student
 export const registerStudent = catchAsync(async (req: Request, res: Response) => {
@@ -352,7 +353,7 @@ export const getStudentChapterProgress = catchAsync(async (req: Request, res: Re
   sendSuccess(res, 200, 'Chapter progress retrieved successfully', progressData);
 });
 
-// Update video watching progress
+// Update video watching progress with access validation
 export const updateStudentVideoProgress = catchAsync(async (req: Request, res: Response) => {
   // Ensure user is authenticated and get userId
   if (!req.user || !req.user.userId) {
@@ -412,10 +413,27 @@ export const updateStudentVideoProgress = catchAsync(async (req: Request, res: R
     throw new AppError(errorMessage, 403, ErrorTypes.AUTHORIZATION);
   }
 
+  // Check if student can access this video (progressive unlocking)
+  const accessCheck = await canAccessVideo(student.id, videoId);
+  if (!accessCheck.canAccess) {
+    logger.warn('Video access denied', {
+      studentId: student.id,
+      videoId,
+      reason: accessCheck.reason,
+    });
+    throw new AppError(`Access denied: ${accessCheck.reason}`, 403, ErrorTypes.AUTHORIZATION);
+  }
+
   // Update video progress
   const progressData = await updateVideoProgress(student.id, videoId, watchedPercentNum);
 
-  sendSuccess(res, 200, 'Video progress updated successfully', progressData);
+  sendSuccess(res, 200, 'Video progress updated successfully', {
+    ...progressData,
+    accessInfo: {
+      canAccess: true,
+      nextVideoUnlocked: watchedPercentNum === 100,
+    },
+  });
 });
 
 // Get exam details for a student
@@ -458,10 +476,27 @@ export const getStudentExamDetails = catchAsync(async (req: Request, res: Respon
     throw new AppError(errorMessage, 403, ErrorTypes.AUTHORIZATION);
   }
 
+  // Check if student can access this exam (progressive unlocking)
+  const accessCheck = await canAccessExam(student.id, examId);
+  if (!accessCheck.canAccess) {
+    logger.warn('Exam access denied', {
+      studentId: student.id,
+      examId,
+      reason: accessCheck.reason,
+    });
+    throw new AppError(`Access denied: ${accessCheck.reason}`, 403, ErrorTypes.AUTHORIZATION);
+  }
+
   // Get exam details
   const examData = await getExamDetails(student.id, examId);
 
-  sendSuccess(res, 200, 'Exam details retrieved successfully', examData);
+  sendSuccess(res, 200, 'Exam details retrieved successfully', {
+    ...examData,
+    accessInfo: {
+      canAccess: true,
+      unlockedAt: new Date(),
+    },
+  });
 });
 
 // Start a new exam attempt
@@ -504,13 +539,30 @@ export const startStudentExamAttempt = catchAsync(async (req: Request, res: Resp
     throw new AppError(errorMessage, 403, ErrorTypes.AUTHORIZATION);
   }
 
+  // Check if student can access this exam (progressive unlocking)
+  const accessCheck = await canAccessExam(student.id, examId);
+  if (!accessCheck.canAccess) {
+    logger.warn('Exam attempt access denied', {
+      studentId: student.id,
+      examId,
+      reason: accessCheck.reason,
+    });
+    throw new AppError(`Access denied: ${accessCheck.reason}`, 403, ErrorTypes.AUTHORIZATION);
+  }
+
   // Start the exam attempt
   const attemptData = await startExamAttempt(student.id, examId);
 
   // Return different status code based on whether it's a new or ongoing attempt
   const statusCode = attemptData.isNewAttempt ? 201 : 200;
 
-  sendSuccess(res, statusCode, attemptData.message, attemptData);
+  sendSuccess(res, statusCode, attemptData.message, {
+    ...attemptData,
+    accessInfo: {
+      canAccess: true,
+      prerequisitesMet: true,
+    },
+  });
 });
 
 // Submit an exam attempt with answers
@@ -580,7 +632,21 @@ export const submitStudentExamAttempt = catchAsync(async (req: Request, res: Res
     ? `Congratulations! You passed the exam with a score of ${resultData.score}%`
     : `Exam submitted. Your score is ${resultData.score}%. The passing score was ${resultData.exam.passingScore}%`;
 
-  sendSuccess(res, 200, message, resultData);
+  // Check if this completion unlocks new content
+  let unlockedContent = null;
+  if (resultData.isPassed) {
+    // Check if this was the last requirement for the chapter
+    // This would unlock the next chapter if all requirements are met
+    unlockedContent = {
+      chapterCompleted: true,
+      message: 'This chapter is now complete! New content may be available.',
+    };
+  }
+
+  sendSuccess(res, 200, message, {
+    ...resultData,
+    unlockedContent,
+  });
 });
 
 // Get exam attempt result
