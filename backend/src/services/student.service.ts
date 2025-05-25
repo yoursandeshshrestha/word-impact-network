@@ -2593,7 +2593,7 @@ export async function getPreviewCourse(courseId: string) {
 // Get full course content service function
 export async function getEnrolledCourseContent(studentId: string, courseId: string) {
   try {
-    logger.info('Fetching full course content', { studentId, courseId });
+    logger.info('Fetching full course content with progressive unlocking', { studentId, courseId });
 
     // Check if student exists
     const student = await prisma.student.findUnique({
@@ -2692,36 +2692,83 @@ export async function getEnrolledCourseContent(studentId: string, courseId: stri
       },
     });
 
-    // Format the response with detailed information including progress
-    const formattedChapters = course.chapters.map((chapter) => {
+    // Helper function to check if a video is completed
+    const isVideoCompleted = (videoId: string): boolean => {
+      const progress = videoProgressRecords.find((vp) => vp.videoId === videoId);
+      return progress ? progress.watchedPercent === 100 : false;
+    };
+
+    // Helper function to check if a chapter is completed (all videos + exam if exists)
+    const isChapterCompleted = (chapterId: string): boolean => {
+      const progress = chapterProgressRecords.find((cp) => cp.chapterId === chapterId);
+      return progress ? progress.isCompleted : false;
+    };
+
+    // Helper function to check if exam is passed
+    const isExamPassed = (examId: string): boolean => {
+      const attempts = examAttempts.filter((attempt) => attempt.examId === examId);
+      return attempts.some((attempt) => attempt.isPassed);
+    };
+
+    // Format the response with progressive unlocking logic
+    let previousChapterCompleted = true; // First chapter is always unlocked
+
+    const formattedChapters = course.chapters.map((chapter, chapterIndex) => {
+      // Check if this chapter should be unlocked
+      const isChapterUnlocked = chapterIndex === 0 || previousChapterCompleted;
+
       // Find progress for this chapter
       const chapterProgress = chapterProgressRecords.find((cp) => cp.chapterId === chapter.id);
 
-      // Format videos with progress
-      const formattedVideos = chapter.videos.map((video) => {
+      // Process videos with progressive unlocking within the chapter
+      let previousVideoCompleted = true; // First video in unlocked chapter is always available
+
+      const formattedVideos = chapter.videos.map((video, videoIndex) => {
         // Find progress for this video
         const videoProgress = videoProgressRecords.find((vp) => vp.videoId === video.id);
+        const completed = videoProgress ? videoProgress.watchedPercent === 100 : false;
+
+        // Video is unlocked if:
+        // 1. Chapter is unlocked AND
+        // 2. It's the first video OR all previous videos in this chapter are completed
+        const isVideoUnlocked = isChapterUnlocked && (videoIndex === 0 || previousVideoCompleted);
+
+        // Update for next iteration
+        if (completed) {
+          previousVideoCompleted = true;
+        } else if (videoIndex > 0) {
+          previousVideoCompleted = false;
+        }
 
         return {
           id: video.id,
           title: video.title,
           description: video.description,
           duration: video.duration,
-          backblazeUrl: video.backblazeUrl,
+          backblazeUrl: isVideoUnlocked ? video.backblazeUrl : null, // Hide URL if locked
           orderIndex: video.orderIndex,
+          isUnlocked: isVideoUnlocked,
           progress: videoProgress
             ? {
                 watchedPercent: videoProgress.watchedPercent,
                 lastWatchedAt: videoProgress.lastWatchedAt,
-                isCompleted: videoProgress.watchedPercent === 100,
+                isCompleted: completed,
               }
             : {
                 watchedPercent: 0,
                 lastWatchedAt: null,
                 isCompleted: false,
               },
+          lockReason: !isVideoUnlocked
+            ? !isChapterUnlocked
+              ? 'Complete previous chapter to unlock'
+              : 'Complete previous videos to unlock'
+            : null,
         };
       });
+
+      // Check if all videos in this chapter are completed
+      const allVideosCompleted = chapter.videos.every((video) => isVideoCompleted(video.id));
 
       // Find exam attempts for this chapter's exam
       const chapterExamAttempts = chapter.exam
@@ -2735,27 +2782,49 @@ export async function getEnrolledCourseContent(studentId: string, courseId: stri
 
       const hasPassedExam = chapterExamAttempts.some((attempt) => attempt.isPassed);
 
+      // Exam is unlocked if chapter is unlocked AND all videos are completed
+      const isExamUnlocked = isChapterUnlocked && allVideosCompleted;
+
+      // Current chapter completion status
+      const currentChapterCompleted = isChapterCompleted(chapter.id);
+
+      // Prepare exam data with unlock status
+      const examData = chapter.exam
+        ? {
+            ...chapter.exam,
+            attempts: chapterExamAttempts.length,
+            bestScore: bestExamScore,
+            passed: hasPassedExam,
+            isUnlocked: isExamUnlocked,
+            lockReason: !isExamUnlocked
+              ? !isChapterUnlocked
+                ? 'Complete previous chapter to unlock'
+                : 'Complete all videos in this chapter to unlock exam'
+              : null,
+          }
+        : null;
+
+      // Update previousChapterCompleted for next iteration
+      previousChapterCompleted = currentChapterCompleted;
+
       return {
         id: chapter.id,
         title: chapter.title,
         description: chapter.description,
         orderIndex: chapter.orderIndex,
         courseYear: chapter.courseYear,
+        isUnlocked: isChapterUnlocked,
         videos: formattedVideos,
-        exam: chapter.exam
-          ? {
-              ...chapter.exam,
-              attempts: chapterExamAttempts.length,
-              bestScore: bestExamScore,
-              passed: hasPassedExam,
-            }
-          : null,
+        exam: examData,
         progress: {
-          isCompleted: chapterProgress?.isCompleted || false,
+          isCompleted: currentChapterCompleted,
           completedAt: chapterProgress?.completedAt || null,
           totalVideos: chapter.videos.length,
           watchedVideos: formattedVideos.filter((v) => v.progress.isCompleted).length,
+          allVideosCompleted,
+          examPassed: chapter.exam ? hasPassedExam : true, // No exam means it's considered passed
         },
+        lockReason: !isChapterUnlocked ? 'Complete previous chapter to unlock' : null,
       };
     });
 
@@ -2772,9 +2841,55 @@ export async function getEnrolledCourseContent(studentId: string, courseId: stri
     // Calculate overall course progress as average of video and chapter progress
     const overallProgress = Math.round((videoProgress + chapterProgress) / 2);
 
-    logger.info('Course content retrieved successfully', {
+    // Calculate next action for the student
+    const getNextAction = () => {
+      // Find first incomplete chapter
+      for (const chapter of formattedChapters) {
+        if (!chapter.progress.isCompleted && chapter.isUnlocked) {
+          // Find first incomplete video in this chapter
+          const incompleteVideo = chapter.videos.find(
+            (v) => !v.progress.isCompleted && v.isUnlocked,
+          );
+          if (incompleteVideo) {
+            return {
+              type: 'video',
+              chapterId: chapter.id,
+              chapterTitle: chapter.title,
+              videoId: incompleteVideo.id,
+              videoTitle: incompleteVideo.title,
+              message: `Continue watching "${incompleteVideo.title}" in ${chapter.title}`,
+            };
+          }
+
+          // If all videos are done but exam isn't passed
+          if (chapter.exam && !chapter.progress.examPassed && chapter.exam.isUnlocked) {
+            return {
+              type: 'exam',
+              chapterId: chapter.id,
+              chapterTitle: chapter.title,
+              examId: chapter.exam.id,
+              examTitle: chapter.exam.title,
+              message: `Take the exam for ${chapter.title}`,
+            };
+          }
+        }
+      }
+
+      // If everything is completed
+      return {
+        type: 'completed',
+        message: 'Congratulations! You have completed this course.',
+      };
+    };
+
+    const nextAction = getNextAction();
+
+    logger.info('Course content with progressive unlocking retrieved successfully', {
       studentId,
       courseId,
+      totalChapters,
+      unlockedChapters: formattedChapters.filter((c) => c.isUnlocked).length,
+      nextActionType: nextAction.type,
     });
 
     return {
@@ -2798,7 +2913,17 @@ export async function getEnrolledCourseContent(studentId: string, courseId: stri
         watchedVideos,
         totalVideos,
       },
+      nextAction,
       chapters: formattedChapters,
+      unlockingRules: {
+        description: 'Content is unlocked progressively',
+        rules: [
+          'Videos within a chapter unlock sequentially after completing the previous video',
+          'Chapter exams unlock only after completing all videos in that chapter',
+          'Next chapter unlocks only after completing all content (videos + exam) in the previous chapter',
+          'First chapter and first video are always unlocked for enrolled students',
+        ],
+      },
     };
   } catch (error) {
     logger.error('Error in getEnrolledCourseContent', {
