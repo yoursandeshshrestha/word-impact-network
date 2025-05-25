@@ -306,7 +306,7 @@ const VideoForm: React.FC<VideoFormProps> = ({
 
           {videoFile && (
             <span className="ml-2 text-sm text-gray-500 flex items-center">
-              {videoFile.name} (
+              {videoFile.name.slice(0, 30)} (
               {Math.round((videoFile.size / 1024 / 1024) * 10) / 10} MB)
               {videoDuration && (
                 <span className="ml-2 flex items-center text-gray-600">
