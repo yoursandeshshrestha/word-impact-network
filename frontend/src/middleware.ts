@@ -9,7 +9,7 @@ export async function middleware(request: NextRequest) {
   if (isAuthRoute && token) {
     const isValid = await validateToken(token);
     if (isValid) {
-      return NextResponse.redirect(new URL("/dashboard", request.url));
+      return NextResponse.redirect(new URL("/my-learning", request.url));
     }
   }
 
@@ -49,7 +49,9 @@ async function validateToken(token: string): Promise<boolean> {
 export const config = {
   matcher: [
     // Protected routes
-    "/dashboard/:path*",
+    "/profile/:path*",
+    "/all-courses/:path*",
+    "/my-learning/:path*",
 
     // Auth routes
     "/auth/:path*",
