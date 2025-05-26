@@ -40,7 +40,7 @@ const LoginPage = () => {
 
       // Redirect based on user role if needed
       const user = result.user;
-      let redirectPath = "/dashboard";
+      let redirectPath = "/my-learning";
 
       if (user && user.role === "ADMIN") {
         redirectPath = "/admin/dashboard";
