@@ -101,7 +101,7 @@ export const login = async (
 };
 
 /**
- * Logs the user out by removing auth cookies
+ * Logs the user out by removing auth cookies and redirecting to login
  * @returns AuthResult object indicating success/failure
  */
 export const logout = (): AuthResult => {
@@ -109,6 +109,9 @@ export const logout = (): AuthResult => {
     // Remove auth cookies
     Cookies.remove("client-token-win", { path: "/" });
     Cookies.remove("user", { path: "/" });
+
+    // Redirect to login page
+    window.location.href = "/auth/login";
 
     return {
       success: true,
@@ -128,7 +131,7 @@ export const logout = (): AuthResult => {
  * @returns boolean indicating auth status
  */
 export const isAuthenticated = (): boolean => {
-  const token = Cookies.get("authToken");
+  const token = Cookies.get("client-token-win");
   return !!token;
 };
 
@@ -152,7 +155,7 @@ export const getCurrentUser = (): User | null => {
  * @returns Auth token or null if not present
  */
 export const getAuthToken = (): string | null => {
-  return Cookies.get("authToken") || null;
+  return Cookies.get("client-token-win") || null;
 };
 
 /**
