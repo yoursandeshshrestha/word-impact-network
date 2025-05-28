@@ -6,6 +6,7 @@ import { useParams } from "next/navigation";
 import { useAutoCoursePreview } from "@/hooks/coursePreview";
 import { useCourseEnrollment } from "@/hooks/useCourseEnrollment";
 import { BookOpen, Play, ChevronRight } from "lucide-react";
+import placeholderCourseImage from "@/assets/placeholder-image.png";
 
 function CoursePreviewPage() {
   const params = useParams();
@@ -93,7 +94,7 @@ function CoursePreviewPage() {
         <div className="rounded-2xl overflow-hidden mb-8 bg-gradient-to-t from-slate-950 via-black to-slate-950">
           <div className="relative h-80 flex items-end">
             <Image
-              src={coursePreview.coverImageUrl}
+              src={coursePreview.coverImageUrl || placeholderCourseImage}
               alt={coursePreview.title}
               fill
               className="object-cover opacity-50"
