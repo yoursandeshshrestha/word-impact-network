@@ -4,6 +4,7 @@ import {
   fetchCourses,
   fetchPreviewCourseById,
   clearCurrentCourse,
+  enrollInCourse,
 } from "@/redux/features/publicCourses/publicCourses";
 
 export const useCourses = () => {
@@ -18,6 +19,10 @@ export const useCourses = () => {
 
   const loadCourseDetails = (courseId: string) => {
     dispatch(fetchPreviewCourseById(courseId));
+  };
+
+  const handleEnroll = (courseId: string) => {
+    dispatch(enrollInCourse(courseId));
   };
 
   const clearCourse = () => {
@@ -35,6 +40,7 @@ export const useCourses = () => {
     isLoading: status === "loading",
     isError: status === "failed",
     isSuccess: status === "succeeded",
+    enrollInCourse: handleEnroll,
   };
 };
 
@@ -55,10 +61,15 @@ export const useCourseDetails = (courseId: string) => {
     };
   }, [dispatch, courseId]);
 
+  const handleEnroll = (courseId: string) => {
+    dispatch(enrollInCourse(courseId));
+  };
+
   return {
     course: currentCourse,
     isLoading: status === "loading",
     isError: status === "failed",
     error,
+    enrollInCourse: handleEnroll,
   };
 };
