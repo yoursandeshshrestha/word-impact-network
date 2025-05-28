@@ -6,6 +6,7 @@ import { useAppDispatch, useAppSelector } from "@/hooks/useReduxHooks";
 import {
   fetchPreviewCourseById,
   clearCurrentCourse,
+  enrollInCourse,
 } from "@/redux/features/publicCourses/publicCourses";
 import Image from "next/image";
 import Link from "next/link";
@@ -26,22 +27,7 @@ import {
 import DOMPurify from "dompurify";
 import { isAuthenticated } from "@/common/services/auth";
 import { useRouter } from "next/navigation";
-import { toast } from "sonner";
-
-interface ApiError {
-  response?: {
-    status: number;
-    data?: {
-      success?: boolean;
-      error?: {
-        message: string;
-        code: string;
-        statusCode: number;
-      };
-      message?: string;
-    };
-  };
-}
+import placeholderCourseImage from "@/assets/placeholder-image.png";
 
 interface VideoData {
   id: string;
@@ -121,74 +107,10 @@ const CourseDetailPage = () => {
 
     try {
       setIsEnrolling(true);
-      toast.success("Successfully enrolled in the course!");
-      router.push("/dashboard");
-    } catch (error: unknown) {
-      const apiError = error as ApiError;
-      const errorData = apiError?.response?.data;
-
-      if (errorData?.error) {
-        // Handle specific error cases
-        switch (errorData.error.code) {
-          case "DUPLICATE":
-            toast.error("You are already enrolled in this course", {
-              duration: 5000,
-              position: "top-center",
-            });
-            break;
-          case "NOT_FOUND":
-            if (errorData.error.message.includes("Student")) {
-              toast.error(
-                "Student account not found. Please contact support.",
-                {
-                  duration: 5000,
-                  position: "top-center",
-                }
-              );
-            } else {
-              toast.error("Course not found or is currently unavailable.", {
-                duration: 5000,
-                position: "top-center",
-              });
-            }
-            break;
-          case "AUTHORIZATION":
-            toast.error("You are not authorized to enroll in this course.", {
-              duration: 5000,
-              position: "top-center",
-            });
-            break;
-          case "PRECONDITION_FAILED":
-            toast.error(
-              "You need to complete the prerequisites before enrolling.",
-              {
-                duration: 5000,
-                position: "top-center",
-              }
-            );
-            break;
-          default:
-            toast.error(
-              errorData.error.message ||
-                "Failed to enroll in the course. Please try again.",
-              {
-                duration: 5000,
-                position: "top-center",
-              }
-            );
-        }
-      } else {
-        const errorMessage =
-          errorData?.message ||
-          (typeof errorData === "string"
-            ? errorData
-            : "Failed to enroll in the course. Please try again.");
-
-        toast.error(errorMessage, {
-          duration: 5000,
-          position: "top-center",
-        });
-      }
+      await dispatch(enrollInCourse(courseid as string)).unwrap();
+      router.push("/my-learning");
+    } catch {
+      // Error is already handled in Redux
     } finally {
       setIsEnrolling(false);
     }
@@ -359,7 +281,7 @@ const CourseDetailPage = () => {
         {/* Background Image with Overlay */}
         <div className="absolute inset-0 z-0">
           <Image
-            src={typedCourse.coverImageUrl}
+            src={typedCourse.coverImageUrl || placeholderCourseImage}
             alt={typedCourse.title}
             fill
             className="object-cover"
@@ -676,7 +598,7 @@ const CourseDetailPage = () => {
 
                 <button
                   onClick={handleEnrollNow}
-                  className="w-full bg-gray-800 hover:bg-gray-700 text-white py-3 rounded-md font-semibold transition-colors flex items-center justify-center mt-4 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full bg-gray-800 hover:bg-gray-700 text-white py-3 rounded-md font-semibold transition-colors flex items-center justify-center mt-4 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                 >
                   {isEnrolling ? (
                     <>
