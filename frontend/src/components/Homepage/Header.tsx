@@ -4,9 +4,15 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import logo from "@/assets/logo-one.png";
+import { isAuthenticated } from "@/common/services/auth";
 
 const Header: React.FC = () => {
   const [isScrolled, setIsScrolled] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  useEffect(() => {
+    setIsLoggedIn(isAuthenticated());
+  }, []);
 
   // Add scroll effect
   useEffect(() => {
@@ -232,36 +238,75 @@ const Header: React.FC = () => {
 
           {/* Authentication Links */}
           <div className="flex items-center space-x-4 flex-shrink-0">
-            <Link
-              href="/auth/login"
-              className="flex items-center text-gray-700 hover:text-indigo-700 transition-colors"
-            >
-              <div className="flex items-center justify-center w-8 h-8 rounded-full bg-gray-100">
+            {isLoggedIn ? (
+              <Link
+                href="/my-learning"
+                className="inline-flex items-center px-6 py-2.5 bg-white text-gray-900 border border-gray-200 rounded-lg text-sm font-medium shadow-sm hover:bg-gray-50 transition-all duration-200"
+              >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
+                  className="h-5 w-5 mr-2 text-gray-600"
                   fill="none"
+                  viewBox="0 0 24 24"
                   stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="w-5 h-5"
                 >
-                  <circle cx="12" cy="12" r="10" />
-                  <circle cx="12" cy="10" r="3" />
-                  <path d="M7 20.662V19c0-1.657 2.239-3 5-3s5 1.343 5 3v1.662" />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
+                  />
                 </svg>
-              </div>
-              <span className="ml-2 hidden md:inline font-medium">Login</span>
-            </Link>
-            <Link
-              href="/auth/apply"
-              className="bg-gray-800 hover:bg-gray-700 text-white px-6 py-2.5 rounded-md text-sm font-semibold transition-colors"
-            >
-              Apply
-            </Link>
+                Dashboard
+              </Link>
+            ) : (
+              <>
+                <Link
+                  href="/auth/login"
+                  className="inline-flex items-center px-4 py-2.5 text-gray-600 hover:text-gray-900 transition-colors rounded-lg hover:bg-gray-50 font-medium"
+                >
+                  <div className="flex items-center justify-center w-8 h-8 rounded-full bg-gray-50 border border-gray-200">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="w-5 h-5"
+                    >
+                      <circle cx="12" cy="12" r="10" />
+                      <circle cx="12" cy="10" r="3" />
+                      <path d="M7 20.662V19c0-1.657 2.239-3 5-3s5 1.343 5 3v1.662" />
+                    </svg>
+                  </div>
+                  <span className="ml-2 hidden md:inline">Login</span>
+                </Link>
+                <Link
+                  href="/auth/apply"
+                  className="inline-flex items-center px-6 py-2.5 bg-white text-gray-900 border border-gray-200 rounded-lg text-sm font-medium shadow-sm hover:bg-gray-50 transition-all duration-200"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-5 w-5 mr-2 text-gray-600"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                    />
+                  </svg>
+                  Apply Now
+                </Link>
+              </>
+            )}
           </div>
 
           {/* Mobile menu button */}
