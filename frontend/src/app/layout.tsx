@@ -4,7 +4,7 @@ import "./globals.css";
 import { LoadingProvider } from "@/common/contexts/LoadingContext";
 import { Toaster } from "sonner";
 import { ReduxProvider } from "@/redux/provider";
-import { UserProvider } from "./(no-layout)/dashboard/UserProvider";
+import { UserProvider } from "./UserProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
