@@ -4,6 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { Calendar, Clock, Edit, Trash2, File } from "lucide-react";
 import { Course } from "@/redux/features/coursesSlice";
+import placeholderCourseImage from "@/assets/placeholder-image.png";
 
 interface CourseCardProps {
   course: Course;
@@ -22,14 +23,13 @@ const CourseCard: React.FC<CourseCardProps> = ({
         <div className="relative h-48 w-full bg-gray-200">
           {course.coverImageUrl ? (
             <Image
-              src={course.coverImageUrl}
+              src={course.coverImageUrl || placeholderCourseImage}
               alt={course.title}
               fill
               className="object-cover"
               onError={(e) => {
                 const target = e.target as HTMLImageElement;
-                target.src = "/placeholder-image.jpg"; // Fallback image
-                target.onerror = null; // Prevent infinite loop
+                target.onerror = null;
               }}
             />
           ) : (
