@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useAutoCourses } from "@/hooks/useCourses";
+import placeholderCourseImage from "@/assets/placeholder-image.png";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 function CoursesPage() {
@@ -142,7 +143,9 @@ function CoursesPage() {
                     {/* Course Image */}
                     <div className="w-93 h-60 relative flex-shrink-0 bg-slate-100 rounded-2xl mx-6 my-6 flex items-center justify-center overflow-hidden border border-slate-200">
                       <Image
-                        src={course.coverImageUrl}
+                        src={
+                          course.coverImageUrl || placeholderCourseImage
+                        }
                         alt={course.title}
                         fill
                         className="object-cover rounded-2xl"
