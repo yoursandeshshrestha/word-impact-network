@@ -161,12 +161,6 @@ const ChapterItem: React.FC<ChapterItemProps> = ({
                   <CheckCircle className="w-4 h-4" />
                   <span>All videos completed</span>
                 </div>
-                {progress.hasExam && (
-                  <div className="flex items-center space-x-1 text-green-600">
-                    <Trophy className="w-4 h-4" />
-                    <span>Exam passed</span>
-                  </div>
-                )}
               </div>
               {progress.completedAt && (
                 <p className="text-xs text-slate-500 mt-1">
@@ -419,8 +413,8 @@ const CourseChapterPage: React.FC = () => {
   }));
 
   return (
-    <div className="h-[calc(100vh-4rem)] bg-gradient-to-br pt-10 from-slate-50 to-white overflow-auto">
-      <div className="px-4 py-6">
+    <div className="h-screen overflow-auto">
+      <div className="px-5 pt-20">
         {/* Breadcrumb Navigation */}
         <nav className="mb-6">
           <div className="flex items-center space-x-2 text-sm">
