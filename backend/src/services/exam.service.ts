@@ -17,7 +17,6 @@ export async function createExamForChapter(
   examData: {
     title: string;
     description?: string | null;
-    passingScore: number;
     timeLimit?: number | null;
   },
 ) {
@@ -49,8 +48,8 @@ export async function createExamForChapter(
       data: {
         title: examData.title,
         description: examData.description,
-        passingScore: examData.passingScore,
         timeLimit: examData.timeLimit,
+        passingScore: 70, // Default passing score percentage
         chapter: {
           connect: { id: chapterId },
         },
@@ -124,7 +123,6 @@ export async function updateExamById(
   examData: {
     title: string;
     description?: string | null;
-    passingScore: number;
     timeLimit?: number | null;
   },
 ) {
@@ -147,8 +145,8 @@ export async function updateExamById(
       data: {
         title: examData.title,
         description: examData.description,
-        passingScore: examData.passingScore,
         timeLimit: examData.timeLimit,
+        passingScore: 70, // Maintain default passing score percentage
       },
       include: {
         questions: true,
