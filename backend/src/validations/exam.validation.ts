@@ -6,7 +6,6 @@ import { AppError, ErrorTypes } from '@/utils/appError';
 const examSchema = Joi.object({
   title: Joi.string().required().trim().min(3).max(100),
   description: Joi.string().allow('', null),
-  passingScore: Joi.number().required().min(1).max(100),
   timeLimit: Joi.number().allow(null).min(1),
 });
 
