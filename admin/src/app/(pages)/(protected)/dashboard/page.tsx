@@ -12,10 +12,10 @@ import {
   X,
   AlertCircle,
   TrendingUp,
-  DollarSign,
   RefreshCw,
   PieChart,
   ChevronRight,
+  IndianRupee,
 } from "lucide-react";
 import { formatCurrency, formatDate } from "@/utils/formatters";
 import Loading from "@/components/common/Loading";
@@ -658,7 +658,7 @@ const Dashboard = () => {
         <div className="bg-white overflow-hidden shadow rounded-lg flex flex-col justify-between">
           <div className="px-6 py-4 border-b border-gray-200">
             <h2 className="text-lg font-semibold text-gray-900 flex items-center">
-              <DollarSign className="h-5 w-5 mr-2 text-green-600" />
+              <IndianRupee className="h-5 w-5 mr-2 text-green-600" />
               Payment Information
             </h2>
           </div>
@@ -667,7 +667,7 @@ const Dashboard = () => {
               {/* Total Revenue */}
               <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-lg p-4 border border-green-200 flex items-center">
                 <div className="flex-shrink-0 h-10 w-10 rounded-full bg-green-600 flex items-center justify-center">
-                  <DollarSign className="h-5 w-5 text-white" />
+                  <IndianRupee className="h-5 w-5 text-white" />
                 </div>
                 <div className="ml-3">
                   <p className="text-xs font-medium text-gray-500">
