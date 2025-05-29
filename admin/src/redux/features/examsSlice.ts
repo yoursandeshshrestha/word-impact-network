@@ -31,7 +31,7 @@ export interface Exam {
   id: string;
   title: string;
   description: string | null;
-  passingScore: number;
+  passingScore?: number;
   timeLimit: number | null; // in minutes
   chapterId: string;
   adminId: string;
@@ -95,7 +95,6 @@ export const createExam = createAsyncThunk(
       const cleanPayload = {
         title: examData.title,
         description: examData.description,
-        passingScore: examData.passingScore,
         timeLimit: examData.timeLimit,
       };
 
