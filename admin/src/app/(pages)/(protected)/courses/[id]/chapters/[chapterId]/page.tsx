@@ -281,7 +281,6 @@ const ChapterDetailPage: React.FC<ChapterDetailPageProps> = ({ params }) => {
     createNewExam(chapterId, {
       title: `${chapter?.title || "Chapter"} Exam`,
       description: `Exam for ${chapter?.title || "this chapter"}`,
-      passingScore: 70, // Default passing score
       timeLimit: 60, // Default time limit in minutes
     });
   };
