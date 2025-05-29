@@ -87,31 +87,33 @@ function CoursesPage() {
   }
 
   return (
-    <div className="h-[calc(100vh-4rem)] bg-white pt-10 overflow-auto">
-      <div className="px-4 py-6">
+    <div className="min-h-screen overflow-auto">
+      <div className="px-5 pt-20">
         {/* Page Title */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-slate-900">All Courses</h1>
-          <p className="text-slate-600 mt-2">
+        <div className="mb-6 sm:mb-8">
+          <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">
+            All Courses
+          </h1>
+          <p className="text-slate-600 mt-2 text-sm sm:text-base">
             Browse and search through our collection of courses
           </p>
         </div>
 
         {/* Course Grid */}
         {currentCourses.length === 0 ? (
-          <div className="text-center py-16">
-            <div className="text-6xl mb-6">📚</div>
-            <h3 className="text-2xl font-semibold text-slate-900 mb-4">
+          <div className="text-center py-12 sm:py-16">
+            <div className="text-5xl sm:text-6xl mb-4 sm:mb-6">📚</div>
+            <h3 className="text-xl sm:text-2xl font-semibold text-slate-900 mb-3 sm:mb-4">
               No courses found
             </h3>
-            <p className="text-slate-600 text-lg max-w-2xl mx-auto">
+            <p className="text-slate-600 text-base sm:text-lg max-w-2xl mx-auto px-4">
               Try adjusting your search criteria or browse all available
               courses.
             </p>
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-1 gap-6 mb-16">
+            <div className="grid grid-cols-1 gap-4 sm:gap-6 mb-12 sm:mb-16">
               {currentCourses.map((course) => (
                 <div
                   key={course.id}
@@ -119,14 +121,14 @@ function CoursesPage() {
                   onClick={() => handleCourseClick(course.id)}
                 >
                   {/* Course Card */}
-                  <div className="overflow-hidden flex items-center bg-white rounded-2xl hover:bg-slate-50 transition-all duration-300 border border-slate-200 shadow-sm hover:shadow-md">
+                  <div className="overflow-hidden flex flex-col sm:flex-row items-center bg-white rounded-2xl hover:bg-slate-50 transition-all duration-300 border border-slate-200 shadow-sm hover:shadow-md">
                     {/* Course Content */}
-                    <div className="flex-1 flex flex-col justify-between p-6">
+                    <div className="flex-1 flex flex-col justify-between p-4 sm:p-6 w-full">
                       <div>
-                        <h3 className="text-xl font-bold text-slate-900 mb-3 leading-tight">
+                        <h3 className="text-lg sm:text-xl font-bold text-slate-900 mb-2 sm:mb-3 leading-tight">
                           {course.title}
                         </h3>
-                        <p className="text-slate-600 leading-relaxed mb-6">
+                        <p className="text-slate-600 leading-relaxed mb-4 sm:mb-6 text-sm sm:text-base line-clamp-3">
                           {stripHtml(course.description)}
                         </p>
                       </div>
@@ -135,21 +137,19 @@ function CoursesPage() {
                           e.stopPropagation();
                           handleCourseClick(course.id);
                         }}
-                        className="bg-slate-800 hover:bg-slate-700 text-white px-6 py-3 rounded-xl font-semibold cursor-pointer transition-all duration-200 self-start shadow-sm hover:shadow-md"
+                        className="bg-slate-800 hover:bg-slate-700 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-xl font-semibold cursor-pointer transition-all duration-200 self-start shadow-sm hover:shadow-md text-sm sm:text-base"
                       >
                         View Course
                       </button>
                     </div>
                     {/* Course Image */}
-                    <div className="w-93 h-60 relative flex-shrink-0 bg-slate-100 rounded-2xl mx-6 my-6 flex items-center justify-center overflow-hidden border border-slate-200">
+                    <div className="w-full sm:w-80 h-48 sm:h-60 relative flex-shrink-0 bg-slate-100 rounded-2xl sm:mx-6 my-4 sm:my-6 flex items-center justify-center overflow-hidden border border-slate-200">
                       <Image
-                        src={
-                          course.coverImageUrl || placeholderCourseImage
-                        }
+                        src={course.coverImageUrl || placeholderCourseImage}
                         alt={course.title}
                         fill
                         className="object-cover rounded-2xl"
-                        sizes="320px"
+                        sizes="(max-width: 640px) 100vw, 320px"
                         onError={(e) => {
                           const target = e.target as HTMLImageElement;
                           target.src = "/placeholder-course.jpg";
@@ -163,25 +163,27 @@ function CoursesPage() {
 
             {/* Pagination */}
             {totalPages > 1 && (
-              <div className="flex items-center justify-center gap-2 pb-6">
+              <div className="flex items-center justify-center gap-1 sm:gap-2 pb-6 overflow-x-auto">
                 <button
                   onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
                   disabled={currentPage === 1}
-                  className="w-10 h-10 rounded-xl flex items-center justify-center text-slate-600 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 border border-slate-200"
+                  className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center text-slate-600 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 border border-slate-200"
                 >
-                  <ChevronLeft className="w-5 h-5" />
+                  <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5" />
                 </button>
 
-                {renderPaginationNumbers()}
+                <div className="flex items-center gap-1 sm:gap-2">
+                  {renderPaginationNumbers()}
+                </div>
 
                 <button
                   onClick={() =>
                     handlePageChange(Math.min(totalPages, currentPage + 1))
                   }
                   disabled={currentPage === totalPages}
-                  className="w-10 h-10 rounded-xl flex items-center justify-center text-slate-600 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 border border-slate-200"
+                  className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center text-slate-600 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 border border-slate-200"
                 >
-                  <ChevronRight className="w-5 h-5" />
+                  <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5" />
                 </button>
               </div>
             )}
