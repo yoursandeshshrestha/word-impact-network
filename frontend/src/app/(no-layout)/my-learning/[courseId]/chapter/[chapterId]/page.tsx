@@ -302,8 +302,8 @@ const ChapterDetailPage: React.FC = () => {
   const { chapter, course, videos, exam, progress } = chapterDetail;
 
   return (
-    <div className="h-[calc(100vh-4rem)] bg-gradient-to-br pt-10 from-slate-50 to-white overflow-auto">
-      <div className="px-4 py-6">
+    <div className="h-screen overflow-auto">
+      <div className="px-5 pt-20">
         {/* Breadcrumb Navigation */}
         <nav className="mb-6">
           <div className="flex items-center space-x-2 text-sm text-slate-600">
@@ -495,7 +495,7 @@ const ChapterDetailPage: React.FC = () => {
           </div>
 
           {/* Right Side - Video Player */}
-          <div className="lg:sticky lg:top-8 h-fit">
+          <div className="md:sticky md:top-22 h-fit ">
             <div className="bg-white rounded-2xl border border-slate-100 overflow-hidden">
               {currentVideo ? (
                 <div className="aspect-video bg-black">
