@@ -1,4 +1,4 @@
-import { PrismaClient, ApplicationStatus } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 import { AppError, ErrorTypes } from '../utils/appError';
 import { logger } from '../utils/logger';
 
@@ -901,6 +901,574 @@ export async function updateVideoProgressHeartbeat(
       chapterId,
       videoId,
       watchedPercent,
+      error: error instanceof Error ? error.message : String(error),
+    });
+    throw error;
+  }
+}
+
+// Get exam detail with locking logic
+export async function getMyLearningExamDetail(
+  studentId: string,
+  courseId: string,
+  chapterId: string,
+  examId: string,
+) {
+  try {
+    logger.info('Fetching exam detail with locking logic', {
+      studentId,
+      courseId,
+      chapterId,
+      examId,
+    });
+
+    // Check if student exists
+    const student = await prisma.student.findUnique({
+      where: { id: studentId },
+    });
+
+    if (!student) {
+      logger.warn('Exam detail fetch failed - student not found', { studentId });
+      throw new AppError('Student not found', 404, ErrorTypes.NOT_FOUND);
+    }
+
+    // Check if student is enrolled in this course
+    const enrollment = await prisma.courseEnrollment.findFirst({
+      where: {
+        studentId,
+        courseId,
+        isActive: true,
+      },
+    });
+
+    if (!enrollment) {
+      logger.warn('Exam detail fetch failed - student not enrolled', { studentId, courseId });
+      throw new AppError('You are not enrolled in this course', 403, ErrorTypes.AUTHORIZATION);
+    }
+
+    // Get exam details with chapter info
+    const exam = await prisma.exam.findFirst({
+      where: {
+        id: examId,
+        chapterId: chapterId,
+        chapter: {
+          courseId: courseId,
+        },
+      },
+      include: {
+        chapter: {
+          select: {
+            id: true,
+            title: true,
+            courseId: true,
+          },
+        },
+        questions: {
+          select: {
+            id: true,
+            text: true,
+            questionType: true,
+            options: true,
+            points: true,
+          },
+          orderBy: {
+            createdAt: 'asc',
+          },
+        },
+      },
+    });
+
+    if (!exam) {
+      logger.warn('Exam detail fetch failed - exam not found', { examId, chapterId, courseId });
+      throw new AppError('Exam not found in this chapter', 404, ErrorTypes.NOT_FOUND);
+    }
+
+    // Check if all videos in the chapter are completed (exam unlock condition)
+    const totalVideos = await prisma.video.count({
+      where: { chapterId },
+    });
+
+    const completedVideos = await prisma.videoProgress.count({
+      where: {
+        studentId,
+        video: { chapterId },
+        watchedPercent: 100,
+      },
+    });
+
+    const allVideosCompleted = totalVideos > 0 && completedVideos === totalVideos;
+    const isExamLocked = !allVideosCompleted;
+
+    // Get previous exam attempts for this student
+    const examAttempts = await prisma.examAttempt.findMany({
+      where: {
+        studentId,
+        examId,
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+      select: {
+        id: true,
+        startTime: true,
+        endTime: true,
+        score: true,
+        isPassed: true,
+      },
+    });
+
+    // Check if student has already passed the exam
+    const hasPassed = examAttempts.some((attempt) => attempt.isPassed);
+    const bestScore =
+      examAttempts.length > 0 ? Math.max(...examAttempts.map((a) => a.score || 0)) : 0;
+
+    // Check if there's an ongoing attempt (started but not ended)
+    const ongoingAttempt = examAttempts.find((attempt) => !attempt.endTime);
+
+    if (isExamLocked) {
+      return {
+        exam: {
+          id: exam.id,
+          title: exam.title,
+          description: exam.description,
+          passingScore: exam.passingScore,
+          timeLimit: exam.timeLimit,
+          totalQuestions: exam.questions.length,
+          totalPoints: exam.questions.reduce((sum, q) => sum + q.points, 0),
+          isLocked: true,
+          lockReason: 'Complete all videos in this chapter to unlock exam',
+        },
+        chapter: {
+          id: exam.chapter.id,
+          title: exam.chapter.title,
+        },
+        progress: {
+          videosCompleted: completedVideos,
+          totalVideos,
+          allVideosCompleted: false,
+          canTakeExam: false,
+        },
+        attempts: [],
+        canStartExam: false,
+      };
+    }
+
+    logger.info('Exam detail retrieved successfully', {
+      studentId,
+      examId,
+      isLocked: isExamLocked,
+      totalAttempts: examAttempts.length,
+      hasPassed,
+    });
+
+    return {
+      exam: {
+        id: exam.id,
+        title: exam.title,
+        description: exam.description,
+        passingScore: exam.passingScore,
+        timeLimit: exam.timeLimit,
+        totalQuestions: exam.questions.length,
+        totalPoints: exam.questions.reduce((sum, q) => sum + q.points, 0),
+        isLocked: false,
+      },
+      chapter: {
+        id: exam.chapter.id,
+        title: exam.chapter.title,
+      },
+      progress: {
+        videosCompleted: completedVideos,
+        totalVideos,
+        allVideosCompleted: true,
+        canTakeExam: true,
+        hasPassed,
+        bestScore,
+      },
+      attempts: examAttempts,
+      ongoingAttempt,
+      canStartExam: !ongoingAttempt, // Can start new exam only if no ongoing attempt
+    };
+  } catch (error) {
+    logger.error('Error in getMyLearningExamDetail', {
+      studentId,
+      courseId,
+      chapterId,
+      examId,
+      error: error instanceof Error ? error.message : String(error),
+    });
+    throw error;
+  }
+}
+
+// Start a new exam attempt
+export async function startMyLearningExam(
+  studentId: string,
+  courseId: string,
+  chapterId: string,
+  examId: string,
+) {
+  try {
+    logger.info('Starting exam attempt', { studentId, courseId, chapterId, examId });
+
+    // Check if student is enrolled in this course
+    const enrollment = await prisma.courseEnrollment.findFirst({
+      where: {
+        studentId,
+        courseId,
+        isActive: true,
+      },
+    });
+
+    if (!enrollment) {
+      logger.warn('Start exam failed - student not enrolled', { studentId, courseId });
+      throw new AppError('You are not enrolled in this course', 403, ErrorTypes.AUTHORIZATION);
+    }
+
+    // Get exam details
+    const exam = await prisma.exam.findFirst({
+      where: {
+        id: examId,
+        chapterId: chapterId,
+        chapter: {
+          courseId: courseId,
+        },
+      },
+      include: {
+        questions: {
+          select: {
+            id: true,
+            text: true,
+            questionType: true,
+            options: true,
+            points: true,
+          },
+          orderBy: {
+            createdAt: 'asc',
+          },
+        },
+      },
+    });
+
+    if (!exam) {
+      logger.warn('Start exam failed - exam not found', { examId, chapterId, courseId });
+      throw new AppError('Exam not found in this chapter', 404, ErrorTypes.NOT_FOUND);
+    }
+
+    // Check if all videos in the chapter are completed
+    const totalVideos = await prisma.video.count({
+      where: { chapterId },
+    });
+
+    const completedVideos = await prisma.videoProgress.count({
+      where: {
+        studentId,
+        video: { chapterId },
+        watchedPercent: 100,
+      },
+    });
+
+    const allVideosCompleted = totalVideos > 0 && completedVideos === totalVideos;
+
+    if (!allVideosCompleted) {
+      logger.warn('Start exam failed - not all videos completed', {
+        studentId,
+        examId,
+        completedVideos,
+        totalVideos,
+      });
+      throw new AppError(
+        'Complete all videos in this chapter to take the exam',
+        403,
+        ErrorTypes.AUTHORIZATION,
+      );
+    }
+
+    // Check if there's already an ongoing attempt
+    const ongoingAttempt = await prisma.examAttempt.findFirst({
+      where: {
+        studentId,
+        examId,
+        endTime: null, // Not finished yet
+      },
+    });
+
+    if (ongoingAttempt) {
+      logger.warn('Start exam failed - ongoing attempt exists', {
+        studentId,
+        examId,
+        attemptId: ongoingAttempt.id,
+      });
+      throw new AppError(
+        'You have an ongoing exam attempt. Please complete it first.',
+        409,
+        ErrorTypes.VALIDATION,
+      );
+    }
+
+    // Create new exam attempt
+    const examAttempt = await prisma.examAttempt.create({
+      data: {
+        studentId,
+        examId,
+        startTime: new Date(),
+      },
+    });
+
+    logger.info('Exam attempt started successfully', {
+      studentId,
+      examId,
+      attemptId: examAttempt.id,
+    });
+
+    return {
+      attemptId: examAttempt.id,
+      examId: exam.id,
+      title: exam.title,
+      description: exam.description,
+      timeLimit: exam.timeLimit,
+      passingScore: exam.passingScore,
+      totalQuestions: exam.questions.length,
+      totalPoints: exam.questions.reduce((sum, q) => sum + q.points, 0),
+      questions: exam.questions.map((q) => ({
+        id: q.id,
+        text: q.text,
+        questionType: q.questionType,
+        options: q.options,
+        points: q.points,
+      })),
+      startTime: examAttempt.startTime,
+      ...(exam.timeLimit && {
+        endTime: new Date(examAttempt.startTime.getTime() + exam.timeLimit * 60 * 1000),
+      }),
+    };
+  } catch (error) {
+    logger.error('Error in startMyLearningExam', {
+      studentId,
+      courseId,
+      chapterId,
+      examId,
+      error: error instanceof Error ? error.message : String(error),
+    });
+    throw error;
+  }
+}
+
+// Submit exam attempt with answers
+export async function submitMyLearningExam(
+  studentId: string,
+  courseId: string,
+  chapterId: string,
+  examId: string,
+  attemptId: string,
+  answers: Array<{ questionId: string; answer: string }>,
+) {
+  try {
+    logger.info('Submitting exam attempt', {
+      studentId,
+      courseId,
+      chapterId,
+      examId,
+      attemptId,
+      totalAnswers: answers.length,
+    });
+
+    // Check if student is enrolled in this course
+    const enrollment = await prisma.courseEnrollment.findFirst({
+      where: {
+        studentId,
+        courseId,
+        isActive: true,
+      },
+    });
+
+    if (!enrollment) {
+      logger.warn('Submit exam failed - student not enrolled', { studentId, courseId });
+      throw new AppError('You are not enrolled in this course', 403, ErrorTypes.AUTHORIZATION);
+    }
+
+    // Get exam attempt with exam details
+    const examAttempt = await prisma.examAttempt.findFirst({
+      where: {
+        id: attemptId,
+        studentId,
+        examId,
+        endTime: null, // Should not be already submitted
+      },
+      include: {
+        exam: {
+          include: {
+            questions: true,
+          },
+        },
+      },
+    });
+
+    if (!examAttempt) {
+      logger.warn('Submit exam failed - exam attempt not found or already submitted', {
+        attemptId,
+        studentId,
+        examId,
+      });
+      throw new AppError('Exam attempt not found or already submitted', 404, ErrorTypes.NOT_FOUND);
+    }
+
+    // Check if exam time limit has expired (if applicable)
+    if (examAttempt.exam.timeLimit) {
+      const timeElapsed = (new Date().getTime() - examAttempt.startTime.getTime()) / (1000 * 60); // in minutes
+      if (timeElapsed > examAttempt.exam.timeLimit) {
+        logger.warn('Submit exam failed - time limit exceeded', {
+          attemptId,
+          timeElapsed,
+          timeLimit: examAttempt.exam.timeLimit,
+        });
+        // Auto-submit with current answers
+      }
+    }
+
+    const currentTime = new Date();
+    let totalScore = 0;
+    const submittedAnswers = [];
+
+    // Process each answer
+    for (const answerData of answers) {
+      const question = examAttempt.exam.questions.find((q) => q.id === answerData.questionId);
+
+      if (!question) {
+        logger.warn('Question not found for answer', { questionId: answerData.questionId });
+        continue;
+      }
+
+      let isCorrect = false;
+      let points = 0;
+
+      // Check answer based on question type
+      if (question.questionType === 'multiple_choice' || question.questionType === 'true_false') {
+        isCorrect = question.correctAnswer === answerData.answer;
+        points = isCorrect ? question.points : 0;
+      } else if (question.questionType === 'essay') {
+        // For essay questions, we'll need manual grading - for now, give full points
+        isCorrect = true;
+        points = question.points;
+      }
+
+      totalScore += points;
+
+      // Create answer record
+      const answer = await prisma.answer.create({
+        data: {
+          studentAnswer: answerData.answer,
+          isCorrect,
+          points,
+          questionId: question.id,
+          examAttemptId: attemptId,
+        },
+      });
+
+      submittedAnswers.push({
+        questionId: question.id,
+        studentAnswer: answerData.answer,
+        correctAnswer: question.correctAnswer,
+        isCorrect,
+        points,
+        maxPoints: question.points,
+      });
+    }
+
+    // Calculate if exam is passed
+    const totalPossiblePoints = examAttempt.exam.questions.reduce((sum, q) => sum + q.points, 0);
+    const passingScore = examAttempt.exam.passingScore ?? 70; // Use 70% as default if null
+    const isPassed = totalScore >= (totalPossiblePoints * passingScore) / 100;
+
+    // Update exam attempt with results
+    const updatedAttempt = await prisma.examAttempt.update({
+      where: { id: attemptId },
+      data: {
+        endTime: currentTime,
+        score: totalScore,
+        isPassed,
+      },
+    });
+
+    // If exam is passed, update chapter progress
+    if (isPassed) {
+      await prisma.chapterProgress.upsert({
+        where: {
+          studentId_chapterId: {
+            studentId,
+            chapterId,
+          },
+        },
+        update: {
+          isCompleted: true,
+          completedAt: currentTime,
+        },
+        create: {
+          studentId,
+          chapterId,
+          isCompleted: true,
+          completedAt: currentTime,
+        },
+      });
+
+      // Check if next chapter should be unlocked
+      const nextChapter = await prisma.chapter.findFirst({
+        where: {
+          courseId,
+          orderIndex: {
+            gt: await prisma.chapter
+              .findUnique({ where: { id: chapterId } })
+              .then((ch) => ch?.orderIndex || 0),
+          },
+        },
+        orderBy: {
+          orderIndex: 'asc',
+        },
+      });
+
+      logger.info('Exam passed - chapter completed', {
+        studentId,
+        chapterId,
+        nextChapterId: nextChapter?.id,
+      });
+    }
+
+    logger.info('Exam submitted successfully', {
+      studentId,
+      examId,
+      attemptId,
+      totalScore,
+      totalPossiblePoints,
+      isPassed,
+    });
+
+    return {
+      attemptId,
+      examId: examAttempt.examId,
+      score: totalScore,
+      totalPossiblePoints,
+      passingScore: passingScore,
+      isPassed,
+      submittedAt: currentTime,
+      timeTaken: Math.round(
+        (currentTime.getTime() - examAttempt.startTime.getTime()) / (1000 * 60),
+      ), // in minutes
+      answers: submittedAnswers,
+      results: {
+        correctAnswers: submittedAnswers.filter((a) => a.isCorrect).length,
+        totalQuestions: examAttempt.exam.questions.length,
+        percentage: Math.round((totalScore / totalPossiblePoints) * 100),
+      },
+      nextSteps: isPassed
+        ? 'Congratulations! You have passed the exam and unlocked the next chapter.'
+        : `You need ${Math.ceil((totalPossiblePoints * passingScore) / 100) - totalScore} more points to pass. You can retake the exam.`,
+    };
+  } catch (error) {
+    logger.error('Error in submitMyLearningExam', {
+      studentId,
+      courseId,
+      chapterId,
+      examId,
+      attemptId,
       error: error instanceof Error ? error.message : String(error),
     });
     throw error;
