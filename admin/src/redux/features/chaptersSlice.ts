@@ -14,7 +14,7 @@ export interface Exam {
   id: string;
   title: string;
   description: string | null;
-  passingScore: number;
+  passingScore?: number;
   timeLimit: number | null;
   createdAt: string;
   updatedAt: string;
