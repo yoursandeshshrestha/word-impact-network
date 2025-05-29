@@ -4,6 +4,9 @@ import {
   getMyLearningChapterDetail,
   getStudentEnrolledCoursesForLearning,
   updateVideoProgressHeartbeat,
+  getMyLearningExamDetail,
+  startMyLearningExam,
+  submitMyLearningExam,
 } from '../services/mylearning.service';
 import { sendSuccess } from '../utils/responseHandler';
 import { catchAsync } from '../utils/catchAsync';
@@ -224,4 +227,167 @@ export const updateVideoHeartbeat = catchAsync(async (req: Request, res: Respons
   );
 
   sendSuccess(res, 200, 'Video progress tracked', progressResult);
+});
+
+// Get exam details with locking logic
+export const getMyExamDetail = catchAsync(async (req: Request, res: Response) => {
+  // Ensure user is authenticated and get userId
+  if (!req.user || !req.user.userId) {
+    throw new AppError('Authentication required', 401, ErrorTypes.AUTHENTICATION);
+  }
+
+  const { courseId, chapterId, examId } = req.params;
+
+  // Validate parameters
+  if (!courseId || !chapterId || !examId) {
+    throw new AppError(
+      'Course ID, Chapter ID, and Exam ID are required',
+      400,
+      ErrorTypes.VALIDATION,
+    );
+  }
+
+  // Find the student ID from the user ID
+  const student = await prisma.student.findFirst({
+    where: { userId: req.user.userId },
+  });
+
+  if (!student) {
+    logger.warn('Exam detail fetch failed - student not found', { userId: req.user.userId });
+    throw new AppError('Student not found', 404, ErrorTypes.NOT_FOUND);
+  }
+
+  // Ensure student's application is approved
+  if (student.applicationStatus !== 'APPROVED') {
+    logger.warn('Exam detail fetch failed - student application not approved', {
+      studentId: student.id,
+      applicationStatus: student.applicationStatus,
+    });
+
+    let errorMessage = 'Your application needs to be approved to access course content';
+
+    if (student.applicationStatus === 'REJECTED') {
+      errorMessage = 'Your application has been rejected. Please contact support.';
+    }
+
+    throw new AppError(errorMessage, 403, ErrorTypes.AUTHORIZATION);
+  }
+
+  // Get exam detail with locking logic
+  const examDetail = await getMyLearningExamDetail(student.id, courseId, chapterId, examId);
+
+  sendSuccess(res, 200, 'Exam details retrieved successfully', examDetail);
+});
+
+// Start an exam attempt
+export const startExamAttempt = catchAsync(async (req: Request, res: Response) => {
+  // Ensure user is authenticated and get userId
+  if (!req.user || !req.user.userId) {
+    throw new AppError('Authentication required', 401, ErrorTypes.AUTHENTICATION);
+  }
+
+  const { courseId, chapterId, examId } = req.params;
+
+  // Validate parameters
+  if (!courseId || !chapterId || !examId) {
+    throw new AppError(
+      'Course ID, Chapter ID, and Exam ID are required',
+      400,
+      ErrorTypes.VALIDATION,
+    );
+  }
+
+  // Find the student ID from the user ID
+  const student = await prisma.student.findFirst({
+    where: { userId: req.user.userId },
+  });
+
+  if (!student) {
+    logger.warn('Start exam failed - student not found', { userId: req.user.userId });
+    throw new AppError('Student not found', 404, ErrorTypes.NOT_FOUND);
+  }
+
+  // Ensure student's application is approved
+  if (student.applicationStatus !== 'APPROVED') {
+    logger.warn('Start exam failed - student application not approved', {
+      studentId: student.id,
+      applicationStatus: student.applicationStatus,
+    });
+
+    let errorMessage = 'Your application needs to be approved to access course content';
+
+    if (student.applicationStatus === 'REJECTED') {
+      errorMessage = 'Your application has been rejected. Please contact support.';
+    }
+
+    throw new AppError(errorMessage, 403, ErrorTypes.AUTHORIZATION);
+  }
+
+  // Start exam attempt
+  const attemptResult = await startMyLearningExam(student.id, courseId, chapterId, examId);
+
+  sendSuccess(res, 201, 'Exam attempt started successfully', attemptResult);
+});
+
+// Submit exam attempt
+export const submitExamAttempt = catchAsync(async (req: Request, res: Response) => {
+  // Ensure user is authenticated and get userId
+  if (!req.user || !req.user.userId) {
+    throw new AppError('Authentication required', 401, ErrorTypes.AUTHENTICATION);
+  }
+
+  const { courseId, chapterId, examId, attemptId } = req.params;
+  const { answers } = req.body;
+
+  // Validate parameters
+  if (!courseId || !chapterId || !examId || !attemptId) {
+    throw new AppError(
+      'Course ID, Chapter ID, Exam ID, and Attempt ID are required',
+      400,
+      ErrorTypes.VALIDATION,
+    );
+  }
+
+  // Validate request body
+  if (!answers || !Array.isArray(answers)) {
+    throw new AppError('Answers array is required', 400, ErrorTypes.VALIDATION);
+  }
+
+  // Find the student ID from the user ID
+  const student = await prisma.student.findFirst({
+    where: { userId: req.user.userId },
+  });
+
+  if (!student) {
+    logger.warn('Submit exam failed - student not found', { userId: req.user.userId });
+    throw new AppError('Student not found', 404, ErrorTypes.NOT_FOUND);
+  }
+
+  // Ensure student's application is approved
+  if (student.applicationStatus !== 'APPROVED') {
+    logger.warn('Submit exam failed - student application not approved', {
+      studentId: student.id,
+      applicationStatus: student.applicationStatus,
+    });
+
+    let errorMessage = 'Your application needs to be approved to access course content';
+
+    if (student.applicationStatus === 'REJECTED') {
+      errorMessage = 'Your application has been rejected. Please contact support.';
+    }
+
+    throw new AppError(errorMessage, 403, ErrorTypes.AUTHORIZATION);
+  }
+
+  // Submit exam attempt
+  const submissionResult = await submitMyLearningExam(
+    student.id,
+    courseId,
+    chapterId,
+    examId,
+    attemptId,
+    answers,
+  );
+
+  sendSuccess(res, 200, 'Exam submitted successfully', submissionResult);
 });
