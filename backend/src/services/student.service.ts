@@ -1729,7 +1729,7 @@ export async function getExamDetails(studentId: string, examId: string) {
         id: exam.id,
         title: exam.title,
         description: exam.description,
-        passingScore: exam.passingScore,
+        passingScore: Math.round(exam.questions.reduce((sum, q) => sum + q.points, 0) * 0.7),
         timeLimit: exam.timeLimit, // in minutes
         createdBy: exam.createdBy.fullName,
         totalQuestions: exam.questions.length,
@@ -2138,8 +2138,11 @@ export async function submitExamAttempt(
         score = Math.round((earnedPoints / totalObjectivePoints) * 100);
       }
 
+      // Calculate passing score as 70% of total points
+      const passingScore = Math.round(totalPossiblePoints * 0.7);
+
       // Determine if the attempt is passed
-      const isPassed = score >= examAttempt.exam.passingScore;
+      const isPassed = earnedPoints >= passingScore;
 
       // Update the exam attempt with end time and score
       const updatedAttempt = await tx.examAttempt.update({
