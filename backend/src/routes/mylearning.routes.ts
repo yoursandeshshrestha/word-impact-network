@@ -5,7 +5,10 @@ import {
   getMyChapterDetail,
   getMyCourseDetail,
   getMyLearningCourses,
+  getMyExamDetail,
   updateVideoHeartbeat,
+  submitExamAttempt,
+  startExamAttempt,
 } from '@/controllers/mylearning.controller';
 
 const router: Router = express.Router();
@@ -30,6 +33,29 @@ router.post(
   authenticate,
   validateStudent,
   updateVideoHeartbeat,
+);
+
+router.get(
+  '/courses/:courseId/chapters/:chapterId/exams/:examId',
+  authenticate,
+  validateStudent,
+  getMyExamDetail,
+);
+
+// Start new exam attempt
+router.post(
+  '/courses/:courseId/chapters/:chapterId/exams/:examId/start',
+  authenticate,
+  validateStudent,
+  startExamAttempt,
+);
+
+// Submit exam attempt
+router.post(
+  '/courses/:courseId/chapters/:chapterId/exams/:examId/attempts/:attemptId/submit',
+  authenticate,
+  validateStudent,
+  submitExamAttempt,
 );
 
 export default router;
