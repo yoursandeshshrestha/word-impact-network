@@ -43,9 +43,9 @@ const CourseCard: React.FC<CourseCardProps> = ({
   };
 
   return (
-    <div className="overflow-hidden mb-8 flex items-center bg-white rounded-2xl hover:bg-slate-50 transition-all duration-300 border border-slate-200 shadow-sm hover:shadow-md">
+    <div className="overflow-hidden mb-8 flex flex-col md:flex-row items-center bg-white rounded-2xl hover:bg-slate-50 transition-all duration-300 border border-slate-200 shadow-sm hover:shadow-md">
       {/* Course Content */}
-      <div className="flex-1 flex flex-col justify-between p-6">
+      <div className="flex-1 flex flex-col justify-between p-4 md:p-6">
         <div>
           <h3 className="text-xl font-bold text-slate-900 mb-3 leading-tight">
             {title}
@@ -54,7 +54,7 @@ const CourseCard: React.FC<CourseCardProps> = ({
             {getShortDescription(description)}
           </p>
           {/* Progress Section */}
-          <div className="mb-6 w-[500px]">
+          <div className="mb-6 w-full md:w-[500px]">
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm font-medium text-slate-600">
                 Progress
@@ -69,7 +69,7 @@ const CourseCard: React.FC<CourseCardProps> = ({
                 style={{ width: `${progress.overallProgress}%` }}
               ></div>
             </div>
-            <div className="flex items-center justify-between mt-2 text-sm text-slate-600">
+            <div className="flex flex-col md:flex-row items-start md:items-center justify-between mt-2 text-sm text-slate-600 space-y-1 md:space-y-0">
               <span>
                 {progress.completedChapters}/{progress.totalChapters} chapters
                 completed
@@ -82,20 +82,20 @@ const CourseCard: React.FC<CourseCardProps> = ({
         </div>
         <button
           onClick={() => onContinue(id)}
-          className="bg-slate-800 hover:bg-slate-700 text-white px-6 py-3 rounded-xl font-semibold cursor-pointer transition-all duration-200 self-start shadow-sm hover:shadow-md"
+          className="bg-slate-800 hover:bg-slate-700 text-white px-6 py-3 rounded-xl font-semibold cursor-pointer transition-all duration-200 self-start shadow-sm hover:shadow-md w-full md:w-auto"
         >
           Continue Learning
         </button>
       </div>
       {/* Course Image */}
-      <div className="w-93 h-60 relative flex-shrink-0 bg-slate-100 rounded-2xl mx-6 my-6 flex items-center justify-center overflow-hidden border border-slate-200">
+      <div className="w-full md:w-93 h-48 md:h-60 relative flex-shrink-0 bg-slate-100 rounded-2xl mx-0 md:mx-6 mt-4 md:my-6 flex items-center justify-center overflow-hidden border border-slate-200">
         {coverImageUrl ? (
           <Image
             src={coverImageUrl}
             alt={title}
             fill
             className="object-cover rounded-2xl"
-            sizes="320px"
+            sizes="(max-width: 768px) 100vw, 320px"
             onError={(e) => {
               const target = e.target as HTMLImageElement;
               target.src = "/placeholder-course.jpg";
@@ -119,49 +119,51 @@ const MyLearningPage: React.FC = () => {
     router.push(`/my-learning/${courseId}`);
   };
 
-  if (isLoading) {
-    return (
-      <div className="h-[calc(100vh-4rem)] bg-white flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-2 border-slate-200 border-t-[#7a9e7e] mx-auto mb-3"></div>
-          <p className="text-slate-600 text-sm">Loading your courses...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (isError) {
-    return (
-      <div className="h-[calc(100vh-4rem)] bg-white flex items-center justify-center">
-        <div className="text-center">
-          <div className="text-red-500 text-2xl mb-3">⚠️</div>
-          <h2 className="text-lg font-semibold text-slate-900 mb-2">
-            Something went wrong
-          </h2>
-          <p className="text-slate-600 mb-4 text-sm">
-            {error || "Failed to load your learning courses"}
-          </p>
-          <button
-            onClick={() => window.location.reload()}
-            className="bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded-xl text-sm transition-colors cursor-pointer shadow-sm"
-          >
-            Try Again
-          </button>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="h-[calc(100vh-4rem)] bg-white pt-10 overflow-auto">
-      <div className="px-4 py-6">
+    <div className="h-screen  overflow-auto">
+      <div className="px-5 pt-20">
         {/* Page Title */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-slate-900">My Learning</h1>
-          <p className="text-slate-600 mt-2">
+          <h1 className="text-2xl md:text-3xl font-bold text-slate-900">
+            My Learning
+          </h1>
+          <p className="text-sm md:text-base text-slate-600 mt-2">
             Continue your learning journey with your enrolled courses
           </p>
         </div>
+
+        {/* Loading State */}
+        {isLoading && (
+          <div className="flex items-center justify-center py-12 sm:py-16">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-2 border-slate-200 border-t-[#7a9e7e] mx-auto mb-3"></div>
+              <p className="text-sm sm:text-base text-slate-600">
+                Loading your courses...
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Error State */}
+        {isError && (
+          <div className="flex items-center justify-center py-12 sm:py-16">
+            <div className="text-center max-w-lg mx-auto px-4">
+              <div className="text-red-500 text-2xl sm:text-3xl mb-3">⚠️</div>
+              <h2 className="text-lg sm:text-xl font-semibold text-slate-900 mb-2">
+                Something went wrong
+              </h2>
+              <p className="text-sm sm:text-base text-slate-600 mb-4">
+                {error || "Failed to load your learning courses"}
+              </p>
+              <button
+                onClick={() => window.location.reload()}
+                className="bg-slate-800 hover:bg-slate-700 text-white px-4 sm:px-5 py-2 sm:py-2.5 rounded-lg sm:rounded-xl text-sm sm:text-base transition-colors cursor-pointer shadow-sm hover:shadow-md"
+              >
+                Try Again
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Courses List */}
         {courses.length === 0 ? (
@@ -182,7 +184,7 @@ const MyLearningPage: React.FC = () => {
             </button>
           </div>
         ) : (
-          <div className="space-y-0">
+          <div className="space-y-8">
             {courses.map((course) => (
               <CourseCard
                 key={course.id}
