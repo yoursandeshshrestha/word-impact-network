@@ -55,7 +55,7 @@ const Sidebar: React.FC = () => {
       <div className="md:hidden fixed left-4 top-4 z-50">
         <button
           onClick={toggleMobileMenu}
-          className="p-2.5 rounded-xl bg-[#1e2938] shadow-lg border border-white/10 text-white hover:bg-white/5 transition-all duration-200"
+          className="p-2.5 rounded-xl  text-black/90 hover:bg-white/5 transition-all duration-200 hover:text-black cursor-pointer"
         >
           {isMobileMenuOpen ? (
             <X className="h-5 w-5" />
@@ -67,7 +67,7 @@ const Sidebar: React.FC = () => {
 
       {/* Sidebar Container */}
       <aside
-        className={`fixed top-0 left-0 z-40 h-screen bg-[#1e2938] backdrop-blur-xl border-r border-white/10 transition-all duration-300 ease-in-out ${
+        className={`fixed top-0 left-0 z-100 h-screen bg-[#1e2938]  border-r border-white/10 transition-all duration-300 ease-in-out ${
           isMobileMenuOpen
             ? "translate-x-0"
             : "-translate-x-full md:translate-x-0"
@@ -76,7 +76,7 @@ const Sidebar: React.FC = () => {
         {/* Logo */}
         <div className="h-16 flex items-center px-6 border-b border-white/10 bg-[#1e2938]">
           <Link href="/" className="flex items-center gap-3 group">
-            <h1 className="text-lg font-bold text-white group-hover:text-[#7a9e7e] transition-colors">
+            <h1 className="text-lg font-bold text-white transition-colors">
               Word Impact Network
             </h1>
           </Link>
@@ -141,7 +141,7 @@ const Sidebar: React.FC = () => {
       {/* Overlay for mobile */}
       {isMobileMenuOpen && (
         <div
-          className="fixed inset-0 bg-black/20 backdrop-blur-sm z-30 md:hidden"
+          className="fixed inset-0 bg-black/50 z-90 md:hidden"
           onClick={() => setIsMobileMenuOpen(false)}
           aria-hidden="true"
         />
