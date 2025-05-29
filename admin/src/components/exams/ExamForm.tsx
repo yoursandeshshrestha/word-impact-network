@@ -21,14 +21,12 @@ const ExamForm: React.FC<ExamFormProps> = ({
   const [formData, setFormData] = useState({
     title: "",
     description: "",
-    passingScore: 70, // Default passing score 70%
     timeLimit: 60, // Default time limit 60 minutes
   });
 
   const [errors, setErrors] = useState({
     title: "",
     description: "",
-    passingScore: "",
     timeLimit: "",
   });
 
@@ -37,7 +35,6 @@ const ExamForm: React.FC<ExamFormProps> = ({
       setFormData({
         title: initialData.title || "",
         description: initialData.description || "",
-        passingScore: initialData.passingScore || 70,
         timeLimit: initialData.timeLimit || 60,
       });
     }
@@ -64,19 +61,12 @@ const ExamForm: React.FC<ExamFormProps> = ({
     const newErrors = {
       title: "",
       description: "",
-      passingScore: "",
       timeLimit: "",
     };
 
     // Validate title
     if (!formData.title.trim()) {
       newErrors.title = "Title is required";
-      valid = false;
-    }
-
-    // Validate passing score
-    if (formData.passingScore < 0 || formData.passingScore > 100) {
-      newErrors.passingScore = "Passing score must be between 0 and 100";
       valid = false;
     }
 
@@ -169,38 +159,6 @@ const ExamForm: React.FC<ExamFormProps> = ({
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <label
-            htmlFor="passingScore"
-            className=" text-sm font-medium text-gray-700 flex items-center"
-          >
-            <BarChart size={16} className="mr-1" /> Passing Score (%){" "}
-            <span className="text-red-500 ml-1">*</span>
-          </label>
-          <input
-            type="number"
-            id="passingScore"
-            name="passingScore"
-            min="0"
-            max="100"
-            value={formData.passingScore}
-            onChange={handleChange}
-            className={`mt-1 block w-full rounded-md border ${
-              errors.passingScore ? "border-red-500" : "border-gray-300"
-            } shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 cursor-text`}
-            disabled={isLoading}
-          />
-          {errors.passingScore && (
-            <p className="mt-1 text-sm text-red-500 flex items-center">
-              <Info size={14} className="mr-1" /> {errors.passingScore}
-            </p>
-          )}
-          <p className="mt-1 text-xs text-gray-500 flex items-center">
-            <Info size={12} className="mr-1" /> Minimum percentage required to
-            pass the exam
-          </p>
-        </div>
-
         <div>
           <label
             htmlFor="timeLimit"
