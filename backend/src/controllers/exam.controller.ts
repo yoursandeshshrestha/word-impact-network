@@ -25,7 +25,11 @@ export const createExam = catchAsync(async (req: Request, res: Response) => {
 
   const { chapterId } = req.params;
   const userId = req.user.userId;
-  const examData = req.body;
+  const examData = {
+    title: req.body.title,
+    description: req.body.description,
+    timeLimit: req.body.timeLimit,
+  };
 
   // Log the incoming request data
   logger.info('Creating exam for chapter', {
@@ -78,7 +82,11 @@ export const updateExam = catchAsync(async (req: Request, res: Response) => {
 
   const { id } = req.params;
   const userId = req.user.userId;
-  const examData = req.body;
+  const examData = {
+    title: req.body.title,
+    description: req.body.description,
+    timeLimit: req.body.timeLimit,
+  };
 
   // Find the admin record
   const admin = await prisma.admin.findFirst({
