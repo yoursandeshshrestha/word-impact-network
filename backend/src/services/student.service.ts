@@ -2,10 +2,13 @@ import { PrismaClient, Gender, ApplicationStatus, UserRole } from '@prisma/clien
 import { AppError, ErrorTypes } from '../utils/appError';
 import { logger } from '../utils/logger';
 import { uploadToCloudinary } from '../utils/cloudinary';
-import { sendApplicationConfirmationEmail } from './email.service';
+import { sendApplicationConfirmationEmail, sendStudentPasswordResetEmail } from './email.service';
 import bcrypt from 'bcryptjs';
 import { StudentProfileUpdateData } from '@/types/types';
 import { updateChapterProgressBasedOnVideo } from '@/utils/progressUtils';
+import redisClient from '@/config/redis';
+import crypto from 'crypto';
+import generateVerificationCode from '@/utils/generateVerificationCode';
 const prisma = new PrismaClient();
 
 // Register a new student
@@ -2932,6 +2935,137 @@ export async function getEnrolledCourseContent(studentId: string, courseId: stri
     logger.error('Error in getEnrolledCourseContent', {
       studentId,
       courseId,
+      error: error instanceof Error ? error.message : String(error),
+    });
+    throw error;
+  }
+}
+
+// Request password reset
+export async function requestPasswordReset(email: string) {
+  try {
+    logger.info('Initiating student password reset', { email });
+
+    // Check rate limit
+    const rateLimitKey = `password_reset_rate_limit:${email}`;
+    const attempts = await redisClient.get(rateLimitKey);
+
+    if (attempts && parseInt(attempts) >= 3) {
+      logger.warn('Password reset rate limit exceeded', { email });
+      throw new AppError(
+        'Too many password reset attempts. Please try again in 1 hour.',
+        429,
+        ErrorTypes.RATE_LIMIT,
+      );
+    }
+
+    // Find the student by email
+    const user = await prisma.user.findUnique({
+      where: { email: email.toLowerCase() },
+      include: {
+        student: true,
+      },
+    });
+
+    if (!user || user.role !== UserRole.STUDENT || !user.student) {
+      logger.warn('Password reset request failed - student not found', { email });
+      throw new AppError('No account found with this email', 404, ErrorTypes.NOT_FOUND);
+    }
+
+    // Generate a verification code
+    const verificationCode = generateVerificationCode(8);
+
+    // Generate a unique reset ID
+    const resetId = crypto.randomUUID();
+
+    // Store the reset request in Redis (with 30 minute expiration)
+    const resetData = {
+      userId: user.id,
+      verificationCode,
+      expiresAt: new Date(Date.now() + 30 * 60 * 1000).toISOString(),
+    };
+
+    await redisClient.set(
+      `student_password_reset:${resetId}`,
+      JSON.stringify(resetData),
+      { EX: 1800 }, // 30 minutes in seconds
+    );
+
+    // Increment rate limit counter
+    await redisClient.incr(rateLimitKey);
+    await redisClient.expire(rateLimitKey, 3600); // 1 hour expiration
+
+    // Send verification code via email
+    await sendStudentPasswordResetEmail(
+      user.email,
+      user.student.fullName,
+      resetId,
+      verificationCode,
+    );
+
+    logger.info('Password reset initiated successfully', { email, resetId });
+
+    return { resetId };
+  } catch (error) {
+    logger.error('Error in requestPasswordReset', {
+      email,
+      error: error instanceof Error ? error.message : String(error),
+    });
+    throw error;
+  }
+}
+
+// Complete password reset
+export async function completePasswordReset(
+  resetId: string,
+  verificationCode: string,
+  newPassword: string,
+) {
+  try {
+    logger.info('Completing password reset', { resetId });
+
+    // Get reset data from Redis
+    const resetDataJson = await redisClient.get(`student_password_reset:${resetId}`);
+
+    if (!resetDataJson) {
+      logger.warn('Password reset completion failed - invalid or expired reset ID', { resetId });
+      throw new AppError('Invalid or expired reset request', 400, ErrorTypes.VALIDATION);
+    }
+
+    const resetData = JSON.parse(resetDataJson);
+
+    // Check if reset request has expired
+    if (new Date() > new Date(resetData.expiresAt)) {
+      // Clean up expired request
+      await redisClient.del(`student_password_reset:${resetId}`);
+      logger.warn('Password reset completion failed - request expired', { resetId });
+      throw new AppError('Reset request has expired', 400, ErrorTypes.VALIDATION);
+    }
+
+    // Verify the verification code
+    if (resetData.verificationCode !== verificationCode) {
+      logger.warn('Password reset completion failed - invalid verification code', { resetId });
+      throw new AppError('Invalid verification code', 400, ErrorTypes.VALIDATION);
+    }
+
+    // Hash the new password
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    // Update the password in the database
+    await prisma.user.update({
+      where: { id: resetData.userId },
+      data: { password: hashedPassword },
+    });
+
+    // Clean up the reset request from Redis
+    await redisClient.del(`student_password_reset:${resetId}`);
+
+    logger.info('Password reset completed successfully', { userId: resetData.userId });
+
+    return { success: true };
+  } catch (error) {
+    logger.error('Error in completePasswordReset', {
+      resetId,
       error: error instanceof Error ? error.message : String(error),
     });
     throw error;
