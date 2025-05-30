@@ -9,6 +9,7 @@ export enum ErrorTypes {
   THIRD_PARTY = 'ThirdPartyError',
   REQUEST = 'RequestError',
   PRECONDITION_FAILED = 'PreconditionFailedError',
+  RATE_LIMIT = 'RateLimitError',
 }
 
 export class AppError extends Error {
