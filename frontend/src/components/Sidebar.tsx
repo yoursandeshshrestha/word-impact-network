@@ -10,13 +10,13 @@ import {
   User,
   GraduationCap,
   ChevronRight,
+  MessageCircle,
 } from "lucide-react";
 
 const Sidebar: React.FC = () => {
   const pathname = usePathname();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  // Enhanced menu items with better categorization
   const menuItems = [
     {
       category: "Main",
@@ -40,6 +40,16 @@ const Sidebar: React.FC = () => {
           path: "/profile",
           name: "Profile",
           icon: <User className="w-5 h-5" />,
+        },
+      ],
+    },
+    {
+      category: "Support",
+      items: [
+        {
+          path: "/support",
+          name: "Contact Support",
+          icon: <MessageCircle className="w-5 h-5" />,
         },
       ],
     },
