@@ -121,7 +121,7 @@ export const getConversationMessagesController = catchAsync(async (req: Request,
   // Use validated query parameters (these are set by the validation middleware)
   const validatedQuery = (req as any).validatedQuery || {};
   const page = validatedQuery.page || 1;
-  const limit = validatedQuery.limit || 20;
+  const limit = 100;
 
   // Get conversation messages
   const result = await getConversationMessages(userId, partnerId, page, limit);
@@ -167,7 +167,7 @@ export const getStudentAdminConversationController = catchAsync(
     // Use validated query parameters (these are set by the validation middleware)
     const validatedQuery = (req as any).validatedQuery || {};
     const page = validatedQuery.page || 1;
-    const limit = validatedQuery.limit || 20;
+    const limit = 100;
 
     // Get student-admin conversation
     const result = await getStudentAdminConversation(userId, page, limit);
