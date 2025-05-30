@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useStudents } from "@/hooks/useStudent";
 import StudentsList from "@/components/students/StudentsList";
-import StudentDetails from "@/components/students/StudentDetails";
+import StudentDetailsDrawer from "@/components/students/StudentDetailsDrawer";
 import SearchBar from "@/components/students/SearchBar";
 import { Student } from "@/redux/features/studentsSlice";
 import NoDataFound from "@/components/common/NoDataFound";
@@ -86,52 +86,47 @@ const StudentsPage: React.FC = () => {
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className={`${showDetails ? "md:col-span-2" : "md:col-span-3"}`}>
-          <div className="bg-white shadow rounded-lg overflow-hidden">
-            {isLoading && !students.length ? (
-              <Loading />
-            ) : students.length === 0 ? (
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-                <NoDataFound
-                  icon="file"
-                  title="No Students Found"
-                  message="There are no students to display at the moment."
-                />
-              </div>
-            ) : (
-              <>
-                <StudentsList
-                  students={students}
-                  onViewDetails={handleViewDetails}
-                />
-
-                <PaginationControls
-                  total={pagination.total}
-                  currentCount={students.length}
-                  limit={pagination.limit}
-                  onLimitChange={changeLimit}
-                />
-
-                <Pagination
-                  currentPage={pagination.currentPage}
-                  totalPages={pagination.totalPages}
-                  onPageChange={changePage}
-                />
-              </>
-            )}
-          </div>
-        </div>
-
-        {showDetails && selectedStudent && (
-          <div className="md:col-span-1">
-            <StudentDetails
-              student={selectedStudent}
-              onClose={handleCloseDetails}
+      <div className="bg-white shadow rounded-lg overflow-hidden">
+        {isLoading && !students.length ? (
+          <Loading />
+        ) : students.length === 0 ? (
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+            <NoDataFound
+              icon="file"
+              title="No Students Found"
+              message="There are no students to display at the moment."
             />
           </div>
+        ) : (
+          <>
+            <StudentsList
+              students={students}
+              onViewDetails={handleViewDetails}
+            />
+
+            <PaginationControls
+              total={pagination.total}
+              currentCount={students.length}
+              limit={pagination.limit}
+              onLimitChange={changeLimit}
+            />
+
+            <Pagination
+              currentPage={pagination.currentPage}
+              totalPages={pagination.totalPages}
+              onPageChange={changePage}
+            />
+          </>
         )}
       </div>
+
+      {selectedStudent && (
+        <StudentDetailsDrawer
+          student={selectedStudent}
+          isOpen={showDetails}
+          onClose={handleCloseDetails}
+        />
+      )}
     </div>
   );
 };
