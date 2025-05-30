@@ -13,6 +13,9 @@ import { sendSuccess } from '../utils/responseHandler';
 import { catchAsync } from '../utils/catchAsync';
 import { ErrorTypes } from '@/utils/appError';
 import { AppError } from '@/utils/appError';
+import { PrismaClient } from '@prisma/client';
+
+const prisma = new PrismaClient();
 
 // Register a new admin
 export const registerAdmin = catchAsync(async (req: Request, res: Response) => {
@@ -38,13 +41,6 @@ export const loginAdminController = catchAsync(async (req: Request, res: Respons
     email: admin.email,
     role: admin.role,
   });
-
-  // res.cookie('authToken', token, {
-  //   httpOnly: true,
-  //   secure: process.env.NODE_ENV === 'production',
-  //   sameSite: 'strict',
-  //   maxAge: 24 * 60 * 60 * 1000,
-  // });
 
   sendSuccess(res, 200, 'Login successful', {
     admin: {
@@ -125,8 +121,99 @@ export const getAllStudentsController = catchAsync(async (req: Request, res: Res
 
   const { students, total, totalPages } = await getAllStudentsWithSearch(search, page, limit);
 
+  // Get detailed information for each student
+  const studentsWithDetails = await Promise.all(
+    students.map(async (student) => {
+      // Get course enrollments
+      const enrollments = await prisma.courseEnrollment.findMany({
+        where: { studentId: student.id },
+        include: {
+          course: {
+            select: {
+              id: true,
+              title: true,
+              durationYears: true,
+            },
+          },
+        },
+      });
+
+      // Get chapter progress
+      const chapterProgress = await prisma.chapterProgress.findMany({
+        where: { studentId: student.id },
+        select: {
+          isCompleted: true,
+          chapter: {
+            select: {
+              courseId: true,
+            },
+          },
+        },
+      });
+
+      // Get exam attempts
+      const examAttempts = await prisma.examAttempt.findMany({
+        where: { studentId: student.id },
+        select: {
+          isPassed: true,
+          exam: {
+            select: {
+              chapter: {
+                select: {
+                  courseId: true,
+                },
+              },
+            },
+          },
+        },
+      });
+
+      // Calculate progress metrics
+      const coursesEnrolled = enrollments.length;
+      const chaptersCompleted = chapterProgress.filter((progress) => progress.isCompleted).length;
+      const examsCompleted = examAttempts.length;
+      const examsPassed = examAttempts.filter((attempt) => attempt.isPassed).length;
+
+      // Calculate course-wise progress
+      const courseProgress = enrollments.map((enrollment) => {
+        const courseChapters = chapterProgress.filter(
+          (progress) => progress.chapter.courseId === enrollment.courseId,
+        );
+        const completedChapters = courseChapters.filter((progress) => progress.isCompleted).length;
+        const courseExams = examAttempts.filter(
+          (attempt) => attempt.exam.chapter.courseId === enrollment.courseId,
+        );
+        const passedExams = courseExams.filter((attempt) => attempt.isPassed).length;
+
+        return {
+          courseId: enrollment.course.id,
+          courseTitle: enrollment.course.title,
+          durationYears: enrollment.course.durationYears,
+          enrollmentDate: enrollment.enrollmentDate,
+          progress: {
+            chaptersCompleted,
+            totalChapters: courseChapters.length,
+            examsPassed,
+            totalExams: courseExams.length,
+          },
+        };
+      });
+
+      return {
+        ...student,
+        statistics: {
+          coursesEnrolled,
+          chaptersCompleted,
+          examsCompleted,
+          examsPassed,
+        },
+        courseProgress,
+      };
+    }),
+  );
+
   sendSuccess(res, 200, 'Students retrieved successfully', {
-    students,
+    students: studentsWithDetails,
     pagination: {
       total,
       totalPages,
