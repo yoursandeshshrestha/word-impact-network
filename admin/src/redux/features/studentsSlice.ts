@@ -3,12 +3,34 @@ import { RootState } from "../store";
 import { getAuthToken } from "@/utils/auth";
 
 // Types
+interface CourseProgress {
+  courseId: string;
+  courseTitle: string;
+  durationYears: number;
+  enrollmentDate: string;
+  progress: {
+    chaptersCompleted: number;
+    totalChapters: number;
+    examsPassed: number;
+    totalExams: number;
+  };
+}
+
+interface StudentStatistics {
+  coursesEnrolled: number;
+  chaptersCompleted: number;
+  examsCompleted: number;
+  examsPassed: number;
+}
+
 export interface Student {
   id: string;
   fullName: string;
   gender: string;
   phoneNumber: string;
   email: string;
+  statistics: StudentStatistics;
+  courseProgress: CourseProgress[];
 }
 
 export interface PaginationMeta {
