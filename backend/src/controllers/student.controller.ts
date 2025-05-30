@@ -15,6 +15,8 @@ import {
   submitExamAttempt,
   updateStudentProfileByUserId,
   updateVideoProgress,
+  requestPasswordReset,
+  completePasswordReset,
 } from '../services/student.service';
 import { sendError, sendSuccess } from '../utils/responseHandler';
 import { catchAsync } from '../utils/catchAsync';
@@ -770,4 +772,48 @@ export const getFullCourseContent = catchAsync(async (req: Request, res: Respons
   const courseContent = await getEnrolledCourseContent(student.id, courseId);
 
   sendSuccess(res, 200, 'Course content retrieved successfully', courseContent);
+});
+
+// Request password reset
+export const requestPasswordResetController = catchAsync(async (req: Request, res: Response) => {
+  const { email } = req.body;
+
+  if (!email) {
+    throw new AppError('Email is required', 400, ErrorTypes.VALIDATION);
+  }
+
+  const resetData = await requestPasswordReset(email);
+
+  sendSuccess(res, 200, 'Password reset verification code sent to your email', {
+    message: 'Please check your email for the verification code',
+    resetId: resetData.resetId,
+  });
+});
+
+// Complete password reset
+export const completePasswordResetController = catchAsync(async (req: Request, res: Response) => {
+  const { resetId, verificationCode, newPassword } = req.body;
+
+  if (!resetId || !verificationCode || !newPassword) {
+    throw new AppError(
+      'Reset ID, verification code, and new password are required',
+      400,
+      ErrorTypes.VALIDATION,
+    );
+  }
+
+  // Validate password requirements
+  if (newPassword.length < 8) {
+    throw new AppError(
+      'New password must be at least 8 characters long',
+      400,
+      ErrorTypes.VALIDATION,
+    );
+  }
+
+  await completePasswordReset(resetId, verificationCode, newPassword);
+
+  sendSuccess(res, 200, 'Password reset successful', {
+    message: 'Your password has been updated successfully',
+  });
 });
