@@ -16,6 +16,8 @@ import {
   submitStudentExamAttempt,
   updateStudentProfile,
   updateStudentVideoProgress,
+  requestPasswordResetController,
+  completePasswordResetController,
 } from '../controllers/student.controller';
 import {
   validateExamSubmission,
@@ -200,5 +202,9 @@ router.get(
     });
   },
 );
+
+// Password reset routes
+router.post('/request-password-reset', requestPasswordResetController);
+router.post('/complete-password-reset', completePasswordResetController);
 
 export default router;
