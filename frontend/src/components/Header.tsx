@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from "react";
 import { logout } from "@/common/services/auth";
-import { Bell, ChevronDown, User, LogOut, Search } from "lucide-react";
+import { ChevronDown, User, LogOut, Search, Lock } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useAutoCourses } from "@/hooks/useCourses";
 
@@ -102,11 +102,6 @@ const Header: React.FC<{ studentName: string; isLoading?: boolean }> = ({
 
           {/* Right Section - Always aligned to the right */}
           <div className="flex items-center gap-2 sm:gap-3 ml-auto">
-            {/* Notifications */}
-            <button className="relative p-2 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-colors group">
-              <Bell className="h-5 w-5" />
-            </button>
-
             {/* User Profile Dropdown */}
             <div className="relative" id="user-dropdown">
               <button
@@ -171,6 +166,15 @@ const Header: React.FC<{ studentName: string; isLoading?: boolean }> = ({
                     >
                       <User className="h-4 w-4" />
                       View Profile
+                    </a>
+                  </div>
+                  <div className="py-2">
+                    <a
+                      href="/forgot-password"
+                      className="flex items-center gap-3 px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors"
+                    >
+                      <Lock className="h-4 w-4" />
+                      Forgot Password
                     </a>
                   </div>
 
