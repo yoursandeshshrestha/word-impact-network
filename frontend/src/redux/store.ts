@@ -11,6 +11,8 @@ import myLearningReducer from "./features/myLearningSlice/myLearningSlice";
 import courseDetailReducer from "./features/courseDetail/courseDetailSlice";
 import chapterDetailReducer from "./features/chapterDetail/chapterDetailSlice";
 import examReducer from "./features/exam/examSlice";
+import messagesReducer from "./features/Message/messagesSlice";
+import passwordResetReducer from "./features/auth/passwordResetSlice";
 
 interface EnrollmentState {
   loading: boolean;
@@ -31,6 +33,8 @@ export const store = configureStore({
     courseDetail: courseDetailReducer,
     chapterDetail: chapterDetailReducer,
     exam: examReducer,
+    messages: messagesReducer,
+    passwordReset: passwordResetReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
