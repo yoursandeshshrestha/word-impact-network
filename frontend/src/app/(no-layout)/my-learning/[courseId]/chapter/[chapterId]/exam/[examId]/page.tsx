@@ -46,6 +46,7 @@ function ExamPage() {
     if (courseId && chapterId && examId) {
       loadExamData(courseId as string, chapterId as string, examId as string);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [courseId, chapterId, examId]);
 
   useEffect(() => {
@@ -68,6 +69,7 @@ function ExamPage() {
 
       return () => clearInterval(timer);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentAttempt]);
 
   const handleStartExam = () => {
