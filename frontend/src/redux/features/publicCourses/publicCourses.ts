@@ -1,6 +1,7 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import axios, { AxiosError } from "axios";
 import { toast } from "sonner";
+import { withAuth } from "@/common/services/auth";
 
 interface ErrorResponse {
   message: string;
@@ -86,6 +87,29 @@ export const fetchPreviewCourseById = createAsyncThunk(
       const errorMessage =
         (error as AxiosError<ErrorResponse>).response?.data?.message ||
         "Failed to fetch course details";
+      toast.error(errorMessage);
+      return rejectWithValue(errorMessage);
+    }
+  }
+);
+
+export const enrollInCourse = createAsyncThunk(
+  "courses/enrollInCourse",
+  async (courseId: string, { rejectWithValue }) => {
+    try {
+      const response = await axios.post(
+        `${BASE_URL}/student/courses/${courseId}/enroll`,
+        {},
+        {
+          headers: withAuth() as Record<string, string>,
+        }
+      );
+
+      return response.data.data;
+    } catch (error) {
+      const errorMessage =
+        (error as AxiosError<ErrorResponse>).response?.data?.message ||
+        "Failed to enroll in course";
       toast.error(errorMessage);
       return rejectWithValue(errorMessage);
     }
