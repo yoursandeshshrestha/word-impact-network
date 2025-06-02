@@ -46,12 +46,12 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ video, onClose }) => {
 
   // This crucial cleanup function runs when component unmounts
   useEffect(() => {
+    const videoElement = videoRef.current;
     return () => {
-      if (videoRef.current) {
-        // This sequence is critical for proper cleanup
-        videoRef.current.pause();
-        videoRef.current.removeAttribute("src"); // Removes reference to source
-        videoRef.current.load(); // Resets the media element
+      if (videoElement) {
+        videoElement.pause();
+        videoElement.removeAttribute("src");
+        videoElement.load();
       }
     };
   }, []);
