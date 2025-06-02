@@ -1,5 +1,5 @@
 import React from "react";
-import { Student } from "@/src/redux/features/studentsSlice";
+import { Student } from "@/redux/features/studentsSlice";
 
 interface StudentsListProps {
   students: Student[];
