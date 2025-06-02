@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Exam } from "@/redux/features/examsSlice";
-import { Info, Type, FileText, Clock, BarChart, Save, X } from "lucide-react";
+import { Info, Type, FileText, Clock, Save, X } from "lucide-react";
 
 interface ExamFormProps {
   initialData?: Omit<
