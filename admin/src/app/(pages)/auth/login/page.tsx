@@ -62,7 +62,7 @@ const Login = () => {
       }
 
       // Set auth token
-      Cookies.set("auth_token", response.data.token, {
+      Cookies.set("authToken", response.data.token, {
         expires: rememberMe ? 7 : 1, // 7 days if remember me is checked, 1 day otherwise
         path: "/",
         secure: process.env.NODE_ENV === "production",
