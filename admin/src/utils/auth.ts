@@ -141,6 +141,7 @@ export const AuthService = {
           "Content-Type": "application/json",
         },
         body: JSON.stringify(formData),
+        credentials: "include",
       });
 
       console.log("Registration response status:", response.status);

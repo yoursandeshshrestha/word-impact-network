@@ -6,7 +6,17 @@ const corsOptions: CorsOptions = {
 
     if (!origin) return callback(null, true);
 
-    if (allowedOrigins.indexOf(origin) !== -1 || process.env.NODE_ENV === 'development') {
+    // Check if the origin matches any of the allowed origins
+    const isAllowed = allowedOrigins.some((allowedOrigin) => {
+      // If allowedOrigin is a domain without protocol, match any protocol
+      if (allowedOrigin.startsWith('.')) {
+        return origin.endsWith(allowedOrigin);
+      }
+      // If allowedOrigin is a full URL, do exact match
+      return origin === allowedOrigin;
+    });
+
+    if (isAllowed || process.env.NODE_ENV === 'development') {
       callback(null, true);
     } else {
       callback(new Error(`Origin ${origin} not allowed by CORS policy`));
@@ -14,8 +24,20 @@ const corsOptions: CorsOptions = {
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
-  exposedHeaders: ['Content-Range', 'X-Content-Range'],
+  allowedHeaders: [
+    'Content-Type',
+    'Authorization',
+    'X-Requested-With',
+    'Accept',
+    'Origin',
+    'X-CSRF-Token',
+    'X-API-Key',
+    'X-HTTP-Method-Override',
+    'X-Requested-With',
+    'Access-Control-Request-Method',
+    'Access-Control-Request-Headers',
+  ],
+  exposedHeaders: ['Content-Range', 'X-Content-Range', 'Set-Cookie'],
   maxAge: 86400,
 };
 
