@@ -99,9 +99,20 @@ export const errorHandler = (err: Error, req: Request, res: Response, next: Next
   }
 
   // For unknown errors, log with our structured logger
-  logger.error(`Unhandled error: ${error.message}`, {
-    path: req.path,
-    method: req.method,
+  logger.error('Unhandled error', {
+    error: {
+      name: error.name,
+      message: error.message,
+      stack: error.stack,
+    },
+    request: {
+      path: req.path,
+      method: req.method,
+      body: req.body,
+      query: req.query,
+      params: req.params,
+      headers: req.headers,
+    },
   });
 
   // For unknown errors, send a generic message in production

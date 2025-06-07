@@ -3,8 +3,9 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { AuthService, setAuthToken, setUserInfo } from "@/utils/auth";
+import { AuthService } from "@/utils/auth";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
+import Cookies from "js-cookie";
 
 const Login = () => {
   const router = useRouter();
@@ -12,92 +13,91 @@ const Login = () => {
     email: "",
     password: "",
   });
-  const [errors, setErrors] = useState<Record<string, string>>({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const validate = () => {
+    if (!formData.email) {
+      setError("Email is required");
+      return false;
+    }
+    if (!formData.password) {
+      setError("Password is required");
+      return false;
+    }
+    return true;
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
-
-    // Clear error for the field being changed
-    if (errors[name]) {
-      setErrors({ ...errors, [name]: "" });
-    }
-  };
-
-  const validate = () => {
-    const newErrors: Record<string, string> = {};
-
-    // Email validation
-    if (!formData.email) {
-      newErrors.email = "Email is required";
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = "Email is invalid";
-    }
-
-    // Password validation
-    if (!formData.password) {
-      newErrors.password = "Password is required";
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+    // Clear error when user starts typing
+    if (error) setError("");
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError("");
 
     if (!validate()) {
       return;
     }
 
-    setIsSubmitting(true);
+    setLoading(true);
 
     try {
-      // Use the AuthService for login
       const response = await AuthService.login(
         formData.email,
         formData.password
       );
       console.log("Login response:", response);
 
-      // Set auth token
-      if (response.data && response.data.token) {
-        setAuthToken(response.data.token, rememberMe);
-      } else {
-        throw new Error("No token received from server");
+      if (!response.data.token || !response.data.admin) {
+        throw new Error("Invalid response from server");
       }
+
+      // Set auth token
+      Cookies.set("auth_token", response.data.token, {
+        expires: rememberMe ? 7 : 1, // 7 days if remember me is checked, 1 day otherwise
+        path: "/",
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "strict",
+      });
 
       // Set user info
-      if (response.data && response.data.admin) {
-        setUserInfo(
-          {
-            id: response.data.admin.id,
-            email: response.data.admin.email,
-            fullName: response.data.admin.fullName,
-          },
-          rememberMe
-        );
-      } else {
-        throw new Error("No admin data received from server");
-      }
+      Cookies.set(
+        "user",
+        JSON.stringify({
+          id: response.data.admin.id,
+          email: response.data.admin.email,
+          fullName: response.data.admin.fullName,
+          role: response.data.admin.role,
+        }),
+        {
+          expires: rememberMe ? 7 : 1, // 7 days if remember me is checked, 1 day otherwise
+          path: "/",
+          secure: process.env.NODE_ENV === "production",
+          sameSite: "strict",
+        }
+      );
 
-      // Show success message
-      toast.success(response.message || "Login successful!");
-
-      // Redirect to dashboard after a short delay
-      setTimeout(() => {
-        router.push("/");
-      }, 1000);
-    } catch (error) {
-      console.error("Login error:", error);
+      toast.success(response.message || "Login successful");
+      router.push("/dashboard");
+    } catch (err) {
+      console.error("Login error:", err);
+      setError(
+        err instanceof Error ? err.message : "An error occurred during login"
+      );
       toast.error(
-        error instanceof Error ? error.message : "An unknown error occurred"
+        err instanceof Error ? err.message : "An error occurred during login"
       );
     } finally {
-      setIsSubmitting(false);
+      setLoading(false);
     }
   };
 
@@ -139,12 +139,10 @@ const Login = () => {
                   value={formData.email}
                   onChange={handleChange}
                   className={`appearance-none block w-full px-3 py-2 border ${
-                    errors.email ? "border-red-300" : "border-gray-300"
+                    error ? "border-red-300" : "border-gray-300"
                   } rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm`}
                 />
-                {errors.email && (
-                  <p className="mt-2 text-sm text-red-600">{errors.email}</p>
-                )}
+                {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
               </div>
             </div>
 
@@ -165,7 +163,7 @@ const Login = () => {
                   value={formData.password}
                   onChange={handleChange}
                   className={`appearance-none block w-full px-3 py-2 border ${
-                    errors.password ? "border-red-300" : "border-gray-300"
+                    error ? "border-red-300" : "border-gray-300"
                   } rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm`}
                 />
                 <button
@@ -179,9 +177,7 @@ const Login = () => {
                     <Eye className="h-5 w-5" />
                   )}
                 </button>
-                {errors.password && (
-                  <p className="mt-2 text-sm text-red-600">{errors.password}</p>
-                )}
+                {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
               </div>
             </div>
 
@@ -216,10 +212,10 @@ const Login = () => {
             <div>
               <button
                 type="submit"
-                disabled={isSubmitting}
+                disabled={loading}
                 className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-gray-800 hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isSubmitting ? (
+                {loading ? (
                   <Loader2 className="animate-spin h-5 w-5" />
                 ) : (
                   "Sign in"

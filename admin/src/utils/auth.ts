@@ -94,7 +94,6 @@ export const AuthService = {
           email: email,
           password: password,
         }),
-        credentials: "include",
       });
 
       console.log("Login response status:", response.status);
@@ -118,26 +117,24 @@ export const AuthService = {
         throw new Error(data.message || "Login failed");
       }
 
-      // Handle both possible response structures
-      const token = data.token || (data.data && data.data.token);
-      const admin = data.admin || (data.data && data.data.admin);
-
-      if (!token) {
-        throw new Error("No token received from server");
+      // Match the exact response structure from the server
+      if (data.status !== "success") {
+        throw new Error(data.message || "Login failed");
       }
 
-      if (!admin) {
-        throw new Error("No admin data received from server");
+      if (!data.data || !data.data.token || !data.data.admin) {
+        throw new Error("Invalid response format from server");
       }
 
       return {
-        message: data.message || "Login successful",
+        message: data.message,
         data: {
-          token,
+          token: data.data.token,
           admin: {
-            id: admin.id,
-            email: admin.email,
-            fullName: admin.fullName,
+            id: data.data.admin.id,
+            email: data.data.admin.email,
+            fullName: data.data.admin.fullName,
+            role: data.data.admin.role,
           },
         },
       };
