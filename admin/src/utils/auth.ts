@@ -99,6 +99,14 @@ export const AuthService = {
 
       console.log("Login response status:", response.status);
 
+      // Check if the response is JSON
+      const contentType = response.headers.get("content-type");
+      if (!contentType || !contentType.includes("application/json")) {
+        throw new Error(
+          "Server returned non-JSON response. Please check your API configuration."
+        );
+      }
+
       const data = await response.json();
       console.log("Login response data:", data);
 
@@ -136,6 +144,14 @@ export const AuthService = {
       });
 
       console.log("Registration response status:", response.status);
+
+      // Check if the response is JSON
+      const contentType = response.headers.get("content-type");
+      if (!contentType || !contentType.includes("application/json")) {
+        throw new Error(
+          "Server returned non-JSON response. Please check your API configuration."
+        );
+      }
 
       const data = await response.json();
       console.log("Registration response data:", data);
