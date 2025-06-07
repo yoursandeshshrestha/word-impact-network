@@ -21,6 +21,10 @@ app.use(cors(corsOptions));
 app.use(cookieParser());
 app.use(helmet());
 app.use(compression());
+
+// Handle OPTIONS requests
+app.options('*', cors(corsOptions));
+
 app.use(
   express.json({
     limit: '10kb',
