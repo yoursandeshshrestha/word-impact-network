@@ -63,11 +63,14 @@ const Login = () => {
       );
       console.log("Login response:", response);
 
-      // Correctly access the nested data structure
+      // Set auth token
       if (response.data && response.data.token) {
         setAuthToken(response.data.token, rememberMe);
+      } else {
+        throw new Error("No token received from server");
       }
 
+      // Set user info
       if (response.data && response.data.admin) {
         setUserInfo(
           {
@@ -77,6 +80,8 @@ const Login = () => {
           },
           rememberMe
         );
+      } else {
+        throw new Error("No admin data received from server");
       }
 
       // Show success message

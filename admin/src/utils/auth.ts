@@ -98,6 +98,10 @@ export const AuthService = {
       });
 
       console.log("Login response status:", response.status);
+      console.log(
+        "Login response headers:",
+        Object.fromEntries(response.headers.entries())
+      );
 
       // Check if the response is JSON
       const contentType = response.headers.get("content-type");
@@ -114,7 +118,29 @@ export const AuthService = {
         throw new Error(data.message || "Login failed");
       }
 
-      return data;
+      // Handle both possible response structures
+      const token = data.token || (data.data && data.data.token);
+      const admin = data.admin || (data.data && data.data.admin);
+
+      if (!token) {
+        throw new Error("No token received from server");
+      }
+
+      if (!admin) {
+        throw new Error("No admin data received from server");
+      }
+
+      return {
+        message: data.message || "Login successful",
+        data: {
+          token,
+          admin: {
+            id: admin.id,
+            email: admin.email,
+            fullName: admin.fullName,
+          },
+        },
+      };
     } catch (error) {
       console.error("Login error:", error);
       if (error instanceof Error) {
