@@ -13,8 +13,7 @@ const Register = () => {
     email: "",
     password: "",
     confirmPassword: "",
-    adminCreationSecret:
-      process.env.NEXT_PUBLIC_ADMIN_CREATION_SECRET || "Helloworld",
+    adminCreationSecret: "",
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -58,6 +57,11 @@ const Register = () => {
       newErrors.confirmPassword = "Please confirm your password";
     } else if (formData.confirmPassword !== formData.password) {
       newErrors.confirmPassword = "Passwords do not match";
+    }
+
+    // Admin creation secret validation
+    if (!formData.adminCreationSecret) {
+      newErrors.adminCreationSecret = "Admin creation secret is required";
     }
 
     setErrors(newErrors);
@@ -247,6 +251,35 @@ const Register = () => {
                 {errors.confirmPassword && (
                   <p className="mt-2 text-sm text-red-600">
                     {errors.confirmPassword}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            <div>
+              <label
+                htmlFor="adminCreationSecret"
+                className="block text-sm font-medium text-gray-700"
+              >
+                Admin Creation Secret
+              </label>
+              <div className="mt-1">
+                <input
+                  id="adminCreationSecret"
+                  name="adminCreationSecret"
+                  type="password"
+                  required
+                  value={formData.adminCreationSecret}
+                  onChange={handleChange}
+                  className={`appearance-none block w-full px-3 py-2 border ${
+                    errors.adminCreationSecret
+                      ? "border-red-300"
+                      : "border-gray-300"
+                  } rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm`}
+                />
+                {errors.adminCreationSecret && (
+                  <p className="mt-2 text-sm text-red-600">
+                    {errors.adminCreationSecret}
                   </p>
                 )}
               </div>
