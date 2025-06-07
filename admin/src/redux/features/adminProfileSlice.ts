@@ -55,7 +55,7 @@ export const fetchAdminProfile = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       const apiUrl =
-        process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8080/api/v1";
+        process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api/v1";
 
       const response = await fetch(`${apiUrl}/admin/profile`, {
         headers: {
@@ -89,7 +89,7 @@ export const requestPasswordReset = createAsyncThunk(
   async (passwordData: PasswordReset, { rejectWithValue }) => {
     try {
       const apiUrl =
-        process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8080/api/v1";
+        process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api/v1";
 
       const response = await fetch(`${apiUrl}/admin/request-password-reset`, {
         method: "POST",
@@ -119,7 +119,7 @@ export const verifyPasswordReset = createAsyncThunk(
   async (verificationData: PasswordResetVerification, { rejectWithValue }) => {
     try {
       const apiUrl =
-        process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8080/api/v1";
+        process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api/v1";
 
       const response = await fetch(`${apiUrl}/admin/verify-password-reset`, {
         method: "POST",

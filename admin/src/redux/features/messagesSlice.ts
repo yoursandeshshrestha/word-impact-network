@@ -82,7 +82,7 @@ export const fetchConversations = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       const apiUrl =
-        process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8080/api/v1";
+        process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api/v1";
 
       const response = await fetch(`${apiUrl}/messages/conversations`, {
         headers: {
@@ -121,7 +121,7 @@ export const fetchConversationMessages = createAsyncThunk(
 
     try {
       const apiUrl =
-        process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8080/api/v1";
+        process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api/v1";
 
       const response = await fetch(
         `${apiUrl}/messages/conversations/${partnerId}?page=${page}&limit=${limit}`,
@@ -164,7 +164,7 @@ export const sendMessage = createAsyncThunk(
   ) => {
     try {
       const apiUrl =
-        process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8080/api/v1";
+        process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api/v1";
 
       const response = await fetch(`${apiUrl}/messages/admin`, {
         method: "POST",
@@ -200,7 +200,7 @@ export const markConversationAsRead = createAsyncThunk(
   async (partnerId: string, { rejectWithValue }) => {
     try {
       const apiUrl =
-        process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8080/api/v1";
+        process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api/v1";
 
       const response = await fetch(
         `${apiUrl}/messages/conversations/${partnerId}/read`,
@@ -238,7 +238,7 @@ export const fetchUnreadCount = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       const apiUrl =
-        process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8080/api/v1";
+        process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api/v1";
 
       const response = await fetch(`${apiUrl}/messages/unread-count`, {
         headers: {
