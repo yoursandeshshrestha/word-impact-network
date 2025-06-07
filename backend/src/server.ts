@@ -1,3 +1,6 @@
+// Register module aliases
+import 'module-alias/register';
+
 import app from './app';
 import config from './types';
 import { PrismaClient } from '@prisma/client';

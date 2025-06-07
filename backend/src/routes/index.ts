@@ -1,15 +1,15 @@
 import express, { Router } from 'express';
-import adminRoutes from '@/routes/admin.routes';
-import studentRoutes from '@/routes/student.routes';
-import applicationRoutes from '@/routes/application.routes';
-import courseRoutes from '@/routes/course.routes';
-import chapterRoutes from '@/routes/chapter.routes';
-import videoRoutes from '@/routes/video.routes';
-import examRoutes from '@/routes/exam.routes';
-import messageRoutes from '@/routes/message.routes';
-import notificationRoutes from '@/routes/notification.routes';
-import analyticsRoutes from '@/routes/analytics.routes';
-import myLearningRoutes from '@/routes/mylearning.routes';
+import adminRoutes from './admin.routes';
+import studentRoutes from './student.routes';
+import applicationRoutes from './application.routes';
+import courseRoutes from './course.routes';
+import chapterRoutes from './chapter.routes';
+import videoRoutes from './video.routes';
+import examRoutes from './exam.routes';
+import messageRoutes from './message.routes';
+import notificationRoutes from './notification.routes';
+import analyticsRoutes from './analytics.routes';
+import myLearningRoutes from './mylearning.routes';
 
 const router: Router = express.Router();
 

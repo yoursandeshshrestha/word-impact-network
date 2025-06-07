@@ -17,9 +17,6 @@ COPY . .
 # Generate Prisma client explicitly
 RUN npx prisma generate
 
-# Debug to find where Prisma files are located
-RUN find /app -name "prisma" -type d | xargs ls -la
-
 # Build the application
 RUN pnpm run build
 
@@ -43,11 +40,14 @@ COPY prisma ./prisma
 # Copy build output
 COPY --from=builder /app/dist ./dist
 
-# Simply copy the entire node_modules directory to ensure all dependencies are included
+# Copy module-alias configuration
+COPY module-alias.js ./
+
+# Copy node_modules
 COPY --from=builder /app/node_modules ./node_modules
 
 # Set environment variables
 ENV NODE_ENV=production
 
 # Command to run the application
-CMD ["node", "dist/server.js"]
+CMD ["node", "-r", "./module-alias.js", "dist/server.js"]
