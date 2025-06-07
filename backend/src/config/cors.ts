@@ -2,7 +2,9 @@ import { CorsOptions } from 'cors';
 
 const corsOptions: CorsOptions = {
   origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
-    const allowedOrigins = (process.env.CORS_ORIGINS || 'http://localhost:3000').split(',');
+    const allowedOrigins = (
+      process.env.CORS_ORIGINS || 'http://localhost:3000,http://localhost:4000'
+    ).split(',');
 
     if (!origin) return callback(null, true);
 
