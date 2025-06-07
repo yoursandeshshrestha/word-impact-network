@@ -61,12 +61,6 @@ const handleJoiErrors = (err: any) => {
 
 // Global error handler middleware
 export const errorHandler = (err: Error, req: Request, res: Response, next: NextFunction): void => {
-  // Handle OPTIONS requests
-  if (req.method === 'OPTIONS') {
-    res.status(200).end();
-    return;
-  }
-
   // Transform known error types into AppError format
   let error = err;
   error = handlePrismaErrors(error);
