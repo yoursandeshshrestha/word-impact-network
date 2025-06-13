@@ -41,14 +41,15 @@ class SocketIOService {
       this.disconnect();
 
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+      // Remove /api/v1 from the URL as Socket.IO needs the base URL
+      const socketUrl = apiUrl.replace(/\/api\/v1$/, "");
 
       // Reset connection attempts on manual connect
       this.connectionAttempts = 0;
 
-      console.log("Socket.IO: Attempting to connect to", apiUrl);
-
       // Create Socket.IO connection with auth token
-      this.socket = io(apiUrl, {
+      this.socket = io(socketUrl, {
+        path: "/socket.io",
         auth: { token },
         query: { token }, // Including in query for backward compatibility
         reconnection: true,
@@ -73,13 +74,11 @@ class SocketIOService {
 
     // Connection successful
     this.socket.on("connect", () => {
-      console.log("Socket.IO: Connected successfully");
       this.connected = true;
       this.connectionAttempts = 0; // Reset attempts on successful connection
 
       // If we were previously disconnected, fetch latest data
       if (this.wasDisconnected) {
-        console.log("Socket.IO: Refreshing data after reconnection");
         this.wasDisconnected = false;
         this.refreshData();
       }
@@ -90,7 +89,6 @@ class SocketIOService {
 
     // Connection closed
     this.socket.on("disconnect", (reason) => {
-      console.log(`Socket.IO: Disconnected - reason: ${reason}`);
       this.connected = false;
       this.wasDisconnected = true;
 
@@ -120,8 +118,6 @@ class SocketIOService {
 
     // New message received
     this.socket.on(SocketEvents.NEW_MESSAGE, (data) => {
-      console.log("Socket.IO: New message received", data);
-
       // Immediately update unread count in Redux store
       store.dispatch(fetchUnreadCount());
 
@@ -131,8 +127,6 @@ class SocketIOService {
 
     // New notification received
     this.socket.on(SocketEvents.NEW_NOTIFICATION, (data) => {
-      console.log("Socket.IO: New notification received", data);
-
       // Immediately update notifications in Redux store
       store.dispatch(
         fetchNotifications({ page: 1, limit: 10, unreadOnly: false })
@@ -144,8 +138,6 @@ class SocketIOService {
 
     // Message read event
     this.socket.on(SocketEvents.MESSAGE_READ, (data) => {
-      console.log("Socket.IO: Message read event", data);
-
       // Update unread count in Redux store
       store.dispatch(fetchUnreadCount());
 
@@ -155,8 +147,6 @@ class SocketIOService {
 
     // Notification read event
     this.socket.on(SocketEvents.NOTIFICATION_READ, (data) => {
-      console.log("Socket.IO: Notification read event", data);
-
       // Emit event to any listeners
       this.emitToListeners(SocketEvents.NOTIFICATION_READ, data);
     });
@@ -207,12 +197,22 @@ class SocketIOService {
       );
 
       this.reconnectTimer = setTimeout(() => {
-        this.connect();
+        // Only attempt to reconnect if we have a valid token
+        if (getAuthToken()) {
+          this.connect();
+        } else {
+          console.warn(
+            "Socket.IO: No auth token available, skipping reconnect"
+          );
+          this.connectionAttempts = 0; // Reset attempts
+        }
       }, delay);
     } else {
       console.warn(
         `Socket.IO: Maximum reconnection attempts (${this.maxReconnectionAttempts}) reached`
       );
+      // Reset connection attempts after max attempts
+      this.connectionAttempts = 0;
     }
   }
 
@@ -233,7 +233,6 @@ class SocketIOService {
   // Send a message through Socket.IO
   sendMessage(event: string, data: unknown): void {
     if (this.socket && this.connected) {
-      console.log(`Socket.IO: Sending message - event: ${event}`, data);
       this.socket.emit(event, { type: event, data });
     } else {
       console.warn("Socket.IO: Cannot send message, connection not open");
@@ -259,7 +258,6 @@ class SocketIOService {
     });
 
     if (this.socket) {
-      console.log("Socket.IO: Disconnecting");
       this.socket.disconnect();
       this.socket = null;
       this.connected = false;
