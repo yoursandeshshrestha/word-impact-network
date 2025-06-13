@@ -297,7 +297,7 @@ const CourseForm: React.FC<CourseFormProps> = ({
           } rounded-md overflow-hidden`}
         >
           <Editor
-            apiKey="hwqbciee1qbh3165r74nw7fwh4n3z4vq2l2043ic44b2gv43" // Replace with your TinyMCE API key
+            apiKey="z30k8qlrd6zw5khpdft6selhun150mm2vmz8zm2g2yiztr8a" // Replace with your TinyMCE API key
             onInit={(evt, editor) => (editorRef.current = editor)}
             initialValue={formData.description}
             onEditorChange={handleEditorChange}
