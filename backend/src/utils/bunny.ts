@@ -1,43 +1,46 @@
 import { logger } from './logger';
 import { AppError, ErrorTypes } from './appError';
 import { randomUUID } from 'crypto';
+import * as fs from 'fs';
+import { createReadStream } from 'fs';
+import { pipeline } from 'stream/promises';
 
 // Validate required environment variables
 const requiredEnvVars = [
   'BUNNY_STORAGE_ZONE_NAME',
   'BUNNY_STORAGE_PASSWORD',
   'BUNNY_STORAGE_HOSTNAME',
+  'BUNNY_CDN_URL',
 ];
 const missingEnvVars = requiredEnvVars.filter((envVar) => !process.env[envVar]);
 
 if (missingEnvVars.length > 0) {
   throw new AppError(
-    `Missing required Bunny CDN environment variables: ${missingEnvVars.join(', ')}`,
+    `Missing required Bunny environment variables: ${missingEnvVars.join(', ')}`,
     500,
     ErrorTypes.SERVER,
   );
 }
 
-// Bunny CDN configuration
+// Bunny configuration
 const BUNNY_CONFIG = {
-  storageZoneName: process.env.BUNNY_STORAGE_ZONE_NAME!, // Should be "test-win"
-  password: process.env.BUNNY_STORAGE_PASSWORD!, // Your storage password
-  hostname: process.env.BUNNY_STORAGE_HOSTNAME!, // sg.storage.bunnycdn.com
-  cdnUrl: process.env.BUNNY_CDN_URL || `https://test-win-pull.b-cdn.net`, // Your pull zone URL
+  storageZoneName: process.env.BUNNY_STORAGE_ZONE_NAME!,
+  password: process.env.BUNNY_STORAGE_PASSWORD!,
+  hostname: process.env.BUNNY_STORAGE_HOSTNAME!,
+  cdnUrl: process.env.BUNNY_CDN_URL!,
+  storageBaseUrl: `https://${process.env.BUNNY_STORAGE_HOSTNAME}/${process.env.BUNNY_STORAGE_ZONE_NAME}`,
 };
-
-// Size threshold for large files (50MB) - reduced from 100MB
-const CHUNKED_UPLOAD_THRESHOLD = 50 * 1024 * 1024;
 
 interface BunnyUploadResult {
   success: boolean;
-  url: string;
+  storageUrl: string;
+  cdnUrl: string;
   fileName: string;
   filePath: string;
 }
 
 /**
- * Helper to generate a safe, unique filename for Bunny CDN
+ * Helper to generate a safe, unique filename for Bunny
  */
 function generateSafeFileName(originalName?: string): string {
   const uuid = randomUUID().replace(/-/g, '');
@@ -65,14 +68,14 @@ function generateSafeFileName(originalName?: string): string {
 }
 
 /**
- * Sanitize folder path for Bunny CDN
+ * Sanitize folder path for Bunny
  */
 function sanitizeFolderPath(folder: string): string {
   if (!folder) return 'videos';
 
   const sanitizedParts = folder
     .trim()
-    .replace(/^\/+|\/+$/g, '') // Remove leading/trailing slashes
+    .replace(/^\/+|\/+$/g, '')
     .split('/')
     .map((segment) => {
       return segment
@@ -86,100 +89,90 @@ function sanitizeFolderPath(folder: string): string {
 }
 
 /**
- * Upload file to Bunny CDN using direct API
+ * Upload file to Bunny Storage using streaming
  */
-async function uploadToBunnyCDN(
-  buffer: Buffer,
+async function uploadToBunnyStorage(
+  filePath: string,
   fileName: string,
   folderPath: string,
 ): Promise<BunnyUploadResult> {
   const fullPath = `${folderPath}/${fileName}`;
-  const url = `https://${BUNNY_CONFIG.hostname}/${BUNNY_CONFIG.storageZoneName}/${fullPath}`;
+  const storageUrl = `${BUNNY_CONFIG.storageBaseUrl}/${fullPath}`;
+  const cdnUrl = `${BUNNY_CONFIG.cdnUrl}/${fullPath}`;
 
-  logger.info('Uploading to Bunny CDN', {
-    url,
+  logger.info('Uploading to Bunny Storage', {
+    storageUrl,
+    cdnUrl,
     fileName,
-    fileSize: buffer.length,
-    headers: {
-      AccessKey: BUNNY_CONFIG.password.substring(0, 8) + '...', // Log partial key for debugging
-    },
+    filePath,
   });
 
   try {
-    const response = await fetch(url, {
+    const fileStream = createReadStream(filePath);
+    const fileSize = fs.statSync(filePath).size;
+
+    const response = await fetch(storageUrl, {
       method: 'PUT',
       headers: {
         AccessKey: BUNNY_CONFIG.password,
         'Content-Type': 'application/octet-stream',
+        'Content-Length': fileSize.toString(),
       },
-      body: buffer,
+      body: fileStream,
+      duplex: 'half',
     });
 
     if (!response.ok) {
       const errorText = await response.text();
-      logger.error('Bunny CDN upload failed', {
+      logger.error('Bunny Storage upload failed', {
         status: response.status,
         statusText: response.statusText,
         error: errorText,
-        url,
+        storageUrl,
+        cdnUrl,
+        storageZone: BUNNY_CONFIG.storageZoneName,
+        hostname: BUNNY_CONFIG.hostname,
       });
       throw new Error(`Upload failed with status ${response.status}: ${errorText}`);
     }
 
-    const cdnUrl = `${BUNNY_CONFIG.cdnUrl}/${fullPath}`;
-
     logger.info('Upload successful', {
+      storageUrl,
       cdnUrl,
       fileName,
-      fileSize: buffer.length,
+      fileSize,
     });
 
     return {
       success: true,
-      url: cdnUrl,
+      storageUrl,
+      cdnUrl,
       fileName,
       filePath: fullPath,
     };
   } catch (error) {
-    logger.error('Error uploading to Bunny CDN', {
+    logger.error('Error uploading to Bunny Storage', {
       error: error instanceof Error ? error.message : String(error),
       fileName,
       folderPath,
-      url,
+      storageUrl,
+      cdnUrl,
+      storageZone: BUNNY_CONFIG.storageZoneName,
+      hostname: BUNNY_CONFIG.hostname,
     });
     throw error;
   }
 }
 
 /**
- * Upload file in chunks for large files
- * Note: Bunny CDN doesn't support traditional chunked uploads like this
- * We'll use the regular upload method but with proper error handling
- */
-async function uploadLargeFileToBunnyCDN(
-  buffer: Buffer,
-  fileName: string,
-  folderPath: string,
-): Promise<BunnyUploadResult> {
-  logger.info('Uploading large file to Bunny CDN', {
-    fileName,
-    fileSize: buffer.length,
-  });
-
-  // For large files, we still use the standard upload method
-  // Bunny CDN handles large files automatically
-  return await uploadToBunnyCDN(buffer, fileName, folderPath);
-}
-
-/**
- * Main upload function to Bunny CDN
- * @param file The file buffer to upload
+ * Main upload function to Bunny
+ * @param filePath The path to the file to upload
  * @param folder The folder to upload to (optional)
  * @param fileName The original filename (optional)
- * @returns The Bunny CDN URL
+ * @returns The Bunny CDN URL for serving the file
  */
 export const uploadToBunny = async (
-  file: Buffer,
+  filePath: string,
   folder?: string,
   fileName?: string,
 ): Promise<string> => {
@@ -187,55 +180,45 @@ export const uploadToBunny = async (
     const safeFolder = folder ? sanitizeFolderPath(folder) : 'videos';
     const safeFileName = generateSafeFileName(fileName);
 
-    logger.info('Starting file upload to Bunny CDN', {
-      fileSize: file.length,
+    logger.info('Starting file upload to Bunny', {
+      filePath,
       safeFolder,
       safeFileName,
     });
 
-    let result: BunnyUploadResult;
+    const result = await uploadToBunnyStorage(filePath, safeFileName, safeFolder);
 
-    // Use chunked upload for large files
-    if (file.length > CHUNKED_UPLOAD_THRESHOLD) {
-      logger.info('Using chunked upload method', { fileSize: file.length });
-      result = await uploadLargeFileToBunnyCDN(file, safeFileName, safeFolder);
-    } else {
-      result = await uploadToBunnyCDN(file, safeFileName, safeFolder);
-    }
-
-    logger.info('File uploaded successfully to Bunny CDN', {
+    logger.info('File uploaded successfully to Bunny', {
       fileName: result.fileName,
-      url: result.url,
-      fileSize: file.length,
+      cdnUrl: result.cdnUrl,
     });
 
-    return result.url;
+    // Return the CDN URL for serving the file
+    return result.cdnUrl;
   } catch (error) {
-    logger.error('Error uploading file to Bunny CDN', {
+    logger.error('Error uploading file to Bunny', {
       error: error instanceof Error ? error.message : String(error),
-      fileSize: file.length,
+      filePath,
       folder,
       fileName,
     });
-    throw new AppError('Failed to upload file to Bunny CDN', 500, ErrorTypes.SERVER);
+    throw new AppError('Failed to upload file to Bunny', 500, ErrorTypes.SERVER);
   }
 };
 
 /**
- * Delete a file from Bunny CDN
- * @param filePath The full path of the file to delete (from the URL)
+ * Delete a file from Bunny Storage
+ * @param fileUrl The CDN URL of the file to delete
  */
 export const deleteFromBunny = async (fileUrl: string): Promise<void> => {
   try {
     // Extract the file path from the CDN URL
-    const cdnBaseUrl = BUNNY_CONFIG.cdnUrl;
-    const filePath = fileUrl.replace(cdnBaseUrl + '/', '');
+    const filePath = fileUrl.replace(BUNNY_CONFIG.cdnUrl + '/', '');
+    const storageUrl = `${BUNNY_CONFIG.storageBaseUrl}/${filePath}`;
 
-    logger.info('Deleting file from Bunny CDN', { filePath });
+    logger.info('Deleting file from Bunny Storage', { filePath, storageUrl });
 
-    const url = `https://${BUNNY_CONFIG.hostname}/${BUNNY_CONFIG.storageZoneName}/${filePath}`;
-
-    const response = await fetch(url, {
+    const response = await fetch(storageUrl, {
       method: 'DELETE',
       headers: {
         AccessKey: BUNNY_CONFIG.password,
@@ -247,9 +230,9 @@ export const deleteFromBunny = async (fileUrl: string): Promise<void> => {
       throw new Error(`Delete failed with status ${response.status}: ${errorText}`);
     }
 
-    logger.info('File deleted successfully from Bunny CDN', { filePath });
+    logger.info('File deleted successfully from Bunny Storage', { filePath });
   } catch (error) {
-    logger.error('Error deleting file from Bunny CDN', {
+    logger.error('Error deleting file from Bunny Storage', {
       fileUrl,
       error: error instanceof Error ? error.message : String(error),
     });
@@ -258,16 +241,14 @@ export const deleteFromBunny = async (fileUrl: string): Promise<void> => {
 };
 
 /**
- * Check if a file exists in Bunny CDN
+ * Check if a file exists in Bunny Storage
  */
 export const checkFileExists = async (fileUrl: string): Promise<boolean> => {
   try {
-    const cdnBaseUrl = BUNNY_CONFIG.cdnUrl;
-    const filePath = fileUrl.replace(cdnBaseUrl + '/', '');
+    const filePath = fileUrl.replace(BUNNY_CONFIG.cdnUrl + '/', '');
+    const storageUrl = `${BUNNY_CONFIG.storageBaseUrl}/${filePath}`;
 
-    const url = `https://${BUNNY_CONFIG.hostname}/${BUNNY_CONFIG.storageZoneName}/${filePath}`;
-
-    const response = await fetch(url, {
+    const response = await fetch(storageUrl, {
       method: 'HEAD',
       headers: {
         AccessKey: BUNNY_CONFIG.password,
@@ -276,7 +257,7 @@ export const checkFileExists = async (fileUrl: string): Promise<boolean> => {
 
     return response.ok;
   } catch (error) {
-    logger.error('Error checking file existence in Bunny CDN', {
+    logger.error('Error checking file existence in Bunny Storage', {
       fileUrl,
       error: error instanceof Error ? error.message : String(error),
     });
