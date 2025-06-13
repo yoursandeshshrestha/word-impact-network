@@ -9,6 +9,7 @@ import {
   updateVideoById,
   deleteVideoById,
 } from '../services/video.service';
+import { cleanupTempFile } from '../utils/upload';
 
 /**
  * Add video to chapter
@@ -28,16 +29,23 @@ export const addVideoToChapter = catchAsync(async (req: Request, res: Response) 
     throw new AppError('Video file is required', 400, ErrorTypes.VALIDATION);
   }
 
-  const video = await createVideo(
-    title,
-    description,
-    parseInt(orderIndex, 10),
-    parseInt(duration, 10),
-    chapterId,
-    req.file,
-  );
+  try {
+    const video = await createVideo(
+      title,
+      description,
+      parseInt(orderIndex, 10),
+      parseInt(duration, 10),
+      chapterId,
+      req.file,
+    );
 
-  sendSuccess(res, 201, 'Video added successfully', video);
+    sendSuccess(res, 201, 'Video added successfully', video);
+  } finally {
+    // Clean up the temporary file
+    if (req.file?.path) {
+      cleanupTempFile(req.file.path);
+    }
+  }
 });
 
 /**
@@ -108,9 +116,15 @@ export const updateVideo = catchAsync(async (req: Request, res: Response) => {
     }
   }
 
-  const video = await updateVideoById(id, updateData, videoFile);
-
-  sendSuccess(res, 200, 'Video updated successfully', video);
+  try {
+    const video = await updateVideoById(id, updateData, videoFile);
+    sendSuccess(res, 200, 'Video updated successfully', video);
+  } finally {
+    // Clean up the temporary file
+    if (videoFile?.path) {
+      cleanupTempFile(videoFile.path);
+    }
+  }
 });
 
 /**
