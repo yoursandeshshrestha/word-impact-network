@@ -297,9 +297,9 @@ const CourseForm: React.FC<CourseFormProps> = ({
           } rounded-md overflow-hidden`}
         >
           <Editor
-            apiKey="z30k8qlrd6zw5khpdft6selhun150mm2vmz8zm2g2yiztr8a" // Replace with your TinyMCE API key
+            apiKey={process.env.NEXT_PUBLIC_TINYMCE_API_KEY}
             onInit={(evt, editor) => (editorRef.current = editor)}
-            initialValue={formData.description}
+            value={formData.description}
             onEditorChange={handleEditorChange}
             init={{
               height: 300,
@@ -330,8 +330,9 @@ const CourseForm: React.FC<CourseFormProps> = ({
                 "alignright alignjustify | bullist numlist outdent indent | " +
                 "removeformat | help",
               content_style:
-                "body { font-family:Helvetica,Arial,sans-serif; font-size:14px }",
+                "body { font-family:Helvetica,Arial,sans-serif; font-size:14px; direction: ltr !important; }",
               placeholder: "Enter course description",
+              directionality: "ltr",
             }}
           />
         </div>
