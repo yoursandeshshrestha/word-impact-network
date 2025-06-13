@@ -87,7 +87,12 @@ const Login = () => {
       );
 
       toast.success(response.message || "Login successful");
-      router.push("/dashboard");
+
+      // Add a small delay to ensure cookies are set before redirection
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      // Use replace instead of push to prevent back navigation to login page
+      router.replace("/dashboard");
     } catch (err) {
       console.error("Login error:", err);
       setError(
