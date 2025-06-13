@@ -53,9 +53,9 @@ export async function createVideo(
     const safeTitle = title.toLowerCase().replace(/\s+/g, '-');
     const timestamp = Date.now();
 
-    // Upload video to Bunny CDN - all videos go to 'course-videos' folder
+    // Upload video to Bunny CDN using file path
     const bunnyUrl = await uploadToBunny(
-      videoFile.buffer,
+      videoFile.path,
       `course-videos`,
       `${safeTitle}-${timestamp}.mp4`,
     );
@@ -67,7 +67,7 @@ export async function createVideo(
         description,
         orderIndex,
         duration,
-        backblazeUrl: bunnyUrl, // Using the existing field for Bunny CDN URL
+        backblazeUrl: bunnyUrl,
         chapterId,
       },
       include: {
@@ -231,9 +231,9 @@ export async function updateVideoById(
       const safeTitle = title.toLowerCase().replace(/\s+/g, '-');
       const timestamp = Date.now();
 
-      // Upload new video to Bunny CDN - all videos go to 'course-videos' folder
+      // Upload new video to Bunny CDN using file path
       const newBunnyUrl = await uploadToBunny(
-        videoFile.buffer,
+        videoFile.path,
         `course-videos`,
         `${safeTitle}-${timestamp}.mp4`,
       );
