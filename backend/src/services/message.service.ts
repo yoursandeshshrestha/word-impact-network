@@ -42,122 +42,154 @@ export async function sendMessage(senderId: string, content: string) {
       );
     }
 
-    // Get the admin user
-    const admin = await prisma.admin.findFirst({
+    // Get ALL admin users
+    const admins = await prisma.admin.findMany({
       include: {
         user: true,
       },
     });
 
-    if (!admin) {
-      logger.warn('Message send failed - admin not found');
-      throw new AppError('Admin not found', 404, ErrorTypes.NOT_FOUND);
+    if (admins.length === 0) {
+      logger.warn('Message send failed - no admins found');
+      throw new AppError('No admins found', 404, ErrorTypes.NOT_FOUND);
     }
 
-    const recipientId = admin.user.id;
+    // Create messages for all admins
+    const messages = await Promise.all(
+      admins.map(async (admin) => {
+        const recipientId = admin.user.id;
 
-    // Create the message
-    const message = await prisma.message.create({
-      data: {
-        content,
-        sender: {
-          connect: { id: senderId },
-        },
-        recipient: {
-          connect: { id: recipientId },
-        },
-        isRead: false,
-      },
-      include: {
-        sender: {
-          select: {
-            id: true,
-            email: true,
-            role: true,
-            student: {
+        // Create the message
+        const message = await prisma.message.create({
+          data: {
+            content,
+            sender: {
+              connect: { id: senderId },
+            },
+            recipient: {
+              connect: { id: recipientId },
+            },
+            isRead: false,
+          },
+          include: {
+            sender: {
               select: {
                 id: true,
-                fullName: true,
+                email: true,
+                role: true,
+                student: {
+                  select: {
+                    id: true,
+                    fullName: true,
+                  },
+                },
+              },
+            },
+            recipient: {
+              select: {
+                id: true,
+                email: true,
+                role: true,
+                admin: {
+                  select: {
+                    id: true,
+                    fullName: true,
+                  },
+                },
               },
             },
           },
-        },
-        recipient: {
-          select: {
-            id: true,
-            email: true,
-            role: true,
-            admin: {
-              select: {
-                id: true,
-                fullName: true,
-              },
+        });
+
+        // Create a notification for the admin
+        const notification = await prisma.notification.create({
+          data: {
+            title: 'New Message',
+            content: `You have received a new message from ${sender.student?.fullName || 'Student'}`,
+            user: {
+              connect: { id: recipientId },
             },
           },
-        },
-      },
-    });
+        });
 
-    // Create a notification for the admin
-    const notification = await prisma.notification.create({
-      data: {
-        title: 'New Message',
-        content: `You have received a new message from ${sender.student?.fullName || 'Student'}`,
-        user: {
-          connect: { id: recipientId },
-        },
-      },
-    });
+        // Send real-time notification if the Socket.IO server is available
+        // and the recipient is online
+        if ((global as any).io) {
+          const io = (global as any).io;
+
+          // Format message for response
+          const formattedMessage = {
+            id: message.id,
+            content: message.content,
+            isRead: message.isRead,
+            createdAt: message.createdAt,
+            updatedAt: message.updatedAt,
+            sender: {
+              id: message.sender.id,
+              email: message.sender.email,
+              role: message.sender.role,
+              fullName: message.sender.student?.fullName || 'Student',
+            },
+            recipient: {
+              id: message.recipient.id,
+              email: message.recipient.email,
+              role: message.recipient.role,
+              fullName: message.recipient.admin?.fullName || 'Admin',
+            },
+          };
+
+          // Attempt to send message via WebSocket
+          const delivered = sendMessageToUser(io, recipientId, SocketEvents.NEW_MESSAGE, {
+            message: formattedMessage,
+            notification: {
+              id: notification.id,
+              title: notification.title,
+              content: notification.content,
+              createdAt: notification.createdAt,
+            },
+          });
+
+          if (delivered) {
+            logger.info('Real-time message notification delivered', {
+              messageId: message.id,
+              recipientId,
+            });
+          }
+        }
+
+        return message;
+      }),
+    );
+
+    // Return the first message for backward compatibility
+    // All messages have the same content, so any one is representative
+    const firstMessage = messages[0];
 
     // Format sender and recipient names for the response
     const formattedMessage = {
-      id: message.id,
-      content: message.content,
-      isRead: message.isRead,
-      createdAt: message.createdAt,
-      updatedAt: message.updatedAt,
+      id: firstMessage.id,
+      content: firstMessage.content,
+      isRead: firstMessage.isRead,
+      createdAt: firstMessage.createdAt,
+      updatedAt: firstMessage.updatedAt,
       sender: {
-        id: message.sender.id,
-        email: message.sender.email,
-        role: message.sender.role,
-        fullName: message.sender.student?.fullName || 'Student',
+        id: firstMessage.sender.id,
+        email: firstMessage.sender.email,
+        role: firstMessage.sender.role,
+        fullName: firstMessage.sender.student?.fullName || 'Student',
       },
       recipient: {
-        id: message.recipient.id,
-        email: message.recipient.email,
-        role: message.recipient.role,
-        fullName: message.recipient.admin?.fullName || 'Admin',
+        id: firstMessage.recipient.id,
+        email: firstMessage.recipient.email,
+        role: firstMessage.recipient.role,
+        fullName: firstMessage.recipient.admin?.fullName || 'Admin',
       },
     };
 
-    // Send real-time notification if the Socket.IO server is available
-    // and the recipient is online
-    if ((global as any).io) {
-      const io = (global as any).io;
-
-      // Attempt to send message via WebSocket
-      const delivered = sendMessageToUser(io, recipientId, SocketEvents.NEW_MESSAGE, {
-        message: formattedMessage,
-        notification: {
-          id: notification.id,
-          title: notification.title,
-          content: notification.content,
-          createdAt: notification.createdAt,
-        },
-      });
-
-      if (delivered) {
-        logger.info('Real-time message notification delivered', {
-          messageId: message.id,
-          recipientId,
-        });
-      }
-    }
-
-    logger.info('Message sent successfully', {
-      messageId: message.id,
+    logger.info('Message sent successfully to all admins', {
+      messageCount: messages.length,
       senderId,
-      recipientId,
+      adminCount: admins.length,
     });
 
     return formattedMessage;
@@ -905,8 +937,32 @@ export async function getStudentAdminConversation(
       take: limit,
     });
 
+    // Deduplicate messages to prevent showing multiple copies of the same student message
+    const deduplicatedMessages = [];
+    const seenMessages = new Set();
+
+    for (const message of messages) {
+      if (message.senderId === studentId) {
+        // For student messages, create a unique key based on content and timestamp
+        // This prevents showing multiple copies when sent to multiple admins
+        const messageKey = `${message.content}-${message.createdAt.getTime()}`;
+        if (!seenMessages.has(messageKey)) {
+          seenMessages.add(messageKey);
+          deduplicatedMessages.push(message);
+        }
+      } else {
+        // For admin messages, include them normally (no duplicates expected)
+        deduplicatedMessages.push(message);
+      }
+    }
+
+    // Re-sort the deduplicated messages by creation time
+    deduplicatedMessages.sort(
+      (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+    );
+
     // Get unread message IDs from this conversation
-    const unreadMessageIds = messages
+    const unreadMessageIds = deduplicatedMessages
       .filter((message) => message.recipientId === studentId && !message.isRead)
       .map((message) => message.id);
 
@@ -927,7 +983,7 @@ export async function getStudentAdminConversation(
       if ((global as any).io) {
         const io = (global as any).io;
 
-        for (const message of messages.filter((m) => unreadMessageIds.includes(m.id))) {
+        for (const message of deduplicatedMessages.filter((m) => unreadMessageIds.includes(m.id))) {
           sendMessageToUser(io, message.senderId, 'message_read', {
             messageId: message.id,
             readAt: new Date(),
@@ -943,7 +999,7 @@ export async function getStudentAdminConversation(
     }
 
     // Format messages for the response
-    const formattedMessages = messages.map((message) => ({
+    const formattedMessages = deduplicatedMessages.map((message) => ({
       id: message.id,
       content: message.content,
       isRead: message.isRead || unreadMessageIds.includes(message.id), // Consider just-read messages as read
@@ -963,7 +1019,8 @@ export async function getStudentAdminConversation(
 
     logger.info('Student-admin conversation retrieved successfully', {
       studentId,
-      count: messages.length,
+      count: formattedMessages.length,
+      originalCount: messages.length,
       markedAsRead: unreadMessageIds.length,
     });
 
