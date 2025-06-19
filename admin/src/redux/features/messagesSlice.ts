@@ -285,7 +285,13 @@ const messagesSlice = createSlice({
     },
     // Add reducers for real-time notifications
     addNewMessage: (state, action) => {
-      state.messages.unshift(action.payload); // Add to beginning of array
+      // Check if message already exists to prevent duplicates
+      const messageExists = state.messages.some(
+        (msg) => msg.id === action.payload.id
+      );
+      if (!messageExists) {
+        state.messages.push(action.payload); // Add to end of array
+      }
     },
     incrementUnreadCount: (state) => {
       state.unreadCount += 1;
