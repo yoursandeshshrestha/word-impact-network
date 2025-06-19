@@ -14,7 +14,7 @@ import {
   Square,
 } from "lucide-react";
 
-type QuestionType = "multiple_choice" | "true_false" | "essay";
+type QuestionType = "multiple_choice" | "true_false";
 
 export type QuestionOption = {
   text: string;
@@ -147,11 +147,6 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
         }
       }
 
-      // For essay, options should be empty
-      if (initialData.questionType === "essay") {
-        processedOptions = [];
-      }
-
       console.log("Processed options:", processedOptions);
 
       // Update form state with processed data
@@ -183,10 +178,7 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
           { text: "True", isCorrect: false },
           { text: "False", isCorrect: false },
         ];
-      } else if (value === "essay") {
-        newOptions = [];
-      } else if (value === "multiple_choice" && newOptions.length < 2) {
-        // Ensure at least 4 options for multiple choice
+      } else if (value === "multiple_choice") {
         newOptions = [
           { text: "", isCorrect: false },
           { text: "", isCorrect: false },
@@ -314,24 +306,22 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
     }
 
     // Validate options for multiple choice and true/false
-    if (formData.questionType !== "essay") {
-      // Check if all options have text
-      const emptyOptions = formData.options.filter(
-        (option) => !option.text.trim()
-      );
-      if (emptyOptions.length > 0) {
-        newErrors.options = "All options must have text";
-        valid = false;
-      }
+    // Check if all options have text
+    const emptyOptions = formData.options.filter(
+      (option) => !option.text.trim()
+    );
+    if (emptyOptions.length > 0) {
+      newErrors.options = "All options must have text";
+      valid = false;
+    }
 
-      // Check if at least one option is marked as correct
-      const hasCorrectOption = formData.options.some(
-        (option) => option.isCorrect
-      );
-      if (!hasCorrectOption) {
-        newErrors.correctAnswer = "Please select the correct answer";
-        valid = false;
-      }
+    // Check if at least one option is marked as correct
+    const hasCorrectOption = formData.options.some(
+      (option) => option.isCorrect
+    );
+    if (!hasCorrectOption) {
+      newErrors.correctAnswer = "Please select the correct answer";
+      valid = false;
     }
 
     // Validate points
@@ -354,13 +344,10 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
       const payload: NewQuestion = {
         text: formData.text.trim(),
         questionType: formData.questionType,
-        options:
-          formData.questionType === "essay"
-            ? null
-            : formData.options.map((option) => ({
-                text: option.text,
-                isCorrect: option.isCorrect,
-              })),
+        options: formData.options.map((option) => ({
+          text: option.text,
+          isCorrect: option.isCorrect,
+        })),
         correctAnswer: correctOption?.text || null,
         points: formData.points,
       };
@@ -417,88 +404,85 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
         >
           <option value="multiple_choice">Multiple Choice</option>
           <option value="true_false">True/False</option>
-          <option value="essay">Essay/Open-ended</option>
         </select>
       </div>
 
       {/* Options for multiple choice and true/false */}
-      {formData.questionType !== "essay" && (
-        <div>
-          <div className="flex justify-between items-center mb-2">
-            <label className="text-sm font-medium text-gray-700 flex items-center">
-              <List size={16} className="mr-1" /> Options{" "}
-              <span className="text-red-500 ml-1">*</span>
-            </label>
-            {formData.questionType === "multiple_choice" && (
+      <div>
+        <div className="flex justify-between items-center mb-2">
+          <label className="text-sm font-medium text-gray-700 flex items-center">
+            <List size={16} className="mr-1" /> Options{" "}
+            <span className="text-red-500 ml-1">*</span>
+          </label>
+          {formData.questionType === "multiple_choice" && (
+            <button
+              type="button"
+              onClick={addOption}
+              className="inline-flex items-center text-xs font-medium text-indigo-600 hover:text-indigo-800 cursor-pointer transition-colors duration-200"
+              disabled={isLoading}
+            >
+              <Plus size={14} className="mr-1" />
+              Add Option
+            </button>
+          )}
+        </div>
+
+        {errors.options && (
+          <p className="mt-1 mb-2 text-sm text-red-500 flex items-center">
+            <Info size={14} className="mr-1" /> {errors.options}
+          </p>
+        )}
+
+        {errors.correctAnswer && (
+          <p className="mt-1 mb-2 text-sm text-red-500 flex items-center">
+            <Info size={14} className="mr-1" /> {errors.correctAnswer}
+          </p>
+        )}
+
+        <div className="space-y-2">
+          {formData.options.map((option, index) => (
+            <div key={index} className="flex items-start space-x-2">
               <button
                 type="button"
-                onClick={addOption}
-                className="inline-flex items-center text-xs font-medium text-indigo-600 hover:text-indigo-800 cursor-pointer transition-colors duration-200"
+                onClick={() => handleOptionCorrectChange(index)}
+                className={`mt-2 ${
+                  option.isCorrect ? "text-green-600" : "text-gray-400"
+                } hover:text-green-700 cursor-pointer transition-colors duration-200`}
                 disabled={isLoading}
               >
-                <Plus size={14} className="mr-1" />
-                Add Option
+                {option.isCorrect ? (
+                  <CheckSquare size={20} />
+                ) : (
+                  <Square size={20} />
+                )}
               </button>
-            )}
-          </div>
 
-          {errors.options && (
-            <p className="mt-1 mb-2 text-sm text-red-500 flex items-center">
-              <Info size={14} className="mr-1" /> {errors.options}
-            </p>
-          )}
-
-          {errors.correctAnswer && (
-            <p className="mt-1 mb-2 text-sm text-red-500 flex items-center">
-              <Info size={14} className="mr-1" /> {errors.correctAnswer}
-            </p>
-          )}
-
-          <div className="space-y-2">
-            {formData.options.map((option, index) => (
-              <div key={index} className="flex items-start space-x-2">
-                <button
-                  type="button"
-                  onClick={() => handleOptionCorrectChange(index)}
-                  className={`mt-2 ${
-                    option.isCorrect ? "text-green-600" : "text-gray-400"
-                  } hover:text-green-700 cursor-pointer transition-colors duration-200`}
+              <div className="flex-1">
+                <input
+                  type="text"
+                  value={option.text}
+                  onChange={(e) => handleOptionChange(index, e.target.value)}
+                  className="block w-full rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 cursor-text"
+                  placeholder={`Option ${index + 1}`}
                   disabled={isLoading}
-                >
-                  {option.isCorrect ? (
-                    <CheckSquare size={20} />
-                  ) : (
-                    <Square size={20} />
-                  )}
-                </button>
-
-                <div className="flex-1">
-                  <input
-                    type="text"
-                    value={option.text}
-                    onChange={(e) => handleOptionChange(index, e.target.value)}
-                    className="block w-full rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 cursor-text"
-                    placeholder={`Option ${index + 1}`}
-                    disabled={isLoading}
-                  />
-                </div>
-
-                {formData.questionType === "multiple_choice" &&
-                  formData.options.length > 2 && (
-                    <button
-                      type="button"
-                      onClick={() => removeOption(index)}
-                      className="mt-2 text-red-500 hover:text-red-700 cursor-pointer transition-colors duration-200"
-                      disabled={isLoading}
-                    >
-                      <Trash2 size={18} />
-                    </button>
-                  )}
+                />
               </div>
-            ))}
-          </div>
+
+              {formData.questionType === "multiple_choice" &&
+                formData.options.length > 2 && (
+                  <button
+                    type="button"
+                    onClick={() => removeOption(index)}
+                    className="mt-2 text-red-500 hover:text-red-700 cursor-pointer transition-colors duration-200"
+                    disabled={isLoading}
+                  >
+                    <Trash2 size={18} />
+                  </button>
+                )}
+            </div>
+          ))}
         </div>
-      )}
+      </div>
 
       {/* Points */}
       <div>
