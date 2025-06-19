@@ -1,5 +1,5 @@
 import nodemailer from 'nodemailer';
-import { createTransporter } from '../config/email';
+import { createTransport } from '../config/email';
 import { PrismaClient } from '@prisma/client';
 import { logger } from '../utils/logger';
 
@@ -8,7 +8,7 @@ const prisma = new PrismaClient();
 // Base email sending function with logging
 export async function sendEmail(to: string, subject: string, html: string) {
   try {
-    const transporter = createTransporter();
+    const transporter = createTransport();
 
     const mailOptions = {
       from: process.env.EMAIL_FROM || 'noreply@wordimpactnetwork.com',
