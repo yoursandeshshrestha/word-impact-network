@@ -2099,8 +2099,6 @@ export async function submitExamAttempt(
             isCorrect = question.correctAnswer === answer;
           }
 
-          // Essay questions will have isCorrect = null initially, to be graded manually
-
           // Calculate points for this answer
           let points: number | null = null;
 
@@ -2361,7 +2359,6 @@ export async function getExamAttemptResult(studentId: string, attemptId: string)
 
     const correctAnswers = objectiveQuestions.filter((a) => a.isCorrect === true).length;
     const incorrectAnswers = objectiveQuestions.filter((a) => a.isCorrect === false).length;
-    const essayQuestions = answersWithDetails.filter((a) => a.questionType === 'essay').length;
 
     // Calculate time spent on the exam
     const startTime = examAttempt.startTime;
@@ -2426,7 +2423,6 @@ export async function getExamAttemptResult(studentId: string, attemptId: string)
           totalQuestions: answersWithDetails.length,
           correctAnswers,
           incorrectAnswers,
-          essayQuestions,
           objectiveScore:
             objectiveQuestions.length > 0
               ? Math.round((correctAnswers / objectiveQuestions.length) * 100)
