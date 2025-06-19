@@ -1345,10 +1345,6 @@ export async function submitMyLearningExam(
       if (question.questionType === 'multiple_choice' || question.questionType === 'true_false') {
         isCorrect = question.correctAnswer === answerData.answer;
         points = isCorrect ? question.points : 0;
-      } else if (question.questionType === 'essay') {
-        // For essay questions, we'll need manual grading - for now, give full points
-        isCorrect = true;
-        points = question.points;
       }
 
       totalScore += points;
