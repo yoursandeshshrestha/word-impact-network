@@ -1,14 +1,6 @@
 import React from "react";
 import { Question } from "@/redux/features/examsSlice";
-import {
-  Edit,
-  Trash2,
-  Check,
-  List,
-  PenTool,
-  CheckSquare,
-  Square,
-} from "lucide-react";
+import { Edit, Trash2, Check, List, CheckSquare, Square } from "lucide-react";
 
 interface QuestionCardProps {
   question: Question;
@@ -83,13 +75,11 @@ const QuestionCard: React.FC<QuestionCardProps> = ({
   const questionTypeIcons = {
     multiple_choice: <List size={18} className="text-blue-600" />,
     true_false: <CheckSquare size={18} className="text-green-600" />,
-    essay: <PenTool size={18} className="text-purple-600" />,
   };
 
   const questionTypeLabels = {
     multiple_choice: "Multiple Choice",
     true_false: "True/False",
-    essay: "Essay",
   };
 
   return (
@@ -147,52 +137,40 @@ const QuestionCard: React.FC<QuestionCardProps> = ({
         </div>
 
         {/* Show options for multiple choice or true/false */}
-        {(question.questionType === "multiple_choice" ||
-          question.questionType === "true_false") &&
-          options.length > 0 && (
-            <div className="mt-3 ml-11 bg-gray-50 p-3 rounded-md">
-              <p className="text-xs font-medium text-gray-500 mb-2">Options:</p>
-              <div className="space-y-2">
-                {options.map((option, index) => (
-                  <div
-                    key={index}
-                    className={`flex items-center text-sm p-2 rounded ${
-                      option.isCorrect ? "bg-green-50" : "bg-white"
-                    }`}
-                  >
-                    {option.isCorrect ? (
-                      <CheckSquare
-                        size={16}
-                        className="mr-2 text-green-600 flex-shrink-0"
-                      />
-                    ) : (
-                      <Square
-                        size={16}
-                        className="mr-2 text-gray-400 flex-shrink-0"
-                      />
-                    )}
-                    <span
-                      className={
-                        option.isCorrect
-                          ? "font-medium text-green-700"
-                          : "text-gray-700"
-                      }
-                    >
-                      {option.text}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-        {/* For essay questions, show that there's no predefined answer */}
-        {question.questionType === "essay" && (
+        {options.length > 0 && (
           <div className="mt-3 ml-11 bg-gray-50 p-3 rounded-md">
-            <p className="text-sm text-gray-500 italic flex items-center">
-              <PenTool size={14} className="mr-2 text-purple-600" />
-              Open-ended question (no predefined answer)
-            </p>
+            <p className="text-xs font-medium text-gray-500 mb-2">Options:</p>
+            <div className="space-y-2">
+              {options.map((option, index) => (
+                <div
+                  key={index}
+                  className={`flex items-center text-sm p-2 rounded ${
+                    option.isCorrect ? "bg-green-50" : "bg-white"
+                  }`}
+                >
+                  {option.isCorrect ? (
+                    <CheckSquare
+                      size={16}
+                      className="mr-2 text-green-600 flex-shrink-0"
+                    />
+                  ) : (
+                    <Square
+                      size={16}
+                      className="mr-2 text-gray-400 flex-shrink-0"
+                    />
+                  )}
+                  <span
+                    className={
+                      option.isCorrect
+                        ? "font-medium text-green-700"
+                        : "text-gray-700"
+                    }
+                  >
+                    {option.text}
+                  </span>
+                </div>
+              ))}
+            </div>
           </div>
         )}
       </div>
