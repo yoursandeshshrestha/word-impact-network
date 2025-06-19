@@ -12,7 +12,7 @@ const examSchema = Joi.object({
 // Question validation schema
 const questionSchema = Joi.object({
   text: Joi.string().required().trim().min(3),
-  questionType: Joi.string().required().valid('multiple_choice', 'true_false', 'essay'),
+  questionType: Joi.string().required().valid('multiple_choice', 'true_false'),
   options: Joi.when('questionType', {
     is: 'multiple_choice',
     then: Joi.array().min(2).required(),
