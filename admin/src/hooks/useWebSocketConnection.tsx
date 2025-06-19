@@ -1,14 +1,23 @@
 import { useEffect, useRef, useCallback } from "react";
 import { useAppDispatch } from "./hooks";
-import { fetchUnreadCount } from "@/redux/features/messagesSlice";
+import {
+  fetchUnreadCount,
+  addNewMessage,
+} from "@/redux/features/messagesSlice";
 import { fetchNotifications } from "@/redux/features/notificationsSlice";
 import websocketService, { SocketEvents } from "@/services/SocketIOService";
 import { toast } from "sonner";
 
 // Define the types for message and new message data
 interface Message {
+  id?: string;
   content: string;
+  createdAt?: string;
+  updatedAt?: string;
   sender: {
+    id: string;
+    email: string;
+    role: string;
     fullName: string;
   };
 }
@@ -46,13 +55,11 @@ function isNewMessageData(data: unknown): data is NewMessageData {
       "sender" in payload.message &&
       typeof (payload.message as { content: unknown }).content === "string" &&
       typeof (payload.message as { sender: unknown }).sender === "object" &&
-      (payload.message as { sender: unknown }).sender !== null &&
-      "fullName" in
-        (payload.message as { sender: { fullName: unknown } }).sender &&
-      typeof (payload.message as { sender: { fullName: unknown } }).sender
-        .fullName === "string"
+      (payload.message as { sender: unknown }).sender !== null
     ) {
-      return true;
+      const sender = (payload.message as { sender: { fullName: unknown } })
+        .sender;
+      return "fullName" in sender && typeof sender.fullName === "string";
     }
   }
   return false;
@@ -122,8 +129,21 @@ export const useWebSocketConnection = () => {
         // Update the unread count
         dispatch(fetchUnreadCount());
 
-        // Show a toast notification
+        // Add the new message to the current conversation if we're in one
         const message = data.payload.message;
+        dispatch(
+          addNewMessage({
+            id: message.id || `temp-${Date.now()}`,
+            content: message.content,
+            isRead: false,
+            createdAt: message.createdAt || new Date().toISOString(),
+            updatedAt: message.updatedAt || new Date().toISOString(),
+            sender: message.sender,
+            isFromUser: false, // This is a message from student to admin
+          })
+        );
+
+        // Show a toast notification
         const sender = message.sender;
 
         toast(
