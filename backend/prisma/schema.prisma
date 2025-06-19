@@ -248,7 +248,7 @@ model Exam {
 model Question {
   id                String           @id @default(uuid())
   text              String           @db.Text
-  questionType      String           // "multiple_choice", "true_false", "essay", etc.
+  questionType      String           // "multiple_choice", "true_false", etc.
   options           Json?            // For multiple choice questions - array of options
   correctAnswer     String?          // For objective questions
   points            Int              @default(1)
