@@ -44,6 +44,28 @@ const GlobalChat: React.FC = () => {
     };
   }, [fetchUnreadCount]);
 
+  // Refresh conversations when new messages arrive (for real-time updates)
+  useEffect(() => {
+    if (isOpen && !showConversation) {
+      // Refresh conversations list when chat is open but not in a conversation
+      getConversations();
+    }
+  }, [isOpen, showConversation, getConversations, unreadCount]);
+
+  // Refresh conversation messages periodically when in conversation view
+  useEffect(() => {
+    if (isOpen && showConversation && selectedStudent) {
+      // Refresh conversation messages every 5 seconds when in conversation view
+      const intervalId = setInterval(() => {
+        getConversationMessages(selectedStudent.id);
+      }, 5000); // Every 5 seconds
+
+      return () => {
+        clearInterval(intervalId);
+      };
+    }
+  }, [isOpen, showConversation, selectedStudent, getConversationMessages]);
+
   // Initial load of conversations (only when chat is opened)
   useEffect(() => {
     if (isOpen && !showConversation) {
