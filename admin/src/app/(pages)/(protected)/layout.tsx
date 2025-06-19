@@ -18,6 +18,7 @@ export default function ProtectedLayout({
   children: React.ReactNode;
 }) {
   const [userName, setUserName] = useState("Admin User");
+  const [userEmail, setUserEmail] = useState("admin@example.com");
 
   // Initialize WebSocket connection using your existing hook
   useWebSocketConnection();
@@ -27,13 +28,14 @@ export default function ProtectedLayout({
 
     if (userInfo) {
       setUserName(userInfo.fullName);
+      setUserEmail(userInfo.email);
     }
   }, []);
 
   return (
     <div className="flex h-screen bg-gray-50">
       <div className="fixed inset-y-0 left-0 w-64">
-        <Sidebar userName={userName} userEmail="admin@example.com" />
+        <Sidebar userName={userName} userEmail={userEmail} />
       </div>
       <div className="flex-1 ml-64">
         <Topbar userName={userName} userRole="Administrator" />
