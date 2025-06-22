@@ -19,6 +19,9 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Word Imapct Network",
   description: "Word Imapct Network",
+  icons: {
+    icon: "/png-logo.png",
+  },
 };
 
 export default function RootLayout({
