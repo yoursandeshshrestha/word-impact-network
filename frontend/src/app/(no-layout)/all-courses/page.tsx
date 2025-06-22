@@ -87,8 +87,8 @@ function CoursesPage() {
   }
 
   return (
-    <div className="min-h-screen overflow-auto">
-      <div className="px-5 pt-20">
+    <div className="min-h-[calc(100vh-4rem)] overflow-auto">
+      <div className="px-5 pt-4">
         {/* Page Title */}
         <div className="mb-6 sm:mb-8">
           <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">
