@@ -43,7 +43,7 @@ const CourseCard: React.FC<CourseCardProps> = ({
   };
 
   return (
-    <div className="overflow-hidden mb-8 flex flex-col md:flex-row items-center bg-white rounded-2xl hover:bg-slate-50 transition-all duration-300 border border-slate-200 shadow-sm hover:shadow-md">
+    <div className="overflow-hidden mb-8 flex flex-col md:flex-row items-center bg-white rounded-2xl hover:bg-slate-50 transition-all duration-300 border border-slate-200 shadow-sm hover:shadow-md ">
       {/* Course Content */}
       <div className="flex-1 flex flex-col justify-between p-4 md:p-6">
         <div>
@@ -120,8 +120,8 @@ const MyLearningPage: React.FC = () => {
   };
 
   return (
-    <div className="h-screen  overflow-auto">
-      <div className="px-5 pt-20">
+    <div className="min-h-[calc(100vh-4rem)] overflow-auto">
+      <div className="px-5 pt-4">
         {/* Page Title */}
         <div className="mb-8">
           <h1 className="text-2xl md:text-3xl font-bold text-slate-900">
