@@ -5,7 +5,6 @@ import Link from "next/link";
 import { Settings, User, LogOut, Key } from "lucide-react";
 import NotificationDropdown from "@/components/ui/NotificationDropdown";
 import { logout } from "@/utils/auth";
-import { useRouter } from "next/navigation";
 
 interface TopbarProps {
   userName: string;
@@ -15,7 +14,6 @@ interface TopbarProps {
 const Topbar: React.FC<TopbarProps> = ({ userName, userRole }) => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const router = useRouter();
   // Handle click outside to close dropdown
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -39,7 +37,7 @@ const Topbar: React.FC<TopbarProps> = ({ userName, userRole }) => {
 
   const handleLogout = () => {
     logout();
-    router.push("/auth/login");
+    window.location.href = "/auth/login";
   };
 
   return (
