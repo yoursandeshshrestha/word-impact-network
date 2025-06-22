@@ -4,7 +4,6 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { logout } from "@/utils/auth";
-import { useRouter } from "next/navigation";
 
 import {
   Home,
@@ -28,7 +27,6 @@ const Sidebar: React.FC<SidebarProps> = ({
   userName = "Admin User",
 }) => {
   const pathname = usePathname();
-  const router = useRouter();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
 
@@ -42,7 +40,7 @@ const Sidebar: React.FC<SidebarProps> = ({
 
   const handleLogout = () => {
     logout();
-    router.push("/auth/login");
+    window.location.href = "/auth/login";
   };
 
   // Create menu items with notification badge
