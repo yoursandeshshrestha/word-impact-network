@@ -22,6 +22,7 @@ export const setAuthToken = (token: string, rememberMe: boolean = false) => {
   Cookies.set("authToken", token, {
     ...COOKIE_OPTIONS,
     expires: expiryDays,
+    sameSite: "strict", // Use strict for better security
   });
 };
 
@@ -33,6 +34,7 @@ export const setUserInfo = (user: User, rememberMe: boolean = false) => {
   Cookies.set("user", JSON.stringify(user), {
     ...COOKIE_OPTIONS,
     expires: expiryDays,
+    sameSite: "strict", // Use strict for better security
   });
 };
 
