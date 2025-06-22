@@ -413,8 +413,8 @@ const CourseChapterPage: React.FC = () => {
   }));
 
   return (
-    <div className="h-screen overflow-auto">
-      <div className="px-5 pt-20">
+    <div className="min-h-[calc(100vh-4rem)] overflow-auto">
+      <div className="px-5 pt-4">
         {/* Breadcrumb Navigation */}
         <nav className="mb-6">
           <div className="flex items-center space-x-2 text-sm">
