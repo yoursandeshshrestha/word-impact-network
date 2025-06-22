@@ -1,14 +1,11 @@
 "use client";
 import React, { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { AuthService } from "@/utils/auth";
+import { AuthService, setAuthToken, setUserInfo } from "@/utils/auth";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
-import Cookies from "js-cookie";
 
 const Login = () => {
-  const router = useRouter();
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -61,29 +58,17 @@ const Login = () => {
         throw new Error("Invalid response from server");
       }
 
-      // Set auth token
-      Cookies.set("authToken", response.data.token, {
-        expires: rememberMe ? 7 : 1, // 7 days if remember me is checked, 1 day otherwise
-        path: "/",
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "strict",
-      });
+      // Set auth token using utility function
+      setAuthToken(response.data.token, rememberMe);
 
-      // Set user info
-      Cookies.set(
-        "user",
-        JSON.stringify({
+      // Set user info using utility function
+      setUserInfo(
+        {
           id: response.data.admin.id,
           email: response.data.admin.email,
           fullName: response.data.admin.fullName,
-          role: response.data.admin.role,
-        }),
-        {
-          expires: rememberMe ? 7 : 1, // 7 days if remember me is checked, 1 day otherwise
-          path: "/",
-          secure: process.env.NODE_ENV === "production",
-          sameSite: "strict",
-        }
+        },
+        rememberMe
       );
 
       toast.success(response.message || "Login successful");
@@ -91,8 +76,8 @@ const Login = () => {
       // Add a small delay to ensure cookies are set before redirection
       await new Promise((resolve) => setTimeout(resolve, 100));
 
-      // Use replace instead of push to prevent back navigation to login page
-      router.replace("/dashboard");
+      // Use window.location.href to force a full page reload so middleware can see the cookies
+      window.location.href = "/dashboard";
     } catch (err) {
       console.error("Login error:", err);
       setError(
