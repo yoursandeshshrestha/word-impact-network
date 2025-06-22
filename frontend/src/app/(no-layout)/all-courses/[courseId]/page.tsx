@@ -81,8 +81,8 @@ function CoursePreviewPage() {
   }
 
   return (
-    <div className="h-screen overflow-auto ">
-      <div className="px-5 pt-22">
+    <div className="min-h-[calc(100vh-4rem)] overflow-auto ">
+      <div className="px-5 pt-4">
         {/* Breadcrumb */}
         <div className="flex items-center gap-2 text-sm text-slate-600 mb-6">
           <span>Courses</span>
