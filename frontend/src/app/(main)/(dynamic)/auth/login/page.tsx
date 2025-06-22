@@ -1,12 +1,12 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 import { Lock, Mail, ArrowRight, Eye, EyeOff } from "lucide-react";
 import { useLoading } from "@/common/contexts/LoadingContext";
 import { toast } from "sonner";
 import Link from "next/link";
-import { login } from "@/common/services/auth";
+import { login, isAuthenticated, getCurrentUser } from "@/common/services/auth";
 
 const LoginPage = () => {
   const router = useRouter();
@@ -17,6 +17,20 @@ const LoginPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const { setLoading } = useLoading();
+
+  // Check if user is already authenticated on component mount
+  useEffect(() => {
+    if (isAuthenticated()) {
+      const user = getCurrentUser();
+      let redirectPath = "/my-learning";
+
+      if (user && user.role === "ADMIN") {
+        redirectPath = "/admin/dashboard";
+      }
+
+      router.push(redirectPath);
+    }
+  }, [router]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
