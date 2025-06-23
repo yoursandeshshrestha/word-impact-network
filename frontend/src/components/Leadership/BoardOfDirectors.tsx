@@ -1,26 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import Image, { StaticImageData } from "next/image";
-
 import ScrollTop from "@/components/Homepage/ScrollTop";
-
-// Director images - replace with actual image paths
-import directorImage1 from "@/assets/sandesh.jpg";
-import directorImage2 from "@/assets/sandesh.jpg";
-import directorImage3 from "@/assets/sandesh.jpg";
-import directorImage4 from "@/assets/sandesh.jpg";
-import directorImage5 from "@/assets/sandesh.jpg";
-import directorImage6 from "@/assets/sandesh.jpg";
-
-// Director interface for type safety
-interface Director {
-  id: number;
-  name: string;
-  title: string;
-  image: string | StaticImageData;
-  location?: string;
-}
 
 const BoardOfDirectors: React.FC = () => {
   const [showScrollTop, setShowScrollTop] = useState<boolean>(false);
@@ -42,57 +23,18 @@ const BoardOfDirectors: React.FC = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  // Directors data
-  const directors: Director[] = [
-    {
-      id: 1,
-      name: "Dr. Mangal Man Maharjan",
-      title: "Dr.",
-      image: directorImage1,
-    },
-    {
-      id: 2,
-      name: "Dr. Norbu Tamang",
-      title: "Dr.",
-      image: directorImage2,
-    },
-    {
-      id: 3,
-      name: "Mr. Arjun Hamal",
-      title: "Mr.",
-      image: directorImage3,
-    },
-    {
-      id: 4,
-      name: "Mr. Prem Tamang",
-      title: "Mr.",
-      image: directorImage4,
-    },
-    {
-      id: 5,
-      name: "Ps. Bhadra Rai",
-      title: "Ps.",
-      image: directorImage5,
-      location: "USA",
-    },
-    {
-      id: 6,
-      name: "Ps Surendra Rai",
-      title: "Ps",
-      image: directorImage6,
-      location: "Canada",
-    },
-  ];
-
   return (
     <>
       <main>
         {/* Hero Section with Purple Background */}
-        <section className="bg-purple-900 text-white py-20 mt-28">
+        <section className="bg-gradient-to-r from-gray-800 to-gray-700 text-white py-20 mt-37">
           <div className="container mx-auto px-4 text-center">
             <h1 className="text-4xl md:text-5xl font-bold mb-6">
               Board of Directors
             </h1>
+            <p className="text-xl max-w-3xl mx-auto">
+              Guiding the Mission with Wisdom, Integrity, and Faith
+            </p>
           </div>
         </section>
 
@@ -101,117 +43,122 @@ const BoardOfDirectors: React.FC = () => {
           <div className="container mx-auto px-4">
             <div className="max-w-5xl mx-auto">
               <p className="text-gray-700 text-lg leading-relaxed">
-                The Board of Directors is responsible for the governance of Word
-                Impact Network, setting policies, making major decisions, and
-                ensuring financial accountability. The Board provides strategic
-                guidance to the President and helps to ensure the long-term
-                sustainability and growth of Word Impact Network.
+                The Board of Directors of Word Impact Network (WIN) provides
+                strategic oversight, spiritual counsel, and financial
+                accountability to ensure that every aspect of the ministry
+                remains faithful to its vision: to spread the fragrance of
+                Christ with the scent of the local soil.
+              </p>
+              <p className="text-gray-700 text-lg leading-relaxed mt-4">
+                Our board is composed of trusted leaders who bring a wealth of
+                ministry experience, grassroots insight, and unwavering
+                commitment to the Gospel. Together, they help shape the
+                mission&apos;s long-term direction, protect its integrity, and
+                empower its growth across India and beyond.
               </p>
             </div>
           </div>
         </section>
 
-        {/* Directors Grid */}
+        {/* Board Members */}
         <section className="py-16 bg-gray-50">
           <div className="container mx-auto px-4">
             <div className="max-w-6xl mx-auto">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                {directors.map((director) => (
-                  <div
-                    key={director.id}
-                    className="bg-white rounded-lg shadow-md overflow-hidden"
-                  >
-                    <div className="relative h-80 w-full">
-                      <Image
-                        src={director.image}
-                        alt={director.name}
-                        fill
-                        className="object-cover"
-                      />
-                    </div>
-                    <div className="p-6 text-center">
-                      <h3 className="text-xl font-bold text-amber-600 mb-1">
-                        {director.name}
-                        {director.location && `, ${director.location}`}
-                      </h3>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Board Responsibilities - Optional */}
-        <section className="py-16 bg-white">
-          <div className="container mx-auto px-4">
-            <div className="max-w-4xl mx-auto">
-              <h2 className="text-3xl font-bold mb-8 text-gray-800 text-center">
-                Board Responsibilities
+              <h2 className="text-3xl font-bold text-gray-800 mb-12 text-center">
+                Board Members
               </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div className="bg-gray-50 p-6 rounded-lg">
-                  <h3 className="text-xl font-bold mb-4 text-gray-800">
-                    Governance
+
+              <div className="space-y-12">
+                {/* Pastor Jagannath Banerjee */}
+                <div className="bg-white rounded-lg shadow-md p-8">
+                  <h3 className="text-2xl font-bold text-gray-800 mb-2">
+                    Pastor Jagannath Banerjee
                   </h3>
-                  <ul className="space-y-3 text-gray-700">
-                    <li className="flex items-start">
-                      <span className="text-amber-600 font-bold mr-2">•</span>
-                      <span>
-                        Setting organizational policies and procedures
-                      </span>
-                    </li>
-                    <li className="flex items-start">
-                      <span className="text-amber-600 font-bold mr-2">•</span>
-                      <span>Ensuring compliance with legal requirements</span>
-                    </li>
-                    <li className="flex items-start">
-                      <span className="text-amber-600 font-bold mr-2">•</span>
-                      <span>Strategic planning and vision casting</span>
-                    </li>
-                  </ul>
+                  <p className="text-lg font-semibold text-gray-600 mb-4">
+                    Founder & President, Word Impact Network
+                  </p>
+                  <p className="text-gray-700 leading-relaxed">
+                    A visionary leader with over three decades of ministry
+                    experience, Pastor Banerjee serves as the spiritual anchor
+                    of WIN, guiding the board with biblical insight and a
+                    passion for reaching the unreached.
+                  </p>
                 </div>
-                <div className="bg-gray-50 p-6 rounded-lg">
-                  <h3 className="text-xl font-bold mb-4 text-gray-800">
-                    Oversight
+
+                {/* Pastor Surajit Bagal */}
+                <div className="bg-white rounded-lg shadow-md p-8">
+                  <h3 className="text-2xl font-bold text-gray-800 mb-2">
+                    Pastor Surajit Bagal
                   </h3>
-                  <ul className="space-y-3 text-gray-700">
-                    <li className="flex items-start">
-                      <span className="text-amber-600 font-bold mr-2">•</span>
-                      <span>Financial accountability and sustainability</span>
-                    </li>
-                    <li className="flex items-start">
-                      <span className="text-amber-600 font-bold mr-2">•</span>
-                      <span>Program evaluation and quality assurance</span>
-                    </li>
-                    <li className="flex items-start">
-                      <span className="text-amber-600 font-bold mr-2">•</span>
-                      <span>Risk management and mitigation</span>
-                    </li>
-                  </ul>
+                  <p className="text-lg font-semibold text-gray-600 mb-4">
+                    Ministry Director, West Bengal
+                  </p>
+                  <p className="text-gray-700 leading-relaxed">
+                    Pastor Surajit brings rich experience in pastoral ministry,
+                    leadership development, and contextual theology. His
+                    personal testimony and lifelong dedication to Gospel work
+                    deeply shape WIN&apos;s training programs and field strategy.
+                  </p>
+                </div>
+
+                {/* Pastor Biplab Sarkar */}
+                <div className="bg-white rounded-lg shadow-md p-8">
+                  <h3 className="text-2xl font-bold text-gray-800 mb-2">
+                    Pastor Biplab Sarkar
+                  </h3>
+                  <p className="text-lg font-semibold text-gray-600 mb-4">
+                    Director of Training & Discipleship
+                  </p>
+                  <p className="text-gray-700 leading-relaxed">
+                    An experienced church planter and discipler, Pastor Biplab
+                    plays a vital role in local mission coordination and
+                    strategic outreach. He brings a heart for worship, prayer,
+                    and practical community engagement.
+                  </p>
+                </div>
+
+                {/* Brother Rajesh Chouhan */}
+                <div className="bg-white rounded-lg shadow-md p-8">
+                  <h3 className="text-2xl font-bold text-gray-800 mb-2">
+                    Brother Rajesh Chouhan
+                  </h3>
+                  <p className="text-lg font-semibold text-gray-600 mb-4">
+                    Advisor & Ministry Partner
+                  </p>
+                  <p className="text-gray-700 leading-relaxed">
+                    Brother Rajesh contributes to the board through his deep
+                    faith, administrative insight, and commitment to mobilizing
+                    local resources for sustainable mission work. His voice
+                    represents lay leaders who are active in advancing the
+                    Kingdom at the grassroots level.
+                  </p>
+                </div>
+
+                {/* Brother Ananda Poria */}
+                <div className="bg-white rounded-lg shadow-md p-8">
+                  <h3 className="text-2xl font-bold text-gray-800 mb-2">
+                    Brother Ananda Poria
+                  </h3>
+                  <p className="text-lg font-semibold text-gray-600 mb-4">
+                    Field Liaison & Community Advocate
+                  </p>
+                  <p className="text-gray-700 leading-relaxed">
+                    Brother Ananda serves as a bridge between field workers and
+                    leadership, offering practical wisdom from years of hands-on
+                    service among the poor and marginalized. His perspective
+                    helps ensure WIN remains grounded and people-focused.
+                  </p>
                 </div>
               </div>
-            </div>
-          </div>
-        </section>
 
-        {/* CTA Section */}
-        <section className="py-16 bg-gray-900 text-white">
-          <div className="container mx-auto px-4 text-center">
-            <h2 className="text-3xl md:text-4xl font-bold mb-6">
-              Be A Mission Partner
-            </h2>
-            <p className="text-xl max-w-3xl mx-auto mb-8">
-              Join us in equipping Nepali-speaking Christian leaders around the
-              world. Your partnership makes a difference.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <a
-                href="/contact"
-                className="bg-yellow-600 text-white hover:bg-yellow-700 px-8 py-3 rounded-md text-lg font-semibold transition-colors"
-              >
-                Contact Word Impact Network →
-              </a>
+              <div className="mt-12 text-center">
+                <p className="text-lg text-gray-700 italic">
+                  Together, the Board of Directors ensures that Word Impact
+                  Network remains faithful to its calling—advancing the Gospel
+                  through local leadership, contextual mission, and unwavering
+                  faith in the One who called us.
+                </p>
+              </div>
             </div>
           </div>
         </section>
