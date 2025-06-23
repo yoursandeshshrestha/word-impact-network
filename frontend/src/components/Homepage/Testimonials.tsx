@@ -1,40 +1,35 @@
 import React from "react";
-import Image from "next/image";
-
-import testimonial1 from "@/assets/graduation-cap-image.jpg";
+import { Heart, Users, BookOpen, Award } from "lucide-react";
 
 const Testimonials = () => {
-  // Testimonials data
-  const testimonials = [
+  // WIN's core values and approach
+  const values = [
     {
-      text: "Dummy text for testing, please ignore, real text will be added soon",
-      name: "Ps. Amitabh Ghosh",
-      location: "Kolkata, India",
-      image: testimonial1,
+      title: "Contextual Ministry",
+      description:
+        "We believe in understanding the culture, language, and needs of Bengali-speaking communities to share the Gospel effectively.",
+      icon: Heart,
       bgColor: "bg-[#2c3e50]",
     },
     {
-      text: "Dummy text for testing, please ignore, real text will be added soon",
-
-      name: "Ps. Sameeran Mondal",
-      location: "Delhi, India",
-      image: testimonial1,
+      title: "Practical Training",
+      description:
+        "Our programs combine biblical knowledge with hands-on ministry experience, preparing students for real-world service.",
+      icon: Users,
       bgColor: "bg-[#7a9e7e]",
     },
     {
-      text: "Dummy text for testing, please ignore, real text will be added soon",
-
-      name: "Ps. Priya Das",
-      location: "Mumbai, India",
-      image: testimonial1,
+      title: "Cultural Sensitivity",
+      description:
+        "We train leaders to minister with cultural awareness and respect, honoring local traditions while sharing Christ's love.",
+      icon: BookOpen,
       bgColor: "bg-[#b7773a]",
     },
     {
-      text: "Dummy text for testing, please ignore, real text will be added soon",
-
-      name: "Eld. Ranjan Chakraborty",
-      location: "Chennai, India",
-      image: testimonial1,
+      title: "Community Impact",
+      description:
+        "Our graduates are equipped to serve their communities through church planting, discipleship, and social ministry.",
+      icon: Award,
       bgColor: "bg-[#2c3e50]",
     },
   ];
@@ -43,52 +38,68 @@ const Testimonials = () => {
     <section className="py-20 bg-gray-50">
       <div className="container mx-auto px-4">
         <div className="text-center mb-16">
-          <h3 className="text-lg font-medium text-indigo-700 mb-2">
-            COMMUNITY IMPACT
+          <h3 className="text-lg font-medium text-gray-700 mb-2">
+            OUR APPROACH
           </h3>
           <h2 className="text-4xl md:text-5xl font-bold text-gray-800 tracking-tight">
-            What Our Community Says
+            Ministry with Purpose
           </h2>
+          <p className="text-gray-600 max-w-3xl mx-auto text-lg mt-4">
+            At WIN, we focus on equipping leaders with the knowledge, skills,
+            and heart to serve Bengali-speaking communities effectively.
+          </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-          {testimonials.map((testimonial, index) => (
-            <div
-              key={index}
-              className={`${testimonial.bgColor} text-white p-8 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 flex flex-col h-full`}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          {values.map((value, index) => {
+            const IconComponent = value.icon;
+            return (
+              <div
+                key={index}
+                className={`${value.bgColor} text-white p-8 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 flex flex-col h-full`}
+              >
+                {/* Icon */}
+                <div className="bg-white/10 p-4 rounded-full mb-6 w-fit">
+                  <IconComponent size={48} className="text-white" />
+                </div>
+
+                {/* Title */}
+                <h3 className="text-2xl font-bold mb-4 tracking-wide">
+                  {value.title}
+                </h3>
+
+                {/* Description */}
+                <div className="text-gray-100 text-lg leading-relaxed flex-grow">
+                  {value.description}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Call to Action */}
+        <div className="text-center mt-16">
+          <p className="text-gray-600 text-lg mb-6">
+            Ready to be part of this ministry?
+          </p>
+          <a
+            href="/auth/apply"
+            className="inline-flex items-center gap-2 bg-gray-800 hover:bg-gray-700 text-white px-8 py-4 rounded-lg text-lg font-semibold transition-colors shadow-lg"
+          >
+            Apply Now
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-5 w-5"
+              viewBox="0 0 20 20"
+              fill="currentColor"
             >
-              {/* Quote marks */}
-              <div className="text-4xl opacity-50 mb-4 leading-none font-serif">
-                &#8220;
-              </div>
-
-              {/* Testimonial text */}
-              <div className="mb-6 text-gray-100 text-lg leading-relaxed flex-grow">
-                {testimonial.text}
-              </div>
-
-              {/* Star rating */}
-              <div className="flex mb-6 text-yellow-300">{"★".repeat(5)}</div>
-
-              {/* Profile */}
-              <div className="flex items-center mt-auto">
-                <div className="relative w-12 h-12 rounded-full overflow-hidden mr-4 border-2 border-white/20">
-                  <Image
-                    src={testimonial.image}
-                    alt={testimonial.name}
-                    fill
-                    className="object-cover"
-                  />
-                </div>
-                <div>
-                  <h4 className="font-bold text-lg">{testimonial.name}</h4>
-                  <p className="text-gray-200 text-sm">
-                    {testimonial.location}
-                  </p>
-                </div>
-              </div>
-            </div>
-          ))}
+              <path
+                fillRule="evenodd"
+                d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z"
+                clipRule="evenodd"
+              />
+            </svg>
+          </a>
         </div>
       </div>
     </section>
