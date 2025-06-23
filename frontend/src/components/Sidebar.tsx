@@ -1,12 +1,10 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   BookOpen,
-  Menu,
-  X,
   User,
   GraduationCap,
   ChevronRight,
@@ -15,7 +13,6 @@ import {
 
 const Sidebar: React.FC = () => {
   const pathname = usePathname();
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const menuItems = [
     {
@@ -55,34 +52,10 @@ const Sidebar: React.FC = () => {
     },
   ];
 
-  const toggleMobileMenu = () => {
-    setIsMobileMenuOpen(!isMobileMenuOpen);
-  };
-
   return (
     <>
-      {/* Mobile Menu Button */}
-      <div className="md:hidden fixed left-4 top-4 z-50">
-        <button
-          onClick={toggleMobileMenu}
-          className="p-2.5 rounded-xl  text-black/90 hover:bg-white/5 transition-all duration-200 hover:text-black cursor-pointer"
-        >
-          {isMobileMenuOpen ? (
-            <X className="h-5 w-5" />
-          ) : (
-            <Menu className="h-5 w-5" />
-          )}
-        </button>
-      </div>
-
       {/* Sidebar Container */}
-      <aside
-        className={`fixed top-0 left-0 z-100 h-screen bg-[#1e2938]  border-r border-white/10 transition-all duration-300 ease-in-out ${
-          isMobileMenuOpen
-            ? "translate-x-0"
-            : "-translate-x-full md:translate-x-0"
-        } w-[280px] md:w-72 shadow-[4px_0_20px_-4px_rgba(0,0,0,0.1)] md:shadow-[4px_0_20px_-4px_rgba(0,0,0,0.1)] flex flex-col`}
-      >
+      <aside className="fixed top-0 left-0 z-30 h-screen bg-[#1e2938] border-r border-white/10 w-[280px] md:w-72 shadow-[4px_0_20px_-4px_rgba(0,0,0,0.1)]  flex-col hidden md:flex">
         {/* Logo */}
         <div className="h-16 flex items-center px-6 border-b border-white/10 bg-[#1e2938]">
           <Link href="/" className="flex items-center gap-3 group">
@@ -107,7 +80,6 @@ const Sidebar: React.FC = () => {
                       <li key={item.path}>
                         <Link
                           href={item.path}
-                          onClick={() => setIsMobileMenuOpen(false)}
                           className={`group flex items-center justify-between p-3 text-sm font-medium rounded-xl transition-all duration-200 ${
                             isActive
                               ? "bg-white/10 text-white shadow-sm border border-white/10"
@@ -147,15 +119,6 @@ const Sidebar: React.FC = () => {
           </div>
         </div>
       </aside>
-
-      {/* Overlay for mobile */}
-      {isMobileMenuOpen && (
-        <div
-          className="fixed inset-0 bg-black/50 z-90 md:hidden"
-          onClick={() => setIsMobileMenuOpen(false)}
-          aria-hidden="true"
-        />
-      )}
     </>
   );
 };
