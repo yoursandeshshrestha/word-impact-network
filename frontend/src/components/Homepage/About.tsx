@@ -11,29 +11,35 @@ const About: React.FC = () => {
           {/* Content Column */}
           <div className="w-full lg:w-1/2 space-y-6">
             <h2 className="text-4xl md:text-5xl font-bold text-gray-800 tracking-tight">
-              Word Impact Network
+              Word Impact Network (WIN)
             </h2>
 
             <p className="text-gray-600 leading-relaxed text-lg">
-              WIN (Word Impact Network) is a transformative educational
-              initiative dedicated to making higher education accessible and
-              affordable for underserved communities. Through a wide range of
-              four-year courses, WIN equips individuals with the knowledge,
-              skills, and spiritual foundation needed to thrive in life,
-              leadership, and ministry.
+              At Word Impact Network (WIN), we believe that true ministry begins
+              with understanding—understanding the people we serve, their
+              culture, their language, and their deepest needs. In a world
+              marked by diversity, advancing the Kingdom of Christ calls for
+              more than passion—it demands a thoughtful, contextual approach
+              that connects with hearts at the deepest level.
             </p>
 
             <p className="text-gray-600 leading-relaxed text-lg">
-              Committed to eliminating financial barriers, WIN offers education
-              either completely free or at a significantly reduced cost. The
-              curriculum is rooted in practical application and biblical
-              principles, designed especially for those pursuing personal
-              growth, social impact, and Christian service.
+              We focus especially on the Bengali-speaking population, seeking to
+              share the Gospel in ways that are both authentic and
+              transformational. Rather than using one-size-fits-all methods, we
+              embrace culturally relevant strategies that speak directly into
+              the lives, struggles, and dreams of the communities we reach.
+            </p>
+
+            <p className="text-gray-600 leading-relaxed text-lg">
+              At WIN, we don&apos;t just deliver a message. We walk alongside
+              people, honoring their story while pointing them to the story of
+              Christ.
             </p>
 
             <div className="pt-6">
               <Link
-                href="/about"
+                href="/about-win-impact-network"
                 className="inline-flex items-center gap-2 bg-gray-800 hover:bg-gray-700 text-white px-6 py-3 rounded-md text-base font-semibold transition-colors shadow-sm"
               >
                 Learn More
@@ -57,7 +63,7 @@ const About: React.FC = () => {
           <div className="w-full lg:w-1/2 mt-8 lg:mt-0">
             <Image
               src={aboutImg}
-              alt="Graduation ceremony"
+              alt="WIN ministry and training"
               width={600}
               height={600}
               className="w-full h-[600px] rounded-lg shadow-lg object-cover"
