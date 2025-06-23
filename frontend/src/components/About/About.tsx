@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-    
+
 import ScrollTop from "@/components/Homepage/ScrollTop";
 
 const About: React.FC = () => {
@@ -24,8 +24,8 @@ const About: React.FC = () => {
   return (
     <>
       <main>
-        {/* Hero Section with Purple Background */}
-        <section className="bg-purple-900 text-white py-20 mt-28">
+        {/* Hero Section with Gray Background */}
+        <section className="bg-gradient-to-r from-gray-800 to-gray-700 text-white py-20 mt-37">
           <div className="container mx-auto px-4 text-center">
             <h1 className="text-4xl md:text-5xl font-bold mb-6">About WIN</h1>
           </div>
@@ -36,110 +36,139 @@ const About: React.FC = () => {
           <div className="container mx-auto px-4">
             <div className="max-w-4xl mx-auto">
               <h2 className="text-3xl font-bold mb-8 text-gray-800">
-                Word Impact Network
+                Word Impact Network (WIN)
               </h2>
               <div className="space-y-6">
                 <p className="text-gray-700 text-lg leading-relaxed">
-                  Welcome to the Word Impact Network. We are a
-                  non-denominational online institution that exists to train,
-                  equip, and educate Nepali-speaking Christians, leaders, and
-                  pastors through the teachings of the Holy Bible. Our goal is
-                  to prepare individuals for Christian service and leadership in
-                  the Church and society, including readiness for the Great
-                  Commission.
+                  At Word Impact Network (WIN), we believe that true ministry
+                  begins with understanding—understanding the people we serve,
+                  their culture, their language, and their deepest needs. In a
+                  world marked by diversity, advancing the Kingdom of Christ
+                  calls for more than passion—it demands a thoughtful,
+                  contextual approach that connects with hearts at the deepest
+                  level.
                 </p>
                 <p className="text-gray-700 text-lg leading-relaxed">
-                  Word Impact Network offers a variety of theological courses
-                  taught by highly educated and qualified instructors who are
-                  well-known for their academic excellence and long-time
-                  faithfulness in church and ministry of the word. We offer a
-                  Bachelor and an Associate degree in Theology and certificate
-                  programs in many topics, giving students a comprehensive and
-                  in-depth understanding of the Bible and its teachings. Our
-                  courses are designed explicitly for Nepali-speaking Christians
-                  and are tailored to meet this community unique needs and
-                  prepare them for the Great Commission.
+                  That&apos;s why WIN is committed to &ldquo;spreading the
+                  fragrance of Christ with the scent of the local soil.&rdquo;
                 </p>
                 <p className="text-gray-700 text-lg leading-relaxed">
-                  The curriculum is based on the belief in the authority and
-                  inerrancy of the Bible. We strongly emphasize personal
-                  spiritual growth and transformation through the power of the
-                  Holy Spirit.
+                  We focus especially on the Bengali-speaking population,
+                  seeking to share the Gospel in ways that are both authentic
+                  and transformational. Rather than using one-size-fits-all
+                  methods, we embrace culturally relevant strategies that speak
+                  directly into the lives, struggles, and dreams of the
+                  communities we reach.
                 </p>
                 <p className="text-gray-700 text-lg leading-relaxed">
-                  We believe that the local church is a vital part of the
-                  Christian community, and we encourage our students to actively
-                  get involved in the ministry and mission of their local
-                  church. In addition, we also take seriously the importance of
-                  evangelism and discipleship and our mission to share the
-                  gospel message with the world.
+                  Whether in rural villages or urban neighborhoods, our mission
+                  is to bring the Good News where it&apos;s needed most—with
+                  humility, compassion, and clarity.
                 </p>
                 <p className="text-gray-700 text-lg leading-relaxed">
-                  We are committed to academic excellence, integrity, and the
-                  pursuit of knowledge. We constantly strive to be at the
-                  forefront of biblical education. We are proud to provide our
-                  students with the tools they need to understand and apply the
-                  Word of God in their lives and service to others.
-                </p>
-                <p className="text-gray-700 text-lg leading-relaxed">
-                  Thank you for visiting our website, and we hope you will
-                  consider joining the Word Impact Network to be equipped for
-                  your Christian service.
+                  At WIN, we don&apos;t just deliver a message. We walk
+                  alongside people, honoring their story while pointing them to
+                  the story of Christ.
                 </p>
               </div>
             </div>
           </div>
         </section>
 
-        {/* Mission Statement */}
-        <section className="py-8  bg-gray-50">
+        {/* Our Leadership Team */}
+        <section className="py-16 bg-gray-50">
           <div className="container mx-auto px-4">
             <div className="max-w-4xl mx-auto">
-              <h2 className="text-3xl font-bold mb-8 text-gray-800 border-b-2 border-gray-200 pb-4">
-                Mission Statement
+              <h2 className="text-3xl font-bold mb-8 text-gray-800 text-center">
+                Our Leadership Team
               </h2>
-              <p className="text-gray-700 text-lg leading-relaxed">
-                The Word Impact Networks mission is to provide a comprehensive,
-                biblical education to Nepali-speaking Christians to equip them
-                for Christian service and leadership in the Church and society.
-                We seek to foster personal spiritual growth and transformation
-                through the power of the Holy Spirit and to prepare our students
-                for the Great Commission.
+              <p className="text-gray-700 text-lg leading-relaxed mb-12 text-center">
+                The leadership team at Word Impact Network (WIN) consists of
+                faithful, mission-driven leaders who are deeply rooted in the
+                Word of God and in the soil of the communities they serve. Each
+                brings years of experience, a heart for discipleship, and a deep
+                commitment to seeing the Gospel transform lives in culturally
+                relevant and lasting ways.
               </p>
-            </div>
-          </div>
-        </section>
 
-        {/* Vision Statement */}
-        <section className="py-8 pb-16 bg-white">
-          <div className="container mx-auto px-4">
-            <div className="max-w-4xl mx-auto">
-              <h2 className="text-3xl font-bold mb-8 text-gray-800 border-b-2 border-gray-200 pb-4">
-                Vision Statement
-              </h2>
-              <p className="text-gray-700 text-lg leading-relaxed">
-                To provide Nepali-speaking Christians with an exceptional
-                biblical education that will equip them with the knowledge,
-                skills, and spiritual growth necessary to fulfill their unique
-                callings and to impact their communities for Christ.
-              </p>
-            </div>
-          </div>
-        </section>
+              <div className="space-y-12">
+                {/* Pastor Jagannath Banerjee */}
+                <div className="bg-white rounded-lg shadow-md p-8">
+                  <h3 className="text-2xl font-bold text-gray-800 mb-2">
+                    Pastor Jagannath Banerjee
+                  </h3>
+                  <p className="text-lg font-semibold text-gray-600 mb-4">
+                    Founder and Senior Leader
+                  </p>
+                  <p className="text-gray-700 leading-relaxed">
+                    With over three decades of ministry experience, Pastor
+                    Jagannath is a pioneer in contextual mission among
+                    Bengali-speaking communities. His passion for the unreached,
+                    especially in rural and marginalized areas, has led to the
+                    birth of numerous churches and training centers. He is a
+                    visionary leader with a shepherd&apos;s heart, mentoring the
+                    next generation of Gospel workers with love and conviction.
+                  </p>
+                </div>
 
-        {/* CTA Section */}
-        <section className="py-16 bg-gray-900 text-white">
-          <div className="container mx-auto px-4 text-center">
-            <h2 className="text-3xl md:text-4xl font-bold mb-6">
-              Be A Mission Partner
-            </h2>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <a
-                href="/contact"
-                className="bg-yellow-600 text-white hover:bg-yellow-700 px-8 py-3 rounded-md text-lg font-semibold transition-colors"
-              >
-                Contact Word Impact Network →
-              </a>
+                {/* Pastor Biplab Sarkar */}
+                <div className="bg-white rounded-lg shadow-md p-8">
+                  <h3 className="text-2xl font-bold text-gray-800 mb-2">
+                    Pastor Biplab Sarkar
+                  </h3>
+                  <p className="text-lg font-semibold text-gray-600 mb-4">
+                    Director of Training and Discipleship
+                  </p>
+                  <p className="text-gray-700 leading-relaxed">
+                    Pastor Biplab is a dedicated Pastor, Worship Leader and
+                    teacher who has faithfully served in challenging mission
+                    fields across West Bengal. Known for his deep love for
+                    Scripture and his ability to connect with grassroots
+                    communities, he plays a vital role in discipleship,
+                    leadership development, and coordinating mission outreach.
+                  </p>
+                </div>
+
+                {/* Pastor Surajit Bagal */}
+                <div className="bg-white rounded-lg shadow-md p-8">
+                  <h3 className="text-2xl font-bold text-gray-800 mb-2">
+                    Pastor Surajit Bagal
+                  </h3>
+                  <p className="text-lg font-semibold text-gray-600 mb-4">
+                    Ministry Director – West Bengal
+                  </p>
+                  <p className="text-gray-700 leading-relaxed">
+                    Born and raised in West Bengal, Pastor Surajit carries a
+                    powerful testimony of redemption and calling. With over 30
+                    years in ministry, he leads WIN&apos;s leadership
+                    development and theological training efforts, equipping
+                    emerging pastors and evangelists to serve with humility,
+                    wisdom, and contextual sensitivity.
+                  </p>
+                </div>
+
+                {/* Brother Rajesh Chouhan */}
+                <div className="bg-white rounded-lg shadow-md p-8">
+                  <h3 className="text-2xl font-bold text-gray-800 mb-2">
+                    Brother Rajesh Chouhan
+                  </h3>
+                  <p className="text-lg font-semibold text-gray-600 mb-4">
+                    Leadership & Community Development Advisor
+                  </p>
+                  <p className="text-gray-700 leading-relaxed">
+                    Brother Rajesh Chouhan brings a strong foundation of faith,
+                    wisdom, and practical experience to the WIN leadership team.
+                    With a heart for empowering local believers, he plays a key
+                    role in mentoring grassroots leaders, strengthening
+                    community outreach, and ensuring accountability in field
+                    operations. Rajesh is known for his humility, servant
+                    leadership, and ability to bridge vision with action. His
+                    insight into local cultures and deep commitment to the
+                    Gospel make him a trusted voice in shaping WIN&apos;s
+                    mission strategy and impact.
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
         </section>
