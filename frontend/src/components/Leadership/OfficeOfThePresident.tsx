@@ -1,10 +1,8 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import Image from "next/image";
 
 import ScrollTop from "@/components/Homepage/ScrollTop";
-import presidentImage from "@/assets/sandesh.jpg"; // Replace with actual president image path
 
 const OfficeOfThePresident: React.FC = () => {
   const [showScrollTop, setShowScrollTop] = useState<boolean>(false);
@@ -30,11 +28,14 @@ const OfficeOfThePresident: React.FC = () => {
     <>
       <main>
         {/* Hero Section with Purple Background */}
-        <section className="bg-purple-900 text-white py-20 mt-28">
+        <section className="bg-gradient-to-r from-gray-800 to-gray-700 text-white py-20 mt-37">
           <div className="container mx-auto px-4 text-center">
             <h1 className="text-4xl md:text-5xl font-bold mb-6">
               Office of the President
             </h1>
+            <p className="text-xl max-w-3xl mx-auto">
+              Providing Vision, Stewardship, and Spiritual Leadership
+            </p>
           </div>
         </section>
 
@@ -42,83 +43,52 @@ const OfficeOfThePresident: React.FC = () => {
         <section className="py-20 bg-white">
           <div className="container mx-auto px-4">
             <div className="max-w-6xl mx-auto">
-              <div className="flex flex-col lg:flex-row items-start gap-12">
-                {/* Text Content */}
-                <div className="w-full lg:w-3/5">
-                  <h2 className="text-4xl font-bold text-gray-800 mb-6">
-                    Mr. Sandesh Shrestha
-                  </h2>
+              <div className="mb-12">
+                <h2 className="text-4xl font-bold text-gray-800 mb-6">
+                  Pastor Jagannath Banerjee
+                </h2>
+                <h3 className="text-2xl font-semibold text-gray-600 mb-8">
+                  Founder & President
+                </h3>
 
-                  <div className="space-y-6 text-gray-700">
-                    <p className="text-lg leading-relaxed">
-                      Mr. Sandesh Shrestha serves as the President of Word
-                      Impact Network. He provides strategic guidance to Word
-                      Impact Network and oversees the institutions operations.
-                    </p>
+                <div className="space-y-6 text-gray-700">
+                  <p className="text-lg leading-relaxed">
+                    With over 30 years of frontline ministry experience, Pastor
+                    Jagannath Banerjee leads WIN with deep conviction, humility,
+                    and a passion for contextual mission. Having planted
+                    churches, trained leaders, and pioneered initiatives across
+                    rural and urban India, he brings both theological depth and
+                    practical wisdom to the role.
+                  </p>
 
-                    <p className="text-lg leading-relaxed">
-                      Mr. Shrestha has completed his Ph.D. in Homiletics
-                      (Practical Theology) from Princeton Theological Seminary,
-                      NJ USA in 2014 and M.Div. from ACTS (Asia Center of
-                      Theological Studies and Mission), South Korea in 1999.
-                      While pastoring the Church, Mr. Shrestha also enjoys
-                      teaching as an adjunct professor at Towson University,
-                      Maryland.
-                    </p>
+                  <p className="text-lg leading-relaxed">
+                    As President, he oversees:
+                  </p>
 
-                    <p className="text-lg leading-relaxed">
-                      He and his wife Kalpana live in Baltimore and have two
-                      sons Joel and Amol. His passion is to equip and train the
-                      leaders of Nepali-speaking churches in the US and beyond.
-                    </p>
-                  </div>
+                  <ul className="list-disc list-inside space-y-2 text-lg leading-relaxed text-gray-700 ml-4">
+                    <li>Vision casting and mission alignment</li>
+                    <li>Leadership development and pastoral mentoring</li>
+                    <li>Strategic partnerships and global engagement</li>
+                    <li>Theological integrity and spiritual formation</li>
+                    <li>
+                      Prayer covering and pastoral care for the WIN network
+                    </li>
+                  </ul>
 
-                  {/* Additional Leadership Details */}
-                  <div className="mt-10 pt-8 border-t border-gray-200">
-                    <h3 className="text-2xl font-bold text-gray-800 mb-4">
-                      Leadership Vision
-                    </h3>
-                    <p className="text-lg leading-relaxed text-gray-700">
-                      Under Mr. Shresthas leadership, Word Impact Network is
-                      committed to providing high-quality theological education
-                      that is accessible, affordable, and culturally relevant to
-                      Nepali-speaking Christians around the world. His vision is
-                      to see well-equipped leaders serving effectively in
-                      churches and communities, making a lasting impact for the
-                      Kingdom of God.
-                    </p>
-                  </div>
+                  <p className="text-lg leading-relaxed">
+                    Pastor Banerjee embodies the mission of WIN: &quot;to spread
+                    the fragrance of Christ with the scent of the local
+                    soil.&quot; His leadership continues to inspire a new
+                    generation of Gospel workers who are rooted in Scripture,
+                    shaped by the culture they serve, and led by the Holy
+                    Spirit.
+                  </p>
 
-                  {/* Contact Information */}
-                  <div className="mt-10 pt-8 border-t border-gray-200">
-                    <h3 className="text-2xl font-bold text-gray-800 mb-4">
-                      Office Contact
-                    </h3>
-                    <p className="text-lg leading-relaxed text-gray-700">
-                      For appointments or inquiries related to the Office of the
-                      President, please contact:
-                    </p>
-                    <p className="text-lg font-medium text-gray-800 mt-2">
-                      Email: president@wordimpactnetwork.org
-                    </p>
-                  </div>
-                </div>
-
-                {/* President Image */}
-                <div className="w-full lg:w-2/5 mt-8 lg:mt-0">
-                  <div className="relative h-[600px] w-full rounded-lg overflow-hidden shadow-xl">
-                    <Image
-                      src={presidentImage}
-                      alt="Dr. Manoj Shrestha, President"
-                      fill
-                      className="object-cover"
-                      priority
-                    />
-                  </div>
-
-                  {/* Image Caption */}
-                  <p className="text-center text-gray-600 mt-3 italic">
-                    Mr. Sandesh Shrestha, Coder
+                  <p className="text-lg leading-relaxed">
+                    Under his guidance, the Office of the President serves not
+                    only as an administrative post but as a spiritual
+                    anchor—keeping the ministry grounded in its founding call:
+                    to make Christ known where He is not yet known.
                   </p>
                 </div>
               </div>
@@ -126,73 +96,20 @@ const OfficeOfThePresident: React.FC = () => {
           </div>
         </section>
 
-        {/* Leadership Team Section */}
+        {/* Mission Focus Section */}
         <section className="py-16 bg-gray-50">
           <div className="container mx-auto px-4">
             <div className="max-w-4xl mx-auto text-center">
               <h2 className="text-3xl font-bold text-gray-800 mb-8">
-                Presidential Leadership Team
+                Our Mission Focus
               </h2>
               <p className="text-lg text-gray-700 mb-12">
-                The President works closely with a dedicated team of leaders to
-                fulfill the mission and vision of Word Impact Network.
+                The Office of the President at Word Impact Network (WIN) exists
+                to provide spiritual oversight, strategic direction, and
+                pastoral care to the mission, ensuring that every initiative
+                reflects the heart of Christ and serves the people we are called
+                to reach.
               </p>
-
-              <div className="flex flex-col md:flex-row justify-center gap-8">
-                {/* Leadership Team Member 1 */}
-                <div className="bg-white rounded-lg shadow-md p-6 flex-1">
-                  <h3 className="text-xl font-bold text-gray-800 mb-2">
-                    Academic Affairs
-                  </h3>
-                  <p className="text-gray-700">
-                    Oversees all academic programs, faculty development, and
-                    curriculum design.
-                  </p>
-                </div>
-
-                {/* Leadership Team Member 2 */}
-                <div className="bg-white rounded-lg shadow-md p-6 flex-1">
-                  <h3 className="text-xl font-bold text-gray-800 mb-2">
-                    Administrative Office
-                  </h3>
-                  <p className="text-gray-700">
-                    Manages day-to-day operations, student services, and
-                    institutional resources.
-                  </p>
-                </div>
-
-                {/* Leadership Team Member 3 */}
-                <div className="bg-white rounded-lg shadow-md p-6 flex-1">
-                  <h3 className="text-xl font-bold text-gray-800 mb-2">
-                    Community Relations
-                  </h3>
-                  <p className="text-gray-700">
-                    Develops partnerships, community outreach, and alumni
-                    connections.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* CTA Section */}
-        <section className="py-16 bg-gray-900 text-white">
-          <div className="container mx-auto px-4 text-center">
-            <h2 className="text-3xl md:text-4xl font-bold mb-6">
-              Be A Mission Partner
-            </h2>
-            <p className="text-xl max-w-3xl mx-auto mb-8">
-              Join us in equipping Nepali-speaking Christian leaders around the
-              world. Your partnership makes a difference.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <a
-                href="/contact"
-                className="bg-yellow-600 text-white hover:bg-yellow-700 px-8 py-3 rounded-md text-lg font-semibold transition-colors"
-              >
-                Contact Word Impact Network →
-              </a>
             </div>
           </div>
         </section>
