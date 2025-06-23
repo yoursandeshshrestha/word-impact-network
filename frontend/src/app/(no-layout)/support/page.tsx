@@ -100,7 +100,7 @@ const Messages: React.FC = () => {
   );
 
   return (
-    <div className="flex flex-col h-screen bg-gray-50 pt-17">
+    <div className="flex flex-col min-h-[calc(100vh-4rem)] bg-gray-50 pt-4">
       {/* Messages Container */}
       <div
         ref={messagesContainerRef}
