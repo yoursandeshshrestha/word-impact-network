@@ -24,14 +24,29 @@ const Hero: React.FC = () => {
         <div className="max-w-4xl mx-auto text-center text-white">
           {/* Main Heading */}
           <h1 className="text-4xl md:text-6xl font-bold mb-4 leading-tight tracking-tight">
-            World Impact Network
+            Word Impact Network
           </h1>
 
-          {/* Description */}
-          <p className="text-xl md:text-2xl max-w-3xl mx-auto text-gray-200 leading-relaxed">
-            Equipping Bengali speaking Christian leaders for the great
-            commission through quality education and spiritual formation.
+          {/* Subtitle */}
+          <p className="text-xl md:text-2xl mb-6 text-gray-200 font-light text-center">
+            Spreading the fragrance of Christ with the scent of the local soil
           </p>
+
+          {/* CTA Buttons */}
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <a
+              href="/educational-programs"
+              className="inline-flex items-center justify-center px-6 py-3 bg-white text-gray-900 font-medium rounded-md transition-colors hover:bg-gray-100"
+            >
+              Explore Programs
+            </a>
+            <a
+              href="/about-win-impact-network"
+              className="inline-flex items-center justify-center px-6 py-3 border border-white text-white font-medium rounded-md transition-colors hover:bg-white hover:text-gray-900"
+            >
+              Learn About WIN
+            </a>
+          </div>
         </div>
       </div>
 
