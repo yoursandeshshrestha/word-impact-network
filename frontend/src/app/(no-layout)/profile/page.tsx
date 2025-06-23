@@ -162,8 +162,8 @@ function StudentProfile() {
       : 0;
 
   return (
-    <div className="h-screen overflow-auto pb-10">
-      <div className="px-5 pt-20">
+    <div className="min-h-[calc(100vh-4rem)] overflow-auto pb-10">
+      <div className="px-5 pt-4">
         {/* Hero Section */}
         <div className="relative mb-8">
           <div className="absolute inset-0 bg-gradient-to-r from-[#2c3e50] via-[#7a9e7e] to-[#b7773a] rounded-3xl blur-3xl opacity-10"></div>
