@@ -6,6 +6,7 @@ import { Geist } from "next/font/google";
 import { useSelector } from "react-redux";
 import { RootState } from "@/redux/store";
 import { useState } from "react";
+import { useWebSocketConnection } from "@/hooks/useWebSocketConnection";
 
 const font = Geist({
   subsets: ["latin", "latin-ext"],
@@ -21,6 +22,9 @@ export default function DashboardLayout({
     (state: RootState) => state.user
   );
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  // Initialize WebSocket connection for real-time updates
+  useWebSocketConnection();
 
   // Provide consistent display name
   const displayName = user?.fullName || "Student";
