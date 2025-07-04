@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState, useRef } from "react";
 import { useMessages } from "@/hooks/useMessages";
+import { useWebSocketConnection } from "@/hooks/useWebSocketConnection";
 import { Send } from "lucide-react";
 
 const Messages: React.FC = () => {
@@ -13,6 +14,9 @@ const Messages: React.FC = () => {
     fetchAdminConversation,
     markAsRead,
   } = useMessages();
+
+  // Initialize WebSocket connection for real-time updates
+  useWebSocketConnection();
 
   const [message, setMessage] = useState("");
   const messagesContainerRef = useRef<HTMLDivElement>(null);
@@ -26,22 +30,6 @@ const Messages: React.FC = () => {
       markAsRead(adminConversation.admin.id);
     }
   }, [adminConversation?.admin?.id, markAsRead]);
-
-  // Debug message data
-  useEffect(() => {
-    if (adminConversation?.messages) {
-      console.log("Admin ID:", adminConversation.admin.id);
-      console.log(
-        "Messages:",
-        adminConversation.messages.map((msg) => ({
-          id: msg.id,
-          content: msg.content,
-          senderId: msg.senderId,
-          isAdmin: msg.senderId === adminConversation.admin.id,
-        }))
-      );
-    }
-  }, [adminConversation]);
 
   // Scroll to bottom when messages change
   useEffect(() => {
@@ -100,7 +88,7 @@ const Messages: React.FC = () => {
   );
 
   return (
-    <div className="flex flex-col min-h-[calc(100vh-4rem)] bg-gray-50 pt-4">
+    <div className="flex flex-col min-h-[calc(100vh-4rem)] bg-gray-50 pt-4 pb-30">
       {/* Messages Container */}
       <div
         ref={messagesContainerRef}
@@ -150,7 +138,7 @@ const Messages: React.FC = () => {
       </div>
 
       {/* Message Input */}
-      <div className="bg-white border-t p-4">
+      <div className="bg-white border-t p-4 fixed bottom-0 w-full">
         {/* Suggestions */}
         <div className="flex flex-wrap gap-2 mb-3">
           {suggestions.map((suggestion, idx) => (
