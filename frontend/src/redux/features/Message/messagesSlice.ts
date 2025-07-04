@@ -36,12 +36,14 @@ interface MessagesState {
   adminConversation: AdminConversation | null;
   loading: boolean;
   error: string | null;
+  unreadCount: number;
 }
 
 const initialState: MessagesState = {
   adminConversation: null,
   loading: false,
   error: null,
+  unreadCount: 0,
 };
 
 // Async thunks
@@ -86,6 +88,19 @@ export const markConversationAsRead = createAsyncThunk(
   }
 );
 
+export const fetchUnreadCount = createAsyncThunk(
+  "messages/fetchUnreadCount",
+  async () => {
+    const response = await axios.get(
+      `${process.env.NEXT_PUBLIC_BACKEND_API}/messages/unread-count`,
+      {
+        headers: withAuth() as Record<string, string>,
+      }
+    );
+    return response.data.data;
+  }
+);
+
 const messagesSlice = createSlice({
   name: "messages",
   initialState,
@@ -100,6 +115,15 @@ const messagesSlice = createSlice({
           ...action.payload,
           ...state.adminConversation.messages,
         ];
+      }
+    },
+    addNewMessage: (state, action) => {
+      console.log("Redux: Adding new message", action.payload);
+      if (state.adminConversation) {
+        state.adminConversation.messages.push(action.payload);
+        console.log("Redux: Message added to conversation");
+      } else {
+        console.log("Redux: No admin conversation available, message not added");
       }
     },
   },
@@ -157,9 +181,13 @@ const messagesSlice = createSlice({
               read: true,
             }));
         }
+      })
+      // Fetch Unread Count
+      .addCase(fetchUnreadCount.fulfilled, (state, action) => {
+        state.unreadCount = action.payload.count || 0;
       });
   },
 });
 
-export const { clearMessages, prependMessages } = messagesSlice.actions;
+export const { clearMessages, prependMessages, addNewMessage } = messagesSlice.actions;
 export default messagesSlice.reducer;
