@@ -198,6 +198,12 @@ export async function updateApplicationStatus(
       throw new AppError('Rejection reason is required', 400, ErrorTypes.VALIDATION);
     }
 
+    // Generate password once before transaction
+    let tempPassword: string | null = null;
+    if (status === ApplicationStatus.APPROVED && !application.student) {
+      tempPassword = generateRandomPassword();
+    }
+
     // Update application status and create user/student if approved
     const updatedApplication = await prisma.$transaction(async (tx) => {
       // Update application
@@ -235,8 +241,7 @@ export async function updateApplicationStatus(
       });
 
       // If approved and no student exists, create user and student
-      if (status === ApplicationStatus.APPROVED && !application.student) {
-        const tempPassword = generateRandomPassword();
+      if (status === ApplicationStatus.APPROVED && !application.student && tempPassword) {
         const hashedPassword = await bcrypt.hash(tempPassword, 10);
 
         // Create user
@@ -277,19 +282,6 @@ export async function updateApplicationStatus(
             },
           },
         });
-
-        // Send approval email
-        await sendApplicationApprovedEmail(
-          updatedApp.email,
-          updatedApp.fullName,
-          tempPassword,
-        ).catch((emailError) => {
-          logger.error('Failed to send application approval email', {
-            applicationId,
-            email: updatedApp.email,
-            error: emailError instanceof Error ? emailError.message : String(emailError),
-          });
-        });
       } else if (application.student) {
         // Update existing student's application status
         await tx.student.update({
@@ -300,21 +292,35 @@ export async function updateApplicationStatus(
         });
       }
 
-      if (status === ApplicationStatus.REJECTED && rejectionReason) {
-        // Send rejection email
-        sendApplicationRejectedEmail(updatedApp.email, updatedApp.fullName, rejectionReason).catch(
-          (emailError) => {
-            logger.error('Failed to send application rejection email', {
-              applicationId,
-              email: updatedApp.email,
-              error: emailError instanceof Error ? emailError.message : String(emailError),
-            });
-          },
-        );
-      }
-
       return updatedApp;
     });
+
+    // Send emails AFTER the transaction is committed
+    if (status === ApplicationStatus.APPROVED && !application.student && tempPassword) {
+      // Send approval email with the same password that was stored in DB
+      sendApplicationApprovedEmail(
+        updatedApplication.email,
+        updatedApplication.fullName,
+        tempPassword,
+      ).catch((emailError) => {
+        logger.error('Failed to send application approval email', {
+          applicationId,
+          email: updatedApplication.email,
+          error: emailError instanceof Error ? emailError.message : String(emailError),
+        });
+      });
+    } else if (status === ApplicationStatus.REJECTED && rejectionReason) {
+      // Send rejection email
+      sendApplicationRejectedEmail(updatedApplication.email, updatedApplication.fullName, rejectionReason).catch(
+        (emailError) => {
+          logger.error('Failed to send application rejection email', {
+            applicationId,
+            email: updatedApplication.email,
+            error: emailError instanceof Error ? emailError.message : String(emailError),
+          });
+        },
+      );
+    }
 
     logger.info('Application status updated successfully', {
       applicationId,
