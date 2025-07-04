@@ -93,19 +93,11 @@ export const useNotifications = () => {
     dispatch(clearError());
   }, [dispatch]);
 
-  // Initial load on mount and set up polling for new notifications
+  // Initial load on mount - real-time updates handled by Socket.IO
   useEffect(() => {
     // Load initial notifications
     loadNotifications();
-
-    // Set up interval to refresh notifications every 30 seconds
-    const intervalId = setInterval(() => {
-      // Only fetch the first page with newest notifications to check for updates
-      dispatch(fetchNotifications({ page: 1, limit: 10 }));
-    }, 30000);
-
-    return () => clearInterval(intervalId);
-  }, [loadNotifications, dispatch]);
+  }, [loadNotifications]);
 
   return {
     // State
