@@ -29,19 +29,10 @@ const GlobalChat: React.FC = () => {
     fetchUnreadCount,
   } = useMessages();
 
-  // Fetch unread count on component mount and websocket events
+  // Fetch unread count on component mount - real-time updates handled by Socket.IO
   useEffect(() => {
     // Initial fetch of unread count (even before opening the chat)
     fetchUnreadCount();
-
-    // Set up an interval to periodically fetch the unread count
-    const intervalId = setInterval(() => {
-      fetchUnreadCount();
-    }, 30000); // Every 30 seconds
-
-    return () => {
-      clearInterval(intervalId);
-    };
   }, [fetchUnreadCount]);
 
   // Refresh conversations when new messages arrive (for real-time updates)
@@ -52,17 +43,11 @@ const GlobalChat: React.FC = () => {
     }
   }, [isOpen, showConversation, getConversations, unreadCount]);
 
-  // Refresh conversation messages periodically when in conversation view
+  // Refresh conversation messages when conversation view is opened - real-time updates handled by Socket.IO
   useEffect(() => {
     if (isOpen && showConversation && selectedStudent) {
-      // Refresh conversation messages every 5 seconds when in conversation view
-      const intervalId = setInterval(() => {
-        getConversationMessages(selectedStudent.id);
-      }, 5000); // Every 5 seconds
-
-      return () => {
-        clearInterval(intervalId);
-      };
+      // Load conversation messages when entering conversation view
+      getConversationMessages(selectedStudent.id);
     }
   }, [isOpen, showConversation, selectedStudent, getConversationMessages]);
 
