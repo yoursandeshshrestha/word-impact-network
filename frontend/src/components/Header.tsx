@@ -16,6 +16,8 @@ import {
 } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useAutoCourses } from "@/hooks/useCourses";
+import { useSelector } from "react-redux";
+import { RootState } from "@/redux/store";
 import Link from "next/link";
 
 const Header: React.FC<{
@@ -39,6 +41,7 @@ const Header: React.FC<{
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const { searchQuery, updateSearchQuery } = useAutoCourses();
+  const { unreadCount } = useSelector((state: RootState) => state.messages);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -293,6 +296,20 @@ const Header: React.FC<{
                         <User className="h-4 w-4" />
                         View Profile
                       </a>
+                      <a
+                        href="/support"
+                        className="flex items-center gap-3 px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors relative"
+                      >
+                        <div className="relative">
+                          <MessageCircle className="h-4 w-4" />
+                          {unreadCount > 0 && (
+                            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[8px] rounded-full px-1 py-0.5 font-bold shadow-md border border-white">
+                              {unreadCount > 9 ? "9+" : unreadCount}
+                            </span>
+                          )}
+                        </div>
+                        Support
+                      </a>
                     </div>
                     <div className="py-2">
                       <a
@@ -343,6 +360,7 @@ const Header: React.FC<{
                 <ul className="space-y-2">
                   {menuItems.map((item) => {
                     const isActive = pathname === item.path;
+                    const isSupport = item.path === "/support";
                     return (
                       <li key={item.path}>
                         <Link
@@ -353,7 +371,14 @@ const Header: React.FC<{
                               : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
                           }`}
                         >
-                          {item.icon}
+                          <div className="relative">
+                            {item.icon}
+                            {isSupport && unreadCount > 0 && (
+                              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] rounded-full px-1.5 py-0.5 font-bold shadow-md border-2 border-white">
+                                {unreadCount > 9 ? "9+" : unreadCount}
+                              </span>
+                            )}
+                          </div>
                           {item.name}
                         </Link>
                       </li>
