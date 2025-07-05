@@ -15,6 +15,7 @@ import {
   LogOut,
   Menu,
   X,
+  Megaphone,
 } from "lucide-react";
 
 type SidebarProps = {
@@ -65,7 +66,11 @@ const Sidebar: React.FC<SidebarProps> = ({
       name: "Applications",
       icon: <FileText className="w-5 h-5" />,
     },
-
+    {
+      path: "/announcements",
+      name: "Announcements",
+      icon: <Megaphone className="w-5 h-5" />,
+    },
     {
       path: "/analytics",
       name: "Analytics",
