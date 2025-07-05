@@ -133,97 +133,61 @@ async function removeTempFile(filePath: string): Promise<void> {
 
 /**
  * Upload a file to Cloudinary with support for large files
- * @param file The file buffer to upload
+ * @param file The file buffer or file path to upload
  * @param folder The folder to upload to (optional)
  * @param fileName The original filename (optional)
  * @returns The Cloudinary secure URL
  */
 export const uploadToCloudinary = async (
-  file: Buffer,
-  folder?: string,
+  file: Buffer | string,
+  folder: string = 'general',
   fileName?: string,
 ): Promise<string> => {
   let tempFilePath: string | null = null;
 
   try {
-    // Generate a completely sanitized folder and filename
-    const safeFolder = folder ? sanitizeFolderPath(folder) : 'win_documents';
-    const safeFileName = generateSafeFileName(fileName);
+    let uploadPath: string;
 
-    logger.info('Starting file upload to Cloudinary', {
-      fileSize: file.length,
-      safeFolder,
-      safeFileName,
-    });
-
-    // Check if this is a large file
-    const isLargeFile = file.length > LARGE_FILE_THRESHOLD;
-
-    let uploadResult: CloudinaryUploadResult;
-
-    if (isLargeFile) {
-      // For large files, write to temp file and use Cloudinary's upload_large API
-      logger.info('Using large file upload method', { fileSize: file.length });
-
+    if (Buffer.isBuffer(file)) {
+      // If it's a buffer, write to temp file first
       tempFilePath = await writeBufferToTempFile(file);
-
-      uploadResult = await new Promise<CloudinaryUploadResult>((resolve, reject) => {
-        const uploadStream = cloudinary.uploader.upload_large(
-          tempFilePath as string,
-          {
-            folder: safeFolder,
-            public_id: safeFileName,
-            resource_type: 'auto',
-            chunk_size: 6000000,
-          },
-          (error, result) => {
-            if (error || !result) {
-              reject(new AppError('Failed to upload file', 500, ErrorTypes.SERVER));
-            } else {
-              resolve(result);
-            }
-          },
-        );
-      });
+      uploadPath = tempFilePath;
     } else {
-      // For smaller files, use the standard base64 upload
-      const base64File = `data:application/octet-stream;base64,${file.toString('base64')}`;
-
-      uploadResult = await cloudinary.uploader.upload(base64File, {
-        folder: safeFolder,
-        public_id: safeFileName,
-        resource_type: 'auto',
-        chunk_size: 6000000,
-      });
+      // If it's already a file path
+      uploadPath = file;
     }
 
-    logger.info('File uploaded successfully to Cloudinary', {
-      public_id: uploadResult.public_id,
-      url: uploadResult.secure_url,
-      resource_type: uploadResult.resource_type,
-      fileSize: file.length,
+    const sanitizedFolder = sanitizeFolderPath(folder);
+    const safeFileName = fileName ? generateSafeFileName(fileName) : undefined;
+
+    const result = await cloudinary.uploader.upload(uploadPath, {
+      folder: sanitizedFolder,
+      public_id: safeFileName,
+      resource_type: 'auto',
+      transformation: [
+        { width: 1200, height: 800, crop: 'limit' }, // Limit max dimensions
+        { quality: 'auto', fetch_format: 'auto' }, // Optimize quality and format
+      ],
     });
 
-    if (!uploadResult) {
-      throw new AppError('Failed to upload file', 500, ErrorTypes.SERVER);
-    }
+    logger.info('Cloudinary upload successful', {
+      publicId: result.public_id,
+      url: result.secure_url,
+      folder: sanitizedFolder,
+    });
 
-    return uploadResult.secure_url;
+    return result.secure_url;
   } catch (error) {
-    logger.error('Error uploading file to Cloudinary', {
-      error: error instanceof Error ? error.message : String(error),
-      details: error instanceof Error ? error.stack : JSON.stringify(error),
-      fileSize: file.length,
+    logger.error('Cloudinary upload failed', {
       folder,
       fileName,
+      error: error instanceof Error ? error.message : String(error),
     });
-    throw new AppError('Failed to upload file', 500, ErrorTypes.SERVER);
+    throw error;
   } finally {
-    // Clean up the temporary file if it was created
+    // Clean up temp file if we created one
     if (tempFilePath) {
-      await removeTempFile(tempFilePath).catch((err) => {
-        logger.warn('Error removing temp file', { tempFilePath, error: err.message });
-      });
+      await removeTempFile(tempFilePath);
     }
   }
 };
@@ -232,18 +196,21 @@ export const uploadToCloudinary = async (
  * Delete a file from Cloudinary
  * @param publicId The public ID of the file to delete
  */
-export const deleteFromCloudinary = async (publicId: string): Promise<void> => {
+export const deleteFromCloudinary = async (publicId: string) => {
   try {
-    logger.info('Deleting file from Cloudinary', { publicId });
+    const result = await cloudinary.uploader.destroy(publicId);
 
-    await cloudinary.uploader.destroy(publicId);
+    logger.info('Cloudinary delete successful', {
+      publicId,
+      result: result.result,
+    });
 
-    logger.info('File deleted successfully from Cloudinary', { publicId });
+    return result;
   } catch (error) {
-    logger.error('Error deleting file from Cloudinary', {
+    logger.error('Cloudinary delete failed', {
       publicId,
       error: error instanceof Error ? error.message : String(error),
     });
-    // We don't throw an error here to prevent blocking other operations
+    throw error;
   }
 };
