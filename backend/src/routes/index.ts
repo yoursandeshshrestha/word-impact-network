@@ -10,6 +10,7 @@ import messageRoutes from './message.routes';
 import notificationRoutes from './notification.routes';
 import analyticsRoutes from './analytics.routes';
 import myLearningRoutes from './mylearning.routes';
+import announcementRoutes from './announcement.routes';
 
 const router: Router = express.Router();
 
@@ -45,5 +46,8 @@ router.use('/analytics', analyticsRoutes);
 
 // my learning routes
 router.use('/mylearning', myLearningRoutes);
+
+// announcement routes
+router.use('/announcements', announcementRoutes);
 
 export default router;
