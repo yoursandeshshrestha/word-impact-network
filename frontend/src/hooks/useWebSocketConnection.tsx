@@ -162,7 +162,7 @@ export const useWebSocketConnection = () => {
     };
 
     // Handle connection errors
-    const handleConnectionError = (error: unknown) => {
+    const handleConnectionError = () => {
       scheduleReconnect();
     };
 
