@@ -93,6 +93,7 @@ model Admin {
   createdChapters   Chapter[]
   createdExams      Exam[]
   reviewedApplications Application[]
+  announcements     Announcement[]
 
   @@map("admins")
 }
@@ -368,4 +369,18 @@ model SystemSettings {
   updatedAt         DateTime         @updatedAt
 
   @@map("system_settings")
+}
+
+model Announcement {
+  id        String   @id @default(uuid())
+  title     String
+  content   String   @db.Text
+  imageUrl  String?  // Optional image
+  isActive  Boolean  @default(true)
+  createdBy Admin    @relation(fields: [adminId], references: [id])
+  adminId   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("announcements")
 }
