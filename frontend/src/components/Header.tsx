@@ -13,12 +13,14 @@ import {
   Home,
   BookOpen,
   MessageCircle,
+
 } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useAutoCourses } from "@/hooks/useCourses";
 import { useSelector } from "react-redux";
 import { RootState } from "@/redux/store";
 import Link from "next/link";
+
 
 const Header: React.FC<{
   studentName: string;
@@ -42,6 +44,7 @@ const Header: React.FC<{
   const [isMobile, setIsMobile] = useState(false);
   const { searchQuery, updateSearchQuery } = useAutoCourses();
   const { unreadCount } = useSelector((state: RootState) => state.messages);
+
 
   useEffect(() => {
     const handleScroll = () => {
