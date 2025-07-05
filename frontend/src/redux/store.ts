@@ -13,6 +13,7 @@ import chapterDetailReducer from "./features/chapterDetail/chapterDetailSlice";
 import examReducer from "./features/exam/examSlice";
 import messagesReducer from "./features/Message/messagesSlice";
 import passwordResetReducer from "./features/auth/passwordResetSlice";
+import announcementsReducer from "./features/announcements/announcementsSlice";
 
 interface EnrollmentState {
   loading: boolean;
@@ -35,6 +36,7 @@ export const store = configureStore({
     exam: examReducer,
     messages: messagesReducer,
     passwordReset: passwordResetReducer,
+    announcements: announcementsReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
