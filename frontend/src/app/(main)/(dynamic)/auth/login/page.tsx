@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import Link from "next/link";
 import { login, isAuthenticated, getCurrentUser } from "@/common/services/auth";
 
+
 const LoginPage = () => {
   const router = useRouter();
   const [formData, setFormData] = useState({
@@ -52,6 +53,8 @@ const LoginPage = () => {
     if (result.success) {
       toast.success("Logged in successfully!");
 
+
+
       // Redirect based on user role if needed
       const user = result.user;
       let redirectPath = "/my-learning";
@@ -60,10 +63,10 @@ const LoginPage = () => {
         redirectPath = "/admin/dashboard";
       }
 
-      // Redirect after successful login
+      // Redirect after successful login (with delay to allow modal to show)
       setTimeout(() => {
         router.push(redirectPath);
-      }, 1000);
+      }, 2000);
     } else {
       setError(result.message || "Login failed");
       toast.error(result.message || "Login failed");
@@ -181,6 +184,8 @@ const LoginPage = () => {
           </form>
         </div>
       </main>
+
+
     </div>
   );
 };
