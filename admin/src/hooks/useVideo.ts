@@ -3,13 +3,17 @@ import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch } from "@/redux/store";
 import {
   addVideo,
+  addVideoWithVimeo,
   getVideosByChapter,
   getVideoById,
   updateVideo,
   deleteVideo,
   resetVideoStatus,
+  resetVideoStatusOnly,
   setVideo,
   clearVideos,
+  setShouldCloseModal,
+  setShouldCloseDeleteModal,
   selectVideos,
   selectVideo,
   selectVideosLoading,
@@ -18,6 +22,8 @@ import {
   selectVideosMessage,
   selectUploadProgress,
   selectIsUploading,
+  selectShouldCloseModal,
+  selectShouldCloseDeleteModal,
   Video,
 } from "@/redux/features/videosSlice";
 
@@ -31,6 +37,8 @@ export const useVideo = () => {
   const message = useSelector(selectVideosMessage);
   const uploadProgress = useSelector(selectUploadProgress);
   const isUploading = useSelector(selectIsUploading);
+  const shouldCloseModal = useSelector(selectShouldCloseModal);
+  const shouldCloseDeleteModal = useSelector(selectShouldCloseDeleteModal);
 
   // Reset status when component unmounts or dependencies change
   useEffect(() => {
@@ -51,6 +59,10 @@ export const useVideo = () => {
     dispatch(addVideo({ chapterId, videoData }));
   };
 
+  const uploadVideoWithVimeo = (chapterId: string, videoData: FormData) => {
+    dispatch(addVideoWithVimeo({ chapterId, videoData }));
+  };
+
   const editVideo = (id: string, videoData: FormData | Partial<Video>) => {
     dispatch(updateVideo({ id, videoData }));
   };
@@ -67,8 +79,20 @@ export const useVideo = () => {
     dispatch(resetVideoStatus());
   };
 
+  const resetStatusOnly = () => {
+    dispatch(resetVideoStatusOnly());
+  };
+
   const clearVideosList = () => {
     dispatch(clearVideos());
+  };
+
+  const closeModal = () => {
+    dispatch(setShouldCloseModal(false));
+  };
+
+  const closeDeleteModal = () => {
+    dispatch(setShouldCloseDeleteModal(false));
   };
 
   return {
@@ -80,13 +104,19 @@ export const useVideo = () => {
     message,
     uploadProgress,
     isUploading,
+    shouldCloseModal,
+    shouldCloseDeleteModal,
     fetchVideosByChapter,
     fetchVideoById,
     uploadVideo,
+    uploadVideoWithVimeo,
     editVideo,
     removeVideo,
     selectVideo: selectVideoData,
     reset,
+    resetStatusOnly,
     clearVideosList,
+    closeModal,
+    closeDeleteModal,
   };
 };
