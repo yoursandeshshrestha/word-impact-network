@@ -15,13 +15,14 @@ import { ArrowLeft, BookOpen, PlusCircle } from "lucide-react";
 import { ChapterFormData } from "@/components/chapter/ChapterForm";
 
 interface ChaptersPageProps {
-  params: {
+  params: Promise<{
     id: string; // courseId
-  };
+  }>;
 }
 
 const ChaptersPage: React.FC<ChaptersPageProps> = ({ params }) => {
-  const { id: courseId } = params;
+  const unwrappedParams = React.use(params);
+  const { id: courseId } = unwrappedParams;
   const router = useRouter();
 
   const {
@@ -183,6 +184,10 @@ const ChaptersPage: React.FC<ChaptersPageProps> = ({ params }) => {
         maxCourseYears={course.durationYears}
         isLoading={loading}
         mode="create"
+        existingChapters={chapters.map((chapter) => ({
+          orderIndex: chapter.orderIndex,
+          courseYear: chapter.courseYear,
+        }))}
       />
 
       {/* Edit Chapter Modal */}
@@ -195,6 +200,10 @@ const ChaptersPage: React.FC<ChaptersPageProps> = ({ params }) => {
         maxCourseYears={course.durationYears}
         isLoading={loading}
         mode="edit"
+        existingChapters={chapters.map((chapter) => ({
+          orderIndex: chapter.orderIndex,
+          courseYear: chapter.courseYear,
+        }))}
       />
 
       {/* Delete Chapter Modal */}
