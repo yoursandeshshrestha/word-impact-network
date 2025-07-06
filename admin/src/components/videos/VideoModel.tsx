@@ -15,6 +15,8 @@ interface VideoModalProps {
   uploadProgress: number;
   isUploading: boolean;
   mode: "create" | "edit";
+  onUploadStateChange?: (isUploading: boolean) => void;
+  existingVideos?: Array<{ orderIndex: number }>;
 }
 
 const VideoModal: React.FC<VideoModalProps> = ({
@@ -26,6 +28,8 @@ const VideoModal: React.FC<VideoModalProps> = ({
   uploadProgress,
   isUploading,
   mode,
+  onUploadStateChange,
+  existingVideos = [],
 }) => {
   if (!isOpen) return null;
 
@@ -79,6 +83,10 @@ const VideoModal: React.FC<VideoModalProps> = ({
                   <strong>Warning:</strong> Upload in progress. Please do not
                   close this window or navigate away from this page.
                 </p>
+                <p className="text-xs text-yellow-600 mt-1">
+                  If your session expires during upload, you may need to refresh
+                  the page and try again.
+                </p>
               </div>
             </div>
           </div>
@@ -91,6 +99,8 @@ const VideoModal: React.FC<VideoModalProps> = ({
           isLoading={isLoading}
           uploadProgress={uploadProgress}
           isUploading={isUploading}
+          onUploadStateChange={onUploadStateChange}
+          existingVideos={existingVideos}
         />
       </div>
     </div>
