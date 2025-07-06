@@ -17,6 +17,7 @@ interface ChapterFormProps {
   onSubmit: (chapterData: ChapterFormData) => void;
   onCancel: () => void;
   isLoading: boolean;
+  existingChapters?: Array<{ orderIndex: number; courseYear: number }>;
 }
 
 const ChapterForm: React.FC<ChapterFormProps> = ({
@@ -25,7 +26,23 @@ const ChapterForm: React.FC<ChapterFormProps> = ({
   onSubmit,
   onCancel,
   isLoading,
+  existingChapters = [],
 }) => {
+  // Calculate the next available order index for the selected course year
+  const getNextOrderIndex = (courseYear: number) => {
+    if (initialData) return initialData.orderIndex; // Keep existing order for edits
+
+    // Filter chapters by the selected course year
+    const chaptersInYear = existingChapters.filter(
+      (chapter) => chapter.courseYear === courseYear
+    );
+
+    if (chaptersInYear.length === 0) return 1;
+
+    const maxOrder = Math.max(...chaptersInYear.map((c) => c.orderIndex));
+    return maxOrder + 1;
+  };
+
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -48,8 +65,51 @@ const ChapterForm: React.FC<ChapterFormProps> = ({
         orderIndex: initialData.orderIndex || 1,
         courseYear: initialData.courseYear || 1,
       });
+    } else {
+      // For new chapters, set the next available order index
+      setFormData((prev) => ({
+        ...prev,
+        orderIndex: getNextOrderIndex(prev.courseYear),
+      }));
     }
-  }, [initialData]);
+  }, [initialData, existingChapters]);
+
+  // Update order index when course year changes
+  useEffect(() => {
+    if (!initialData) {
+      setFormData((prev) => ({
+        ...prev,
+        orderIndex: getNextOrderIndex(prev.courseYear),
+      }));
+    }
+  }, [formData.courseYear, initialData, existingChapters]);
+
+  // Initialize validation on mount
+  useEffect(() => {
+    // Check title validation
+    if (formData.title.trim() && formData.title.trim().length < 3) {
+      setErrors((prev) => ({
+        ...prev,
+        title: "Title must be at least 3 characters long",
+      }));
+    } else if (formData.title.trim() && formData.title.trim().length > 100) {
+      setErrors((prev) => ({
+        ...prev,
+        title: "Title must not exceed 100 characters",
+      }));
+    }
+
+    // Check description validation
+    if (
+      formData.description.trim() &&
+      formData.description.trim().length < 10
+    ) {
+      setErrors((prev) => ({
+        ...prev,
+        description: "Description must be at least 10 characters long",
+      }));
+    }
+  }, []);
 
   const handleChange = (
     e: React.ChangeEvent<
@@ -66,10 +126,57 @@ const ChapterForm: React.FC<ChapterFormProps> = ({
           : value,
     }));
 
-    // Clear error when field is edited
-    if (errors[name as keyof typeof errors]) {
-      setErrors((prev) => ({ ...prev, [name]: "" }));
+    // Real-time validation for title and description
+    if (name === "title") {
+      if (!value.trim()) {
+        setErrors((prev) => ({ ...prev, title: "Title is required" }));
+      } else if (value.trim().length < 3) {
+        setErrors((prev) => ({
+          ...prev,
+          title: "Title must be at least 3 characters long",
+        }));
+      } else if (value.trim().length > 100) {
+        setErrors((prev) => ({
+          ...prev,
+          title: "Title must not exceed 100 characters",
+        }));
+      } else {
+        setErrors((prev) => ({ ...prev, title: "" }));
+      }
+    } else if (name === "description") {
+      if (!value.trim()) {
+        setErrors((prev) => ({
+          ...prev,
+          description: "Description is required",
+        }));
+      } else if (value.trim().length < 10) {
+        setErrors((prev) => ({
+          ...prev,
+          description: "Description must be at least 10 characters long",
+        }));
+      } else {
+        setErrors((prev) => ({ ...prev, description: "" }));
+      }
+    } else {
+      // Clear error when other fields are edited
+      if (errors[name as keyof typeof errors]) {
+        setErrors((prev) => ({ ...prev, [name]: "" }));
+      }
     }
+  };
+
+  // Check if form is valid for enabling/disabling submit button
+  const isFormValid = () => {
+    const hasValidTitle =
+      formData.title.trim().length >= 3 && formData.title.trim().length <= 100;
+    const hasValidDescription = formData.description.trim().length >= 10;
+    const hasValidOrder = formData.orderIndex > 0;
+    const hasValidYear =
+      formData.courseYear >= 1 && formData.courseYear <= maxCourseYears;
+
+    return (
+      hasValidTitle && hasValidDescription && hasValidOrder && hasValidYear
+    );
   };
 
   const validateForm = () => {
@@ -85,11 +192,20 @@ const ChapterForm: React.FC<ChapterFormProps> = ({
     if (!formData.title.trim()) {
       newErrors.title = "Title is required";
       valid = false;
+    } else if (formData.title.trim().length < 3) {
+      newErrors.title = "Title must be at least 3 characters long";
+      valid = false;
+    } else if (formData.title.trim().length > 100) {
+      newErrors.title = "Title must not exceed 100 characters";
+      valid = false;
     }
 
     // Validate description
     if (!formData.description.trim()) {
       newErrors.description = "Description is required";
+      valid = false;
+    } else if (formData.description.trim().length < 10) {
+      newErrors.description = "Description must be at least 10 characters long";
       valid = false;
     }
 
@@ -150,12 +266,29 @@ const ChapterForm: React.FC<ChapterFormProps> = ({
             errors.title ? "border-red-500" : "border-gray-300"
           } shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 cursor-text`}
           placeholder="Enter chapter title"
+          disabled={isLoading}
         />
-        {errors.title && (
-          <p className="mt-1 text-sm text-red-500 flex items-center">
-            <Info size={14} className="mr-1" /> {errors.title}
+        <div className="mt-1 flex justify-between items-center">
+          {errors.title && (
+            <p className="text-sm text-red-500 flex items-center">
+              <Info size={14} className="mr-1" /> {errors.title}
+            </p>
+          )}
+          <p
+            className={`text-xs flex items-center ${
+              formData.title.trim().length < 3 ||
+              formData.title.trim().length > 100
+                ? "text-red-500"
+                : "text-green-600"
+            }`}
+          >
+            {formData.title.trim().length}/100 characters (min: 3)
+            {formData.title.trim().length >= 3 &&
+              formData.title.trim().length <= 100 && (
+                <span className="ml-1">✓</span>
+              )}
           </p>
-        )}
+        </div>
       </div>
 
       <div>
@@ -176,15 +309,64 @@ const ChapterForm: React.FC<ChapterFormProps> = ({
             errors.description ? "border-red-500" : "border-gray-300"
           } shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 cursor-text`}
           placeholder="Enter chapter description"
+          disabled={isLoading}
         />
-        {errors.description && (
-          <p className="mt-1 text-sm text-red-500 flex items-center">
-            <Info size={14} className="mr-1" /> {errors.description}
+        <div className="mt-1 flex justify-between items-center">
+          {errors.description && (
+            <p className="text-sm text-red-500 flex items-center">
+              <Info size={14} className="mr-1" /> {errors.description}
+            </p>
+          )}
+          <p
+            className={`text-xs flex items-center ${
+              formData.description.trim().length < 10
+                ? "text-red-500"
+                : "text-green-600"
+            }`}
+          >
+            {formData.description.trim().length}/10 characters minimum
+            {formData.description.trim().length >= 10 && (
+              <span className="ml-1">✓</span>
+            )}
           </p>
-        )}
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label
+            htmlFor="courseYear"
+            className=" text-sm font-medium text-gray-700 flex items-center"
+          >
+            <Calendar size={16} className="mr-1" /> Year{" "}
+            <span className="text-red-500 ml-1">*</span>
+          </label>
+          <select
+            id="courseYear"
+            name="courseYear"
+            value={formData.courseYear}
+            onChange={handleChange}
+            className={`mt-1 block w-full rounded-md border ${
+              errors.courseYear ? "border-red-500" : "border-gray-300"
+            } shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 cursor-pointer`}
+            disabled={isLoading}
+          >
+            {[...Array(maxCourseYears)].map((_, index) => (
+              <option key={index + 1} value={index + 1}>
+                Year {index + 1}
+              </option>
+            ))}
+          </select>
+          {errors.courseYear && (
+            <p className="mt-1 text-sm text-red-500 flex items-center">
+              <Info size={14} className="mr-1" /> {errors.courseYear}
+            </p>
+          )}
+          <p className="mt-1 text-xs text-gray-500 flex items-center">
+            <Info size={12} className="mr-1" /> Year of the course curriculum
+          </p>
+        </div>
+
         <div>
           <label
             htmlFor="orderIndex"
@@ -203,6 +385,7 @@ const ChapterForm: React.FC<ChapterFormProps> = ({
             className={`mt-1 block w-full rounded-md border ${
               errors.orderIndex ? "border-red-500" : "border-gray-300"
             } shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 cursor-text`}
+            disabled={isLoading}
           />
           {errors.orderIndex && (
             <p className="mt-1 text-sm text-red-500 flex items-center">
@@ -214,54 +397,30 @@ const ChapterForm: React.FC<ChapterFormProps> = ({
             chapters
           </p>
         </div>
-
-        <div>
-          <label
-            htmlFor="courseYear"
-            className=" text-sm font-medium text-gray-700 flex items-center"
-          >
-            <Calendar size={16} className="mr-1" /> Year{" "}
-            <span className="text-red-500 ml-1">*</span>
-          </label>
-          <select
-            id="courseYear"
-            name="courseYear"
-            value={formData.courseYear}
-            onChange={handleChange}
-            className={`mt-1 block w-full rounded-md border ${
-              errors.courseYear ? "border-red-500" : "border-gray-300"
-            } shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 cursor-pointer`}
-          >
-            {[...Array(maxCourseYears)].map((_, index) => (
-              <option key={index + 1} value={index + 1}>
-                Year {index + 1}
-              </option>
-            ))}
-          </select>
-          {errors.courseYear && (
-            <p className="mt-1 text-sm text-red-500 flex items-center">
-              <Info size={14} className="mr-1" /> {errors.courseYear}
-            </p>
-          )}
-          <p className="mt-1 text-xs text-gray-500 flex items-center">
-            <Info size={12} className="mr-1" /> Year of the course curriculum
-          </p>
-        </div>
       </div>
 
       <div className="flex justify-end space-x-3">
         <button
           type="button"
           onClick={onCancel}
-          className="inline-flex items-center justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 cursor-pointer transition-colors duration-200"
+          className={`inline-flex items-center justify-center rounded-md border border-gray-300 px-4 py-2 text-sm font-medium ${
+            isLoading
+              ? "bg-gray-100 text-gray-500 cursor-not-allowed"
+              : "bg-white text-gray-700 hover:bg-gray-50 cursor-pointer"
+          } shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors duration-200`}
+          disabled={isLoading}
         >
           <X size={16} className="mr-2" />
           Cancel
         </button>
         <button
           type="submit"
-          disabled={isLoading}
-          className="inline-flex items-center justify-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-colors duration-200"
+          disabled={isLoading || !isFormValid()}
+          className={`inline-flex items-center justify-center rounded-md border border-transparent px-4 py-2 text-sm font-medium text-white shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 ${
+            isLoading || !isFormValid()
+              ? "bg-indigo-400 cursor-not-allowed"
+              : "bg-indigo-600 hover:bg-indigo-700 cursor-pointer"
+          } transition-colors duration-200`}
         >
           <Save size={16} className="mr-2" />
           {isLoading
