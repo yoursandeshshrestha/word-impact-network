@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback } from "react";
+import { useEffect, useRef, useCallback, useState } from "react";
 import { useAppDispatch } from "./hooks";
 import {
   fetchUnreadCount,
@@ -7,6 +7,7 @@ import {
 import { fetchNotifications } from "@/redux/features/notificationsSlice";
 import websocketService, { SocketEvents } from "@/services/SocketIOService";
 import { toast } from "sonner";
+import { AuthService } from "@/utils/auth";
 
 // Define the types for message and new message data
 interface Message {
@@ -23,17 +24,19 @@ interface Message {
 }
 
 interface NewMessageData {
-  payload: {
-    message: Message;
+  message: Message;
+  notification?: {
+    id: string;
+    title: string;
+    content: string;
+    createdAt: string;
   };
 }
 
 interface NewNotificationData {
-  payload: {
-    notification: {
-      title: string;
-      content: string;
-    };
+  notification: {
+    title: string;
+    content: string;
   };
 }
 
@@ -42,23 +45,19 @@ function isNewMessageData(data: unknown): data is NewMessageData {
   if (
     typeof data === "object" &&
     data !== null &&
-    "payload" in data &&
-    typeof (data as { payload: unknown }).payload === "object" &&
-    (data as { payload: unknown }).payload !== null
+    "message" in data &&
+    typeof (data as { message: unknown }).message === "object" &&
+    (data as { message: unknown }).message !== null
   ) {
-    const payload = (data as { payload: { message: unknown } }).payload;
+    const message = (data as { message: Message }).message;
     if (
-      "message" in payload &&
-      typeof payload.message === "object" &&
-      payload.message !== null &&
-      "content" in payload.message &&
-      "sender" in payload.message &&
-      typeof (payload.message as { content: unknown }).content === "string" &&
-      typeof (payload.message as { sender: unknown }).sender === "object" &&
-      (payload.message as { sender: unknown }).sender !== null
+      "content" in message &&
+      "sender" in message &&
+      typeof message.content === "string" &&
+      typeof message.sender === "object" &&
+      message.sender !== null
     ) {
-      const sender = (payload.message as { sender: { fullName: unknown } })
-        .sender;
+      const sender = message.sender;
       return "fullName" in sender && typeof sender.fullName === "string";
     }
   }
@@ -70,17 +69,16 @@ function isNewNotificationData(data: unknown): data is NewNotificationData {
   if (
     typeof data === "object" &&
     data !== null &&
-    "payload" in data &&
-    typeof (data as { payload: unknown }).payload === "object" &&
-    (data as { payload: unknown }).payload !== null
+    "notification" in data &&
+    typeof (data as { notification: unknown }).notification === "object" &&
+    (data as { notification: unknown }).notification !== null
   ) {
-    const payload = (data as { payload: { notification: unknown } }).payload;
+    const notification = (data as { notification: unknown }).notification;
     if (
-      "notification" in payload &&
-      typeof payload.notification === "object" &&
-      payload.notification !== null &&
-      "title" in payload.notification &&
-      "content" in payload.notification
+      typeof notification === "object" &&
+      notification !== null &&
+      "title" in notification &&
+      "content" in notification
     ) {
       return true;
     }
@@ -91,34 +89,65 @@ function isNewNotificationData(data: unknown): data is NewNotificationData {
 export const useWebSocketConnection = () => {
   const dispatch = useAppDispatch();
   const reconnectTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const dispatchRef = useRef(dispatch);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const hookId = useRef(`hook-${Date.now()}-${Math.random()}`);
 
-  // Function to attempt reconnection with exponential backoff
-  const scheduleReconnect = useCallback((attempt = 1) => {
-    if (reconnectTimerRef.current) {
-      clearTimeout(reconnectTimerRef.current);
-    }
+  // Update the ref when dispatch changes
+  useEffect(() => {
+    dispatchRef.current = dispatch;
+  }, [dispatch]);
 
-    // Exponential backoff: 2^attempt * 1000 ms, capped at 30 seconds
-    const delay = Math.min(Math.pow(2, attempt) * 1000, 30000);
-
-    reconnectTimerRef.current = setTimeout(() => {
-      console.log(`Attempting to reconnect (attempt ${attempt})...`);
-
-      if (!websocketService.isConnected()) {
-        websocketService.connect();
-
-        // Schedule next reconnect attempt if still not connected
-        if (!websocketService.isConnected()) {
-          scheduleReconnect(attempt + 1);
-        }
+  // Check authentication status
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        await AuthService.getCurrentUser();
+        setIsAuthenticated(true);
+      } catch (error) {
+        console.error("Authentication check failed:", error);
+        setIsAuthenticated(false);
       }
-    }, delay);
+    };
+
+    checkAuth();
   }, []);
 
+  // Function to attempt reconnection with exponential backoff
+  const scheduleReconnect = useCallback(
+    (attempt = 1) => {
+      if (reconnectTimerRef.current) {
+        clearTimeout(reconnectTimerRef.current);
+      }
+
+      // Exponential backoff: 2^attempt * 1000 ms, capped at 30 seconds
+      const delay = Math.min(Math.pow(2, attempt) * 1000, 30000);
+
+      reconnectTimerRef.current = setTimeout(() => {
+        console.log(`Attempting to reconnect (attempt ${attempt})...`);
+
+        if (!websocketService.isConnected() && isAuthenticated) {
+          websocketService.connect();
+
+          // Schedule next reconnect attempt if still not connected
+          if (!websocketService.isConnected()) {
+            scheduleReconnect(attempt + 1);
+          }
+        }
+      }, delay);
+    },
+    [isAuthenticated]
+  );
+
   useEffect(() => {
+    // Only proceed if user is authenticated
+    if (!isAuthenticated) {
+      return;
+    }
+
     // Fetch initial unread counts
-    dispatch(fetchUnreadCount());
-    dispatch(fetchNotifications({ page: 1, limit: 10 }));
+    dispatchRef.current(fetchUnreadCount());
+    dispatchRef.current(fetchNotifications({ page: 1, limit: 10 }));
 
     // Connect to WebSocket
     websocketService.connect();
@@ -126,12 +155,9 @@ export const useWebSocketConnection = () => {
     // Handle new message notifications
     const handleNewMessage = (data: unknown) => {
       if (isNewMessageData(data)) {
-        // Update the unread count
-        dispatch(fetchUnreadCount());
-
         // Add the new message to the current conversation if we're in one
-        const message = data.payload.message;
-        dispatch(
+        const message = data.message;
+        dispatchRef.current(
           addNewMessage({
             id: message.id || `temp-${Date.now()}`,
             content: message.content,
@@ -143,42 +169,36 @@ export const useWebSocketConnection = () => {
           })
         );
 
-        // Show a toast notification
-        const sender = message.sender;
-
-        toast(
-          <div className="flex flex-col">
-            <span className="font-medium">{sender.fullName}</span>
-            <span className="text-sm truncate">{message.content}</span>
-          </div>,
-          {
-            description: "New message received",
-            action: {
-              label: "View",
-              onClick: () => {
-                // Open the chat
-                const chatButton =
-                  document.getElementById("global-chat-button");
-                if (chatButton) {
-                  chatButton.click();
-                }
-              },
-            },
-          }
-        );
+        // Show a toast notification (disabled temporarily to fix multiple toasts)
+        // const sender = message.sender;
+        // toast(
+        //   <div className="flex flex-col">
+        //     <span className="font-medium">{sender.fullName}</span>
+        //     <span className="text-sm truncate">{message.content}</span>
+        //   </div>,
+        //   {
+        //     description: "New message received",
+        //     action: {
+        //       label: "View",
+        //       onClick: () => {
+        //         // Open the chat
+        //         const chatButton =
+        //           document.getElementById("global-chat-button");
+        //         if (chatButton) {
+        //           chatButton.click();
+        //         }
+        //       },
+        //     },
+        //   }
+        // );
       }
     };
 
     // Handle new notification events
     const handleNewNotification = (data: unknown) => {
       if (isNewNotificationData(data)) {
-        console.log("New notification received", data);
-
-        // Update notifications
-        dispatch(fetchNotifications({ page: 1, limit: 10 }));
-
         // Show a toast for the new notification
-        const { title, content } = data.payload.notification;
+        const { title, content } = data.notification;
 
         toast(
           <div className="flex flex-col">
@@ -189,17 +209,13 @@ export const useWebSocketConnection = () => {
             description: "New notification",
           }
         );
-      } else {
-        // If the shape doesn't match but it's still a notification event
-        console.log("New notification received with unexpected format", data);
-        dispatch(fetchNotifications({ page: 1, limit: 10 }));
       }
     };
 
     // Handle connection events
     const handleConnected = () => {
-      dispatch(fetchUnreadCount());
-      dispatch(fetchNotifications({ page: 1, limit: 10 }));
+      dispatchRef.current(fetchUnreadCount());
+      dispatchRef.current(fetchNotifications({ page: 1, limit: 10 }));
     };
 
     // Handle connection errors
@@ -208,15 +224,32 @@ export const useWebSocketConnection = () => {
       scheduleReconnect();
     };
 
-    // Register event listeners
-    websocketService.on(SocketEvents.CONNECTED, handleConnected);
-    websocketService.on(SocketEvents.NEW_MESSAGE, handleNewMessage);
-    websocketService.on(SocketEvents.NEW_NOTIFICATION, handleNewNotification);
-    websocketService.on(SocketEvents.ERROR, handleConnectionError);
+    // Register event listeners with unique identifiers
+    const connectedHandler = () => {
+      handleConnected();
+    };
+
+    const newMessageHandler = (data: unknown) => {
+      handleNewMessage(data);
+    };
+
+    const newNotificationHandler = (data: unknown) => {
+      handleNewNotification(data);
+    };
+
+    const errorHandler = (error: unknown) => {
+      console.log(`[${hookId.current}] Error event`);
+      handleConnectionError(error);
+    };
+
+    websocketService.on(SocketEvents.CONNECTED, connectedHandler);
+    websocketService.on(SocketEvents.NEW_MESSAGE, newMessageHandler);
+    websocketService.on(SocketEvents.NEW_NOTIFICATION, newNotificationHandler);
+    websocketService.on(SocketEvents.ERROR, errorHandler);
 
     // Handle visibility change (user returns to tab)
     const handleVisibilityChange = () => {
-      if (document.visibilityState === "visible") {
+      if (document.visibilityState === "visible" && isAuthenticated) {
         // When tab becomes visible, check connection and refresh data
         if (!websocketService.isConnected()) {
           console.log("Tab became visible, reconnecting WebSocket");
@@ -224,8 +257,8 @@ export const useWebSocketConnection = () => {
         }
 
         // Refresh data when returning to tab
-        dispatch(fetchUnreadCount());
-        dispatch(fetchNotifications({ page: 1, limit: 10 }));
+        dispatchRef.current(fetchUnreadCount());
+        dispatchRef.current(fetchNotifications({ page: 1, limit: 10 }));
       }
     };
 
@@ -233,9 +266,9 @@ export const useWebSocketConnection = () => {
 
     // Set up a ping interval to keep the connection alive
     const pingInterval = setInterval(() => {
-      if (websocketService.isConnected()) {
+      if (websocketService.isConnected() && isAuthenticated) {
         websocketService.sendMessage("ping", {});
-      } else {
+      } else if (!websocketService.isConnected() && isAuthenticated) {
         // Try to reconnect if connection is lost
         websocketService.connect();
       }
@@ -246,13 +279,13 @@ export const useWebSocketConnection = () => {
       document.removeEventListener("visibilitychange", handleVisibilityChange);
 
       // Remove event listeners
-      websocketService.off(SocketEvents.CONNECTED, handleConnected);
-      websocketService.off(SocketEvents.NEW_MESSAGE, handleNewMessage);
+      websocketService.off(SocketEvents.CONNECTED, connectedHandler);
+      websocketService.off(SocketEvents.NEW_MESSAGE, newMessageHandler);
       websocketService.off(
         SocketEvents.NEW_NOTIFICATION,
-        handleNewNotification
+        newNotificationHandler
       );
-      websocketService.off(SocketEvents.ERROR, handleConnectionError);
+      websocketService.off(SocketEvents.ERROR, errorHandler);
 
       // Clear intervals and timeouts
       clearInterval(pingInterval);
@@ -263,5 +296,5 @@ export const useWebSocketConnection = () => {
       // Disconnect WebSocket
       websocketService.disconnect();
     };
-  }, [dispatch, scheduleReconnect]);
+  }, [scheduleReconnect, isAuthenticated]);
 };
