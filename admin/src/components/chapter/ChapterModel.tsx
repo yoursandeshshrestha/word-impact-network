@@ -12,6 +12,7 @@ interface ChapterModalProps {
   maxCourseYears: number;
   isLoading: boolean;
   mode: "create" | "edit";
+  existingChapters?: Array<{ orderIndex: number; courseYear: number }>;
 }
 
 const ChapterModal: React.FC<ChapterModalProps> = ({
@@ -23,6 +24,7 @@ const ChapterModal: React.FC<ChapterModalProps> = ({
   maxCourseYears,
   isLoading,
   mode,
+  existingChapters = [],
 }) => {
   if (!isOpen) return null;
 
@@ -50,6 +52,7 @@ const ChapterModal: React.FC<ChapterModalProps> = ({
           onSubmit={onSubmit}
           onCancel={onClose}
           isLoading={isLoading}
+          existingChapters={existingChapters}
         />
       </div>
     </div>
