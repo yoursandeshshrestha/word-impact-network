@@ -1,6 +1,7 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import { RootState } from "../store";
-import { getAuthToken } from "@/utils/auth";
+import { api } from "@/lib/api";
+// Remove client-side token handling - tokens are now in HTTP-only cookies
 
 // Types
 export interface EnrollmentTrend {
@@ -99,22 +100,10 @@ export const fetchAnalyticsDashboard = createAsyncThunk(
   "analytics/fetchDashboard",
   async (_, { rejectWithValue }) => {
     try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/analytics/dashboard`,
-        {
-          headers: {
-            Authorization: `Bearer ${getAuthToken()}`,
-            "Content-Type": "application/json",
-          },
-        }
+      const response = await api.get<AnalyticsDashboard>(
+        "/analytics/dashboard"
       );
-
-      if (!response.ok) {
-        throw new Error("Failed to fetch analytics dashboard");
-      }
-
-      const data = await response.json();
-      return data.data;
+      return response.data as AnalyticsDashboard;
     } catch (error) {
       return rejectWithValue((error as Error).message);
     }
@@ -125,22 +114,10 @@ export const fetchEnrollmentTrends = createAsyncThunk(
   "analytics/fetchEnrollmentTrends",
   async (period: "week" | "month" | "year" = "month", { rejectWithValue }) => {
     try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/analytics/enrollment-trends?period=${period}`,
-        {
-          headers: {
-            Authorization: `Bearer ${getAuthToken()}`,
-            "Content-Type": "application/json",
-          },
-        }
+      const response = await api.get<{ trends: EnrollmentTrend[] }>(
+        `/analytics/enrollment-trends?period=${period}`
       );
-
-      if (!response.ok) {
-        throw new Error("Failed to fetch enrollment trends");
-      }
-
-      const data = await response.json();
-      return data.data.trends;
+      return (response.data as { trends: EnrollmentTrend[] }).trends;
     } catch (error) {
       return rejectWithValue((error as Error).message);
     }
@@ -151,22 +128,10 @@ export const fetchCourseCompletionRates = createAsyncThunk(
   "analytics/fetchCourseCompletionRates",
   async (_, { rejectWithValue }) => {
     try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/analytics/course-completion`,
-        {
-          headers: {
-            Authorization: `Bearer ${getAuthToken()}`,
-            "Content-Type": "application/json",
-          },
-        }
+      const response = await api.get<CourseCompletionRate[]>(
+        "/analytics/course-completion"
       );
-
-      if (!response.ok) {
-        throw new Error("Failed to fetch course completion rates");
-      }
-
-      const data = await response.json();
-      return data.data;
+      return response.data as CourseCompletionRate[];
     } catch (error) {
       return rejectWithValue((error as Error).message);
     }
@@ -177,22 +142,10 @@ export const fetchVideoEngagement = createAsyncThunk(
   "analytics/fetchVideoEngagement",
   async (limit: number = 10, { rejectWithValue }) => {
     try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/analytics/video-engagement?limit=${limit}`,
-        {
-          headers: {
-            Authorization: `Bearer ${getAuthToken()}`,
-            "Content-Type": "application/json",
-          },
-        }
+      const response = await api.get<VideoEngagement[]>(
+        `/analytics/video-engagement?limit=${limit}`
       );
-
-      if (!response.ok) {
-        throw new Error("Failed to fetch video engagement metrics");
-      }
-
-      const data = await response.json();
-      return data.data;
+      return response.data as VideoEngagement[];
     } catch (error) {
       return rejectWithValue((error as Error).message);
     }
@@ -203,22 +156,10 @@ export const fetchExamPerformance = createAsyncThunk(
   "analytics/fetchExamPerformance",
   async (_, { rejectWithValue }) => {
     try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/analytics/exam-performance`,
-        {
-          headers: {
-            Authorization: `Bearer ${getAuthToken()}`,
-            "Content-Type": "application/json",
-          },
-        }
+      const response = await api.get<ExamPerformance[]>(
+        "/analytics/exam-performance"
       );
-
-      if (!response.ok) {
-        throw new Error("Failed to fetch exam performance metrics");
-      }
-
-      const data = await response.json();
-      return data.data;
+      return response.data as ExamPerformance[];
     } catch (error) {
       return rejectWithValue((error as Error).message);
     }
@@ -229,22 +170,10 @@ export const fetchStudentProgress = createAsyncThunk(
   "analytics/fetchStudentProgress",
   async (limit: number = 10, { rejectWithValue }) => {
     try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/analytics/student-progress?limit=${limit}`,
-        {
-          headers: {
-            Authorization: `Bearer ${getAuthToken()}`,
-            "Content-Type": "application/json",
-          },
-        }
+      const response = await api.get<StudentProgress[]>(
+        `/analytics/student-progress?limit=${limit}`
       );
-
-      if (!response.ok) {
-        throw new Error("Failed to fetch student progress data");
-      }
-
-      const data = await response.json();
-      return data.data;
+      return response.data as StudentProgress[];
     } catch (error) {
       return rejectWithValue((error as Error).message);
     }
@@ -255,22 +184,10 @@ export const fetchGeographicDistribution = createAsyncThunk(
   "analytics/fetchGeographicDistribution",
   async (_, { rejectWithValue }) => {
     try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/analytics/geographic-distribution`,
-        {
-          headers: {
-            Authorization: `Bearer ${getAuthToken()}`,
-            "Content-Type": "application/json",
-          },
-        }
+      const response = await api.get<CountryDistribution[]>(
+        "/analytics/geographic-distribution"
       );
-
-      if (!response.ok) {
-        throw new Error("Failed to fetch geographic distribution");
-      }
-
-      const data = await response.json();
-      return data.data;
+      return response.data as CountryDistribution[];
     } catch (error) {
       return rejectWithValue((error as Error).message);
     }
@@ -281,22 +198,10 @@ export const fetchReferralStats = createAsyncThunk(
   "analytics/fetchReferralStats",
   async (_, { rejectWithValue }) => {
     try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/analytics/referral-stats`,
-        {
-          headers: {
-            Authorization: `Bearer ${getAuthToken()}`,
-            "Content-Type": "application/json",
-          },
-        }
+      const response = await api.get<CourseReferralStats[]>(
+        "/analytics/referral-stats"
       );
-
-      if (!response.ok) {
-        throw new Error("Failed to fetch referral statistics");
-      }
-
-      const data = await response.json();
-      return data.data;
+      return response.data as CourseReferralStats[];
     } catch (error) {
       return rejectWithValue((error as Error).message);
     }
