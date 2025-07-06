@@ -1,21 +1,57 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { getAuthToken } from "@/utils/auth";
+import { isAuthenticated, AuthService } from "@/utils/auth";
+
+interface User {
+  id: string;
+  email: string;
+  fullName: string;
+  role: string;
+}
 
 export const useAuth = (requireAuth: boolean = true) => {
   const router = useRouter();
+  const [authStatus, setAuthStatus] = useState<boolean | null>(null);
+  const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
-    const token = getAuthToken();
+    const checkAuth = async () => {
+      try {
+        const authenticated = await isAuthenticated();
+        setAuthStatus(authenticated);
 
-    if (requireAuth && !token) {
-      router.push("/auth/login");
-    } else if (!requireAuth && token) {
-      router.push("/dashboard");
-    }
+        if (authenticated) {
+          // Fetch user data if authenticated
+          const userData = await AuthService.getCurrentUser();
+          if (userData) {
+            setUser({
+              id: userData.id,
+              email: userData.email,
+              fullName: userData.fullName,
+              role: userData.role,
+            });
+          }
+        }
+
+        if (requireAuth && !authenticated) {
+          router.push("/auth/login");
+        } else if (!requireAuth && authenticated) {
+          router.push("/dashboard");
+        }
+      } catch (error) {
+        console.error("Auth check failed:", error);
+        setAuthStatus(false);
+        if (requireAuth) {
+          router.push("/auth/login");
+        }
+      }
+    };
+
+    checkAuth();
   }, [router, requireAuth]);
 
   return {
-    isAuthenticated: !!getAuthToken(),
+    isAuthenticated: authStatus,
+    user,
   };
 };
