@@ -11,7 +11,7 @@ import ChapterModal from "@/components/chapter/ChapterModel";
 import DeleteChapterModal from "@/components/chapter/DeleteChapterModel";
 import VideoModal from "@/components/videos/VideoModel";
 import DeleteVideoModal from "@/components/videos/DeleteVideoModal";
-import VideoPlayer from "@/components/videos/VideoPlayer";
+import VimeoPlayer from "@/components/videos/VimeoPlayer";
 import VideoCard from "@/components/videos/VideoCard";
 import Loading from "@/components/common/Loading";
 import NoDataFound from "@/components/common/NoDataFound";
@@ -37,10 +37,10 @@ import { Video as VideoType } from "@/redux/features/videosSlice";
 import { Exam } from "@/redux/features/examsSlice";
 
 interface ChapterDetailPageProps {
-  params: {
+  params: Promise<{
     id: string; // courseId
     chapterId: string;
-  };
+  }>;
 }
 
 // Define ChapterFormData type
@@ -57,26 +57,31 @@ interface ChapterWithExam extends Chapter {
 }
 
 const ChapterDetailPage: React.FC<ChapterDetailPageProps> = ({ params }) => {
-  const { id: courseId, chapterId } = params;
+  const unwrappedParams = React.use(params);
+  const { id: courseId, chapterId } = unwrappedParams;
   const router = useRouter();
 
   const {
     chapter,
+    chapters: allChapters,
     loading: chapterLoading,
     error: chapterError,
     success: chapterSuccess,
     message: chapterMessage,
     fetchChapterById,
+    fetchChaptersByCourse,
     editChapter,
     removeChapter,
     reset: resetChapter,
   } = useChapter() as {
     chapter: ChapterWithExam;
+    chapters: Chapter[];
     loading: boolean;
     error: string | null;
     success: boolean;
     message: string;
     fetchChapterById: (id: string) => void;
+    fetchChaptersByCourse: (courseId: string) => void;
     editChapter: (id: string, data: ChapterWithExam) => void;
     removeChapter: (id: string) => void;
     reset: () => void;
@@ -92,12 +97,18 @@ const ChapterDetailPage: React.FC<ChapterDetailPageProps> = ({ params }) => {
     message: videoMessage,
     uploadProgress,
     isUploading,
+    shouldCloseModal,
+    shouldCloseDeleteModal,
     fetchVideosByChapter,
     uploadVideo,
+    uploadVideoWithVimeo,
     editVideo,
     removeVideo,
     reset: resetVideo,
+    resetStatusOnly,
     clearVideosList,
+    closeModal,
+    closeDeleteModal,
   } = useVideo();
 
   const {
@@ -124,15 +135,19 @@ const ChapterDetailPage: React.FC<ChapterDetailPageProps> = ({ params }) => {
     title: string;
   } | null>(null);
   const [videoToPlay, setVideoToPlay] = useState<VideoType | null>(null);
+  const [isVideoUploading, setIsVideoUploading] = useState(false);
 
   useEffect(() => {
     fetchChapterById(chapterId);
     fetchCourseById(courseId);
     fetchVideosByChapter(chapterId);
+    fetchChaptersByCourse(courseId);
 
     // Cleanup when component unmounts
     return () => {
       clearVideosList();
+      closeModal();
+      closeDeleteModal();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [chapterId, courseId]);
@@ -167,18 +182,8 @@ const ChapterDetailPage: React.FC<ChapterDetailPageProps> = ({ params }) => {
     // Handle video-related success/error
     if (videoSuccess && videoMessage) {
       toast.success(videoMessage);
-
-      // Close video modals
-      setIsVideoModalOpen(false);
-      setIsDeleteVideoModalOpen(false);
-      setVideoToEdit(null);
-      setVideoToDelete(null);
-
-      // Reset status in Redux
-      resetVideo();
-
-      // Refresh videos
-      fetchVideosByChapter(chapterId);
+      // Don't reset immediately - let the modal close first
+      // The video is already in Redux state
     }
 
     if (videoError) {
@@ -199,6 +204,7 @@ const ChapterDetailPage: React.FC<ChapterDetailPageProps> = ({ params }) => {
       toast.error(examError);
       resetExam();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     chapterSuccess,
     chapterMessage,
@@ -210,14 +216,35 @@ const ChapterDetailPage: React.FC<ChapterDetailPageProps> = ({ params }) => {
     examMessage,
     examError,
     resetChapter,
-    resetVideo,
     resetExam,
     courseId,
     chapterId,
     fetchChapterById,
-    fetchVideosByChapter,
     router,
   ]);
+
+  // Handle modal closing based on Redux state
+  useEffect(() => {
+    if (shouldCloseModal) {
+      setIsVideoModalOpen(false);
+      setVideoToEdit(null);
+      setIsVideoUploading(false);
+      closeModal();
+      // Reset only status flags, not the videos array
+      resetStatusOnly();
+    }
+  }, [shouldCloseModal, closeModal, resetStatusOnly]);
+
+  // Handle delete modal closing based on Redux state
+  useEffect(() => {
+    if (shouldCloseDeleteModal) {
+      setIsDeleteVideoModalOpen(false);
+      setVideoToDelete(null);
+      closeDeleteModal();
+      // Reset only status flags, not the videos array
+      resetStatusOnly();
+    }
+  }, [shouldCloseDeleteModal, closeDeleteModal, resetStatusOnly]);
 
   const handleEditChapter = (chapterData: ChapterFormData) => {
     if (chapter) {
@@ -260,7 +287,13 @@ const ChapterDetailPage: React.FC<ChapterDetailPageProps> = ({ params }) => {
   };
 
   const handleUploadVideo = (formData: FormData) => {
-    uploadVideo(chapterId, formData);
+    // Check if this is a direct-to-Vimeo upload (has vimeoId)
+    const vimeoId = formData.get("vimeoId");
+    if (vimeoId) {
+      uploadVideoWithVimeo(chapterId, formData);
+    } else {
+      uploadVideo(chapterId, formData);
+    }
   };
 
   const handleUpdateVideo = (formData: FormData) => {
@@ -297,6 +330,8 @@ const ChapterDetailPage: React.FC<ChapterDetailPageProps> = ({ params }) => {
 
   const videoCount = videos.length;
   const hasExam = !!chapter.exam;
+
+  // Debug logging
 
   return (
     <div className="p-6">
@@ -583,6 +618,10 @@ const ChapterDetailPage: React.FC<ChapterDetailPageProps> = ({ params }) => {
         maxCourseYears={course?.durationYears || 1}
         isLoading={chapterLoading}
         mode="edit"
+        existingChapters={allChapters.map((chapter) => ({
+          orderIndex: chapter.orderIndex,
+          courseYear: chapter.courseYear,
+        }))}
       />
 
       {/* Delete Chapter Modal */}
@@ -598,10 +637,8 @@ const ChapterDetailPage: React.FC<ChapterDetailPageProps> = ({ params }) => {
       <VideoModal
         isOpen={isVideoModalOpen}
         onClose={() => {
-          if (!isUploading) {
-            setIsVideoModalOpen(false);
-            setVideoToEdit(null);
-          }
+          setIsVideoModalOpen(false);
+          setVideoToEdit(null);
         }}
         onSubmit={videoToEdit ? handleUpdateVideo : handleUploadVideo}
         initialData={
@@ -615,8 +652,10 @@ const ChapterDetailPage: React.FC<ChapterDetailPageProps> = ({ params }) => {
         }
         isLoading={videoLoading}
         uploadProgress={uploadProgress}
-        isUploading={isUploading}
+        isUploading={isUploading || isVideoUploading}
         mode={videoToEdit ? "edit" : "create"}
+        onUploadStateChange={setIsVideoUploading}
+        existingVideos={videos}
       />
 
       {/* Delete Video Modal */}
@@ -630,7 +669,7 @@ const ChapterDetailPage: React.FC<ChapterDetailPageProps> = ({ params }) => {
 
       {/* Video Player */}
       {isVideoPlayerOpen && videoToPlay && (
-        <VideoPlayer
+        <VimeoPlayer
           video={videoToPlay}
           onClose={() => {
             setIsVideoPlayerOpen(false);
