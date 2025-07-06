@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useRef } from "react";
 import { useAppDispatch, useAppSelector } from "./hooks";
 import {
   fetchStudents,
@@ -30,6 +30,9 @@ export const useStudents = () => {
   // Local state for debounce
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState(searchQuery);
 
+  // Ref to track if we should skip the next fetch (to prevent infinite loops)
+  const skipNextFetchRef = useRef(false);
+
   // Update the debounced value after delay
   useEffect(() => {
     const handler = setTimeout(() => {
@@ -41,20 +44,47 @@ export const useStudents = () => {
     };
   }, [searchQuery]);
 
+  // Stable fetch function
+  const fetchStudentsStable = useCallback(
+    (params: { search?: string; page?: number; limit?: number } = {}) => {
+      if (skipNextFetchRef.current) {
+        skipNextFetchRef.current = false;
+        return;
+      }
+      return dispatch(fetchStudents(params));
+    },
+    [dispatch]
+  );
+
   // Fetch students when debounced search term or pagination changes
   useEffect(() => {
-    dispatch(
-      fetchStudents({
-        search: debouncedSearchTerm,
-        page: pagination.currentPage,
-        limit: pagination.limit,
-      })
-    );
-  }, [debouncedSearchTerm, pagination.currentPage, pagination.limit, dispatch]);
+    // Skip fetch if there's an error to prevent infinite retries
+    if (error) {
+      // Don't retry if it's an authentication error
+      if (error.includes("Authentication failed")) {
+        console.log("Authentication failed, stopping retries");
+        return;
+      }
+      return;
+    }
+
+    fetchStudentsStable({
+      search: debouncedSearchTerm,
+      page: pagination.currentPage,
+      limit: pagination.limit,
+    });
+  }, [
+    debouncedSearchTerm,
+    pagination.currentPage,
+    pagination.limit,
+    fetchStudentsStable,
+    error,
+  ]);
 
   // Fetch all students
   const loadStudents = useCallback(() => {
-    dispatch(fetchStudents({ search: "" }));
+    skipNextFetchRef.current = false; // Reset skip flag
+    return dispatch(fetchStudents({ search: "" }));
   }, [dispatch]);
 
   // Update search query
