@@ -24,21 +24,13 @@ export const useDashboard = () => {
     return dispatch(fetchDashboardStats());
   }, [dispatch]);
 
-  // Initial load on mount
+  // Load dashboard data on mount
   useEffect(() => {
-    // If data hasn't been fetched before or it's been more than 5 minutes since last fetch
-    if (!dashboardData || !lastFetched || isDataStale(lastFetched)) {
-      loadDashboardData();
+    // Only fetch if data hasn't been fetched before AND no data exists
+    if (!lastFetched && !dashboardData) {
+      dispatch(fetchDashboardStats());
     }
-  }, [dashboardData, lastFetched, loadDashboardData]);
-
-  // Helper to determine if data is stale (more than 5 minutes old)
-  const isDataStale = (lastFetchedTime: string) => {
-    const now = new Date();
-    const lastFetch = new Date(lastFetchedTime);
-    // Check if data is older than 5 minutes (300000 milliseconds)
-    return now.getTime() - lastFetch.getTime() > 300000;
-  };
+  }, [lastFetched, dashboardData, dispatch]);
 
   // Clear error
   const resetError = useCallback(() => {
@@ -47,8 +39,8 @@ export const useDashboard = () => {
 
   // Refresh data on demand
   const refreshDashboard = useCallback(() => {
-    return loadDashboardData();
-  }, [loadDashboardData]);
+    return dispatch(fetchDashboardStats());
+  }, [dispatch]);
 
   return {
     // State
