@@ -1,6 +1,4 @@
-import { redirect } from "next/navigation";
-
 export default function RootPage() {
-  redirect("/dashboard");
+  // The middleware will handle redirects based on authentication status
   return null;
 }
