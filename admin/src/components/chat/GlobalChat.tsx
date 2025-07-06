@@ -43,6 +43,14 @@ const GlobalChat: React.FC = () => {
     }
   }, [isOpen, showConversation, getConversations, unreadCount]);
 
+  // Refresh conversations list when unread count changes (for real-time updates)
+  useEffect(() => {
+    if (isOpen) {
+      // Refresh conversations list when unread count changes to update individual conversation unread counts
+      getConversations();
+    }
+  }, [unreadCount, isOpen, getConversations]);
+
   // Refresh conversation messages when conversation view is opened - real-time updates handled by Socket.IO
   useEffect(() => {
     if (isOpen && showConversation && selectedStudent) {
@@ -51,10 +59,37 @@ const GlobalChat: React.FC = () => {
     }
   }, [isOpen, showConversation, selectedStudent, getConversationMessages]);
 
+  // Auto-mark conversation as read when new messages arrive in an open conversation
+  useEffect(() => {
+    if (isOpen && showConversation && selectedStudent && unreadCount > 0) {
+      // Check if the current conversation has unread messages
+      const conversation = conversations.find(
+        (c) => c.partner.id === selectedStudent.id
+      );
+      if (conversation && conversation.unreadCount > 0) {
+        // Automatically mark the conversation as read since it's currently open
+        readConversation(selectedStudent.id).then(() => {
+          // Update the global unread count after marking as read
+          fetchUnreadCount();
+        });
+      }
+    }
+  }, [
+    isOpen,
+    showConversation,
+    selectedStudent,
+    unreadCount,
+    conversations,
+    readConversation,
+    fetchUnreadCount,
+  ]);
+
   // Initial load of conversations (only when chat is opened)
   useEffect(() => {
     if (isOpen && !showConversation) {
-      getConversations();
+      getConversations()
+        .then(() => {})
+        .catch(() => {});
     }
   }, [isOpen, showConversation, getConversations]);
 
@@ -67,7 +102,10 @@ const GlobalChat: React.FC = () => {
     // If there are unread messages, mark the conversation as read
     const conversation = conversations.find((c) => c.partner.id === student.id);
     if (conversation && conversation.unreadCount > 0) {
-      readConversation(student.id);
+      readConversation(student.id).then(() => {
+        // Update the global unread count after marking as read
+        fetchUnreadCount();
+      });
     }
   };
 
