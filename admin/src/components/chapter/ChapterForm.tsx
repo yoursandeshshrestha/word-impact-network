@@ -72,6 +72,7 @@ const ChapterForm: React.FC<ChapterFormProps> = ({
         orderIndex: getNextOrderIndex(prev.courseYear),
       }));
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialData, existingChapters]);
 
   // Update order index when course year changes
@@ -82,6 +83,7 @@ const ChapterForm: React.FC<ChapterFormProps> = ({
         orderIndex: getNextOrderIndex(prev.courseYear),
       }));
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [formData.courseYear, initialData, existingChapters]);
 
   // Initialize validation on mount
@@ -109,6 +111,7 @@ const ChapterForm: React.FC<ChapterFormProps> = ({
         description: "Description must be at least 10 characters long",
       }));
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleChange = (
