@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
-import { AuthService, setAuthToken, setUserInfo } from "@/utils/auth";
+import { AuthService } from "@/utils/auth";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 
 const Login = () => {
@@ -54,22 +54,9 @@ const Login = () => {
       );
       console.log("Login response:", response);
 
-      if (!response.data.token || !response.data.admin) {
+      if (!response.data.admin) {
         throw new Error("Invalid response from server");
       }
-
-      // Set auth token using utility function
-      setAuthToken(response.data.token, rememberMe);
-
-      // Set user info using utility function
-      setUserInfo(
-        {
-          id: response.data.admin.id,
-          email: response.data.admin.email,
-          fullName: response.data.admin.fullName,
-        },
-        rememberMe
-      );
 
       toast.success(response.message || "Login successful");
 
