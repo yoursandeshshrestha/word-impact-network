@@ -1,36 +1,24 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React from "react";
 import Sidebar from "@/components/layout/Sidebar";
-import { getUserInfo } from "@/utils/auth";
 import Topbar from "@/components/layout/Topbar";
+import GlobalChat from "@/components/chat/GlobalChat";
 import { Toaster } from "sonner";
+import { useAuth } from "@/hooks/useAuth";
 import { useWebSocketConnection } from "@/hooks/useWebSocketConnection";
-import dynamic from "next/dynamic";
-
-// Dynamically import the GlobalChat component with no SSR
-const GlobalChat = dynamic(() => import("@/components/chat/GlobalChat"), {
-  ssr: false,
-});
 
 export default function ProtectedLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const [userName, setUserName] = useState("Admin User");
-  const [userEmail, setUserEmail] = useState("admin@example.com");
+  const { user } = useAuth();
 
-  // Initialize WebSocket connection using your existing hook
+  // Initialize WebSocket connection for real-time chat
   useWebSocketConnection();
 
-  useEffect(() => {
-    const userInfo = getUserInfo();
-
-    if (userInfo) {
-      setUserName(userInfo.fullName);
-      setUserEmail(userInfo.email);
-    }
-  }, []);
+  const userName = user?.fullName || "Admin User";
+  const userEmail = user?.email || "admin@gmail.com";
 
   return (
     <div className="flex h-screen bg-gray-50">
@@ -43,9 +31,8 @@ export default function ProtectedLayout({
           {children}
         </main>
       </div>
-      <Toaster position="top-right" richColors />
-      {/* Include GlobalChat component */}
       <GlobalChat />
+      <Toaster position="top-right" richColors />
     </div>
   );
 }
