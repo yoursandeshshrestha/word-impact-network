@@ -95,9 +95,14 @@ export const useNotifications = () => {
 
   // Initial load on mount - real-time updates handled by Socket.IO
   useEffect(() => {
+    // Skip fetch if there's an error to prevent infinite retries
+    if (error) {
+      return;
+    }
+
     // Load initial notifications
     loadNotifications();
-  }, [loadNotifications]);
+  }, [loadNotifications, error]);
 
   return {
     // State
