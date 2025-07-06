@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useStudents } from "@/hooks/useStudent";
 import StudentsList from "@/components/students/StudentsList";
 import StudentDetailsDrawer from "@/components/students/StudentDetailsDrawer";
@@ -29,15 +29,20 @@ const StudentsPage: React.FC = () => {
   const [showDetails, setShowDetails] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
 
+  // Stable retry function
+  const retryLoadStudents = useCallback(() => {
+    loadStudents();
+  }, [loadStudents]);
+
   useEffect(() => {
     if (error && retryCount < 3) {
       const timer = setTimeout(() => {
-        loadStudents();
+        retryLoadStudents();
         setRetryCount((prev) => prev + 1);
       }, 2000);
       return () => clearTimeout(timer);
     }
-  }, [error, retryCount, loadStudents]);
+  }, [error, retryCount, retryLoadStudents]);
 
   useEffect(() => {
     if (!error) {
