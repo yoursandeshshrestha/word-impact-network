@@ -1,6 +1,6 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import { RootState } from "../store";
-import { getAuthToken } from "@/utils/auth";
+// Remove client-side token handling - tokens are now in HTTP-only cookies  
 
 // Types
 export interface AdminStatistics {
@@ -59,9 +59,9 @@ export const fetchAdminProfile = createAsyncThunk(
 
       const response = await fetch(`${apiUrl}/admin/profile`, {
         headers: {
-          Authorization: `Bearer ${getAuthToken()}`,
           "Content-Type": "application/json",
         },
+        credentials: "include", // Include cookies for authentication
       });
 
       if (!response.ok) {
@@ -94,9 +94,9 @@ export const requestPasswordReset = createAsyncThunk(
       const response = await fetch(`${apiUrl}/admin/request-password-reset`, {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${getAuthToken()}`,
           "Content-Type": "application/json",
         },
+        credentials: "include", // Include cookies for authentication
         body: JSON.stringify(passwordData),
       });
 
@@ -124,9 +124,9 @@ export const verifyPasswordReset = createAsyncThunk(
       const response = await fetch(`${apiUrl}/admin/verify-password-reset`, {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${getAuthToken()}`,
           "Content-Type": "application/json",
         },
+        credentials: "include", // Include cookies for authentication
         body: JSON.stringify(verificationData),
       });
 
