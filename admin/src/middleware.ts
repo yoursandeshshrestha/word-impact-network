@@ -199,7 +199,6 @@ export const config = {
     "/applications/:path*",
     "/students",
     "/announcements",
-    "/test",
     // Auth routes
     "/auth/:path*",
   ],
