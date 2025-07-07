@@ -1,4 +1,3 @@
-import Cookies from "js-cookie";
 import { toast } from "sonner";
 
 export interface User {
@@ -7,102 +6,25 @@ export interface User {
   fullName: string;
 }
 
-// Cookie expiration options
-const COOKIE_OPTIONS = {
-  secure: process.env.NODE_ENV === "production",
-  sameSite: "lax" as const,
-  path: "/",
-};
-
-/**
- * Set authentication token in cookies
- */
-export const setAuthToken = (token: string, rememberMe: boolean = false) => {
-  const expiryDays = rememberMe ? 30 : 1; // 30 days or 1 day
-  Cookies.set("authToken", token, {
-    ...COOKIE_OPTIONS,
-    expires: expiryDays,
-    sameSite: "strict", // Use strict for better security
-  });
-};
-
-/**
- * Set user info in cookies
- */
-export const setUserInfo = (user: User, rememberMe: boolean = false) => {
-  const expiryDays = rememberMe ? 30 : 1;
-  Cookies.set("user", JSON.stringify(user), {
-    ...COOKIE_OPTIONS,
-    expires: expiryDays,
-    sameSite: "strict", // Use strict for better security
-  });
-};
-
-/**
- * Get authentication token from cookies
- */
-export const getAuthToken = (): string | undefined => {
-  return Cookies.get("authToken");
-};
-
-/**
- * Get user info from cookies
- */
-export const getUserInfo = (): User | null => {
-  const userJson = Cookies.get("user");
-  if (!userJson) return null;
-
-  try {
-    return JSON.parse(userJson) as User;
-  } catch (error) {
-    console.error("Error parsing user info:", error);
-    return null;
-  }
-};
-
-/**
- * Check if user is authenticated
- */
-export const isAuthenticated = (): boolean => {
-  return !!getAuthToken();
-};
-
-/**
- * Remove authentication data (logout)
- */
-export const logout = () => {
-  Cookies.remove("authToken");
-  Cookies.remove("user");
-
-  toast.success("You have been logged out successfully");
-};
-
 /**
  * Authentication API service
  */
 export const AuthService = {
   login: async (email: string, password: string) => {
     try {
-      console.log("Login attempt with:", { email });
       const url = `${process.env.NEXT_PUBLIC_API_URL}/admin/login-admin`;
-      console.log("Login URL:", url);
 
       const response = await fetch(url, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
+        credentials: "include", // Important: include cookies
         body: JSON.stringify({
           email: email,
           password: password,
         }),
       });
-
-      console.log("Login response status:", response.status);
-      console.log(
-        "Login response headers:",
-        Object.fromEntries(response.headers.entries())
-      );
 
       // Check if the response is JSON
       const contentType = response.headers.get("content-type");
@@ -113,7 +35,6 @@ export const AuthService = {
       }
 
       const data = await response.json();
-      console.log("Login response data:", data);
 
       if (!response.ok) {
         throw new Error(data.message || "Login failed");
@@ -124,14 +45,13 @@ export const AuthService = {
         throw new Error(data.message || "Login failed");
       }
 
-      if (!data.data || !data.data.token || !data.data.admin) {
+      if (!data.data || !data.data.admin) {
         throw new Error("Invalid response format from server");
       }
 
       return {
         message: data.message,
         data: {
-          token: data.data.token,
           admin: {
             id: data.data.admin.id,
             email: data.data.admin.email,
@@ -141,7 +61,6 @@ export const AuthService = {
         },
       };
     } catch (error) {
-      console.error("Login error:", error);
       if (error instanceof Error) {
         throw error;
       }
@@ -156,9 +75,7 @@ export const AuthService = {
     adminCreationSecret: string;
   }) => {
     try {
-      console.log("Registration attempt with:", { email: formData.email });
       const url = `${process.env.NEXT_PUBLIC_API_URL}/admin/create-admin`;
-      console.log("Registration URL:", url);
 
       const response = await fetch(url, {
         method: "POST",
@@ -169,8 +86,6 @@ export const AuthService = {
         credentials: "include",
       });
 
-      console.log("Registration response status:", response.status);
-
       // Check if the response is JSON
       const contentType = response.headers.get("content-type");
       if (!contentType || !contentType.includes("application/json")) {
@@ -180,7 +95,6 @@ export const AuthService = {
       }
 
       const data = await response.json();
-      console.log("Registration response data:", data);
 
       if (!response.ok) {
         throw new Error(data.message || "Registration failed");
@@ -188,11 +102,183 @@ export const AuthService = {
 
       return data;
     } catch (error) {
-      console.error("Registration error:", error);
       if (error instanceof Error) {
         throw error;
       }
       throw new Error("An unknown error occurred during registration");
     }
   },
+
+  logout: async () => {
+    try {
+      const url = `${process.env.NEXT_PUBLIC_API_URL}/admin/logout`;
+
+      const response = await fetch(url, {
+        method: "POST",
+        credentials: "include", // Important: include cookies
+      });
+
+      if (response.ok) {
+        toast.success("You have been logged out successfully");
+      }
+    } catch {
+      // Silent error handling for logout
+    }
+  },
+
+  refreshToken: async () => {
+    try {
+      const url = `${process.env.NEXT_PUBLIC_API_URL}/admin/refresh-token`;
+
+      const response = await fetch(url, {
+        method: "POST",
+        credentials: "include", // Important: include cookies
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        return data.data;
+      } else {
+        throw new Error("Token refresh failed");
+      }
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  getCurrentUser: async () => {
+    try {
+      const url = `${process.env.NEXT_PUBLIC_API_URL}/admin/profile`;
+
+      const response = await fetch(url, {
+        method: "GET",
+        credentials: "include", // Important: include cookies
+      });
+
+      // Check if this is an authentication error
+      if (response.status === 401) {
+        // Don't throw error for auth failures - let the API client handle it
+        return null;
+      }
+
+      if (response.ok) {
+        const data = await response.json();
+        return data.data;
+      } else {
+        throw new Error("Failed to get current user");
+      }
+    } catch {
+      // Don't throw error for auth failures - let the API client handle it
+      return null;
+    }
+  },
+};
+
+/**
+ * Check if user is authenticated by making a request to the server
+ */
+export const isAuthenticated = async (): Promise<boolean> => {
+  try {
+    const user = await AuthService.getCurrentUser();
+    return user !== null;
+  } catch {
+    return false;
+  }
+};
+
+// Global state to prevent multiple redirects
+let globalRedirectInProgress = false;
+
+/**
+ * Safe redirect to login that prevents multiple redirects
+ */
+export const safeRedirectToLogin = (): void => {
+  if (globalRedirectInProgress) {
+    return;
+  }
+
+  globalRedirectInProgress = true;
+
+  // Use setTimeout to ensure the redirect happens after the current execution context
+  setTimeout(() => {
+    if (
+      typeof window !== "undefined" &&
+      window.location.pathname !== "/auth/login"
+    ) {
+      window.location.href = "/auth/login";
+    }
+  }, 100);
+};
+
+/**
+ * Reset the global redirect flag (useful for testing or manual redirects)
+ */
+export const resetRedirectFlag = (): void => {
+  globalRedirectInProgress = false;
+};
+
+/**
+ * Remove authentication data (logout)
+ */
+export const logout = async () => {
+  await AuthService.logout();
+  // Use safe redirect instead of direct window.location.href
+  safeRedirectToLogin();
+};
+
+/**
+ * Handle authentication during uploads
+ * This function checks if the user is still authenticated and provides appropriate feedback
+ */
+export const handleUploadAuthentication = async (): Promise<{
+  isAuthenticated: boolean;
+  shouldRefresh: boolean;
+  message?: string;
+}> => {
+  try {
+    // Check if user is still authenticated
+    const user = await AuthService.getCurrentUser();
+    if (user) {
+      return { isAuthenticated: true, shouldRefresh: false };
+    }
+  } catch {
+    // Silent error handling for authentication check
+  }
+
+  // If we get here, authentication has failed
+  return {
+    isAuthenticated: false,
+    shouldRefresh: true,
+    message:
+      "Your session has expired. Please refresh the page and try uploading again.",
+  };
+};
+
+/**
+ * Refresh authentication and retry operation
+ */
+export const refreshAndRetry = async <T>(
+  operation: () => Promise<T>
+): Promise<T> => {
+  try {
+    // First try the operation
+    return await operation();
+  } catch (error) {
+    // If it's an auth error, try to refresh and retry
+    if (
+      error instanceof Error &&
+      error.message.includes("Authentication failed")
+    ) {
+      try {
+        await AuthService.refreshToken();
+        // Retry the operation after refresh
+        return await operation();
+      } catch {
+        throw new Error(
+          "Authentication failed. Please refresh the page and try again."
+        );
+      }
+    }
+    throw error;
+  }
 };
