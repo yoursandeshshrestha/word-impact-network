@@ -89,3 +89,46 @@ export const clearFrontendAuthCookies = (res: any) => {
   res.clearCookie('client-access-token-win', { path: '/' });
   res.clearCookie('client-refresh-token-win', { path: '/' });
 };
+
+/**
+ * Intelligently select tokens based on request context
+ * Prioritizes admin tokens for admin routes and frontend tokens for student routes
+ * @param req Express request object
+ * @returns TokenSelection object with the most appropriate tokens
+ */
+export const selectTokens = (req: Request): TokenSelection => {
+  const isAdminRoute = req.path.startsWith('/admin');
+  const isStudentRoute = req.path.startsWith('/student') || req.path.startsWith('/mylearning');
+
+  // For admin routes, prioritize admin tokens
+  if (isAdminRoute) {
+    const adminTokens = getAdminTokens(req);
+    if (adminTokens.tokenType === 'admin') {
+      return adminTokens;
+    }
+  }
+
+  // For student routes, prioritize frontend tokens
+  if (isStudentRoute) {
+    const frontendTokens = getFrontendTokens(req);
+    if (frontendTokens.tokenType === 'frontend') {
+      return frontendTokens;
+    }
+  }
+
+  // For ambiguous routes, try admin tokens first, then frontend tokens
+  const adminTokens = getAdminTokens(req);
+  if (adminTokens.tokenType === 'admin') {
+    return adminTokens;
+  }
+
+  const frontendTokens = getFrontendTokens(req);
+  if (frontendTokens.tokenType === 'frontend') {
+    return frontendTokens;
+  }
+
+  // No tokens found
+  return {
+    tokenType: 'none',
+  };
+};
