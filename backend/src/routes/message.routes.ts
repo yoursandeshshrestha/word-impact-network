@@ -11,33 +11,47 @@ import {
 import {
   validateAdminMessage,
   validateMessage,
-  validateMessageFilter,
   validateConversationQuery,
   validatePartnerId,
 } from '../validations/message.validation';
-import { authenticate } from '../middlewares/auth.middleware';
+import {
+  authenticate,
+  authenticateAdmin,
+  authenticateStudent,
+} from '../middlewares/auth.middleware';
 
 const router: Router = express.Router();
 
-// All message routes require authentication
-router.use(authenticate);
+// All message routes require authentication (supports both admin and student)
+// router.use(authenticate);
 
 // Basic messaging endpoints
-router.post('/', validateMessage, sendMessageController);
-router.post('/admin', validateAdminMessage, sendAdminMessageController);
-router.get('/unread-count', getUnreadMessagesCountController);
+router.post('/', validateMessage, authenticateStudent, sendMessageController);
+router.post('/admin', validateAdminMessage, authenticateAdmin, sendAdminMessageController);
+router.get('/unread-count', authenticate, getUnreadMessagesCountController);
 
 // Conversation endpoints
-router.get('/conversations', getConversationsController);
+router.get('/conversations', authenticateAdmin, getConversationsController);
 router.get(
   '/conversations/:partnerId',
   validatePartnerId,
   validateConversationQuery,
+  authenticateAdmin,
   getConversationMessagesController,
 );
-router.put('/conversations/:partnerId/read', validatePartnerId, markConversationAsReadController);
+router.put(
+  '/conversations/:partnerId/read',
+  validatePartnerId,
+  authenticateAdmin,
+  markConversationAsReadController,
+);
 
 // For students - get conversation with admin (simplified as single conversation)
-router.get('/admin-conversation', validateConversationQuery, getStudentAdminConversationController);
+router.get(
+  '/admin-conversation',
+  validateConversationQuery,
+  authenticateStudent,
+  getStudentAdminConversationController,
+);
 
 export default router;

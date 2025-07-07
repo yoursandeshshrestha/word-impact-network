@@ -4,6 +4,7 @@ import { sendSuccess } from '../utils/responseHandler';
 import { AppError, ErrorTypes } from '../utils/appError';
 import {
   createVideo,
+  createVideoWithVimeoId,
   fetchVideosByChapterId,
   fetchVideoById,
   updateVideoById,
@@ -46,6 +47,31 @@ export const addVideoToChapter = catchAsync(async (req: Request, res: Response) 
       cleanupTempFile(req.file.path);
     }
   }
+});
+
+/**
+ * Add video to chapter with Vimeo ID (for direct-to-Vimeo uploads)
+ * @route POST /api/v1/chapters/:chapterId/videos/vimeo
+ * @access Private (Admin only)
+ */
+export const addVideoToChapterWithVimeo = catchAsync(async (req: Request, res: Response) => {
+  if (!req.user) {
+    throw new AppError('Authentication required', 401, ErrorTypes.AUTHENTICATION);
+  }
+
+  const { chapterId } = req.params;
+  const { title, description, orderIndex, duration, vimeoId } = req.body;
+
+  const video = await createVideoWithVimeoId(
+    title,
+    description,
+    parseInt(orderIndex, 10),
+    parseInt(duration, 10),
+    chapterId,
+    vimeoId,
+  );
+
+  sendSuccess(res, 201, 'Video added successfully', video);
 });
 
 /**

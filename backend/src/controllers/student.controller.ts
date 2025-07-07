@@ -21,13 +21,14 @@ import {
 import { sendError, sendSuccess } from '../utils/responseHandler';
 import { catchAsync } from '../utils/catchAsync';
 import { ApplicationStatus, Gender, PaymentStatus, UserRole } from '@prisma/client';
-import { generateToken } from '@/utils/jwt';
+import { generateAccessToken } from '@/utils/jwt';
 import { ErrorTypes } from '@/utils/appError';
 import { AppError } from '@/utils/appError';
 import { logger } from '@/utils/logger';
 import prisma from '@/config/prisma';
 import { createNotification } from '@/services/notification.service';
 import { canAccessExam, canAccessVideo } from '@/utils/progressUtils';
+import { clearFrontendAuthCookies } from '../utils/tokenUtils';
 
 // Register a new student
 export const registerStudent = catchAsync(async (req: Request, res: Response) => {
@@ -111,17 +112,35 @@ export const loginStudentController = catchAsync(async (req: Request, res: Respo
   const student = await loginStudent(email, password);
 
   // Generate JWT token
-  const token = generateToken({
+  const token = generateAccessToken({
     userId: student.userId,
     email: student.email,
     role: student.role,
   });
 
-  res.cookie('client-token-win', token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    maxAge: 24 * 60 * 60 * 1000,
+  // Generate refresh token
+  const { generateRefreshToken } = await import('../utils/jwt');
+  const { createRefreshToken } = await import('../services/refreshToken.service');
+
+  const refreshTokenRecord = await createRefreshToken(student.userId);
+  const refreshToken = generateRefreshToken(student.userId, refreshTokenRecord.tokenId);
+
+  const isProduction = process.env.NODE_ENV === 'production';
+
+  res.cookie('client-access-token-win', token, {
+    httpOnly: false, // Allow JavaScript access for frontend
+    secure: isProduction,
     sameSite: 'strict',
+    maxAge: 15 * 60 * 1000, // 15 minutes
+    path: '/',
+  });
+
+  res.cookie('client-refresh-token-win', refreshToken, {
+    httpOnly: false, // Allow JavaScript access for frontend
+    secure: isProduction,
+    sameSite: 'strict',
+    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    path: '/',
   });
 
   sendSuccess(res, 200, 'Login successful', {
@@ -134,6 +153,34 @@ export const loginStudentController = catchAsync(async (req: Request, res: Respo
     },
     token,
   });
+});
+
+// Logout student
+export const logoutStudent = catchAsync(async (req: Request, res: Response) => {
+  // Check for frontend refresh token only
+  const frontendRefreshToken = req.cookies['client-refresh-token-win'];
+
+  // Revoke frontend refresh token if present
+  if (frontendRefreshToken) {
+    try {
+      const { verifyRefreshToken } = await import('../utils/jwt');
+      const { revokeRefreshToken } = await import('../services/refreshToken.service');
+
+      // Verify and revoke refresh token
+      const decoded = verifyRefreshToken(frontendRefreshToken);
+      if (decoded) {
+        await revokeRefreshToken(decoded.tokenId);
+      }
+    } catch (error) {
+      // Continue with logout even if token revocation fails
+      logger.warn('Failed to revoke frontend refresh token during logout', { error });
+    }
+  }
+
+  // Clear only frontend authentication cookies
+  clearFrontendAuthCookies(res);
+
+  sendSuccess(res, 200, 'Logged out successfully');
 });
 
 // Get student profile
@@ -815,5 +862,93 @@ export const completePasswordResetController = catchAsync(async (req: Request, r
 
   sendSuccess(res, 200, 'Password reset successful', {
     message: 'Your password has been updated successfully',
+  });
+});
+
+// Refresh access token for students
+export const refreshStudentToken = catchAsync(async (req: Request, res: Response) => {
+  // Get frontend refresh token
+  const { getFrontendTokens, getCookieNames } = await import('../utils/tokenUtils');
+  const tokenSelection = getFrontendTokens(req);
+
+  const refreshToken = tokenSelection.refreshToken;
+
+  if (!refreshToken) {
+    throw new AppError('Refresh token required', 401, ErrorTypes.AUTHENTICATION);
+  }
+
+  const { verifyRefreshToken } = await import('../utils/jwt');
+  const { findRefreshToken, revokeRefreshToken, createRefreshToken } = await import(
+    '../services/refreshToken.service'
+  );
+
+  // Verify refresh token
+  const decoded = verifyRefreshToken(refreshToken);
+  if (!decoded) {
+    throw new AppError('Invalid refresh token', 401, ErrorTypes.AUTHENTICATION);
+  }
+
+  // Check if refresh token exists in database and is not revoked
+  const refreshTokenRecord = await findRefreshToken(decoded.tokenId);
+  if (!refreshTokenRecord) {
+    throw new AppError('Refresh token not found or revoked', 401, ErrorTypes.AUTHENTICATION);
+  }
+
+  // Get user information
+  const user = await prisma.user.findUnique({
+    where: { id: decoded.userId },
+    include: { student: true },
+  });
+
+  if (!user || user.role !== UserRole.STUDENT || !user.student) {
+    throw new AppError('User not found or not a student', 404, ErrorTypes.NOT_FOUND);
+  }
+
+  // Check if student's application is approved
+  if (user.student.applicationStatus !== ApplicationStatus.APPROVED) {
+    throw new AppError('Student application not approved', 403, ErrorTypes.AUTHORIZATION);
+  }
+
+  // Generate new access token
+  const { generateAccessToken, generateRefreshToken } = await import('../utils/jwt');
+  const newAccessToken = generateAccessToken({
+    userId: user.id,
+    email: user.email,
+    role: user.role,
+  });
+
+  // Revoke old refresh token and create new one (token rotation)
+  await revokeRefreshToken(decoded.tokenId);
+  const newRefreshTokenRecord = await createRefreshToken(user.id);
+  const newRefreshToken = generateRefreshToken(user.id, newRefreshTokenRecord.tokenId);
+
+  // Set new cookies using the appropriate cookie names
+  const isProduction = process.env.NODE_ENV === 'production';
+  const cookieNames = getCookieNames('frontend');
+
+  res.cookie(cookieNames.accessToken, newAccessToken, {
+    httpOnly: false, // Allow JavaScript access for frontend
+    secure: isProduction,
+    sameSite: 'strict',
+    maxAge: 15 * 60 * 1000, // 15 minutes
+    path: '/',
+  });
+
+  res.cookie(cookieNames.refreshToken, newRefreshToken, {
+    httpOnly: false, // Allow JavaScript access for frontend
+    secure: isProduction,
+    sameSite: 'strict',
+    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    path: '/',
+  });
+
+  sendSuccess(res, 200, 'Token refreshed successfully', {
+    student: {
+      id: user.student.id,
+      email: user.email,
+      fullName: user.student.fullName,
+      role: user.role,
+      applicationStatus: user.student.applicationStatus,
+    },
   });
 });

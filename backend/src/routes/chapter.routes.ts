@@ -7,8 +7,8 @@ import {
   deleteChapter,
   reorderChapterController,
 } from '@/controllers/chapter.controller';
-import { addVideoToChapter, getVideosByChapterId } from '@/controllers/video.controller';
-import { validateCreateVideo } from '@/validations/video.validation';
+import { addVideoToChapter, getVideosByChapterId, addVideoToChapterWithVimeo } from '@/controllers/video.controller';
+import { validateCreateVideo, validateCreateVideoWithVimeo } from '@/validations/video.validation';
 import { upload } from '../utils/upload';
 
 const router: Router = express.Router();
@@ -26,6 +26,15 @@ router.post(
   upload.single('video'),
   validateCreateVideo,
   addVideoToChapter,
+);
+
+// POST /api/v1/chapters/:chapterId/videos/vimeo - Add video with Vimeo ID (for direct-to-Vimeo uploads)
+router.post(
+  '/:chapterId/videos/vimeo',
+  authenticate,
+  requireAdmin,
+  validateCreateVideoWithVimeo,
+  addVideoToChapterWithVimeo,
 );
 
 // POST /api/v1/chapters/:chapterId/video - Add Video to Chapter (Admin only) - Singular form

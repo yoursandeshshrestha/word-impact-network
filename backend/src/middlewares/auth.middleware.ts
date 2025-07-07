@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { UserRole } from '@prisma/client';
-import { extractTokenFromHeader, verifyToken } from '../utils/jwt';
+import { extractTokenFromHeader, verifyAccessToken, verifyRefreshToken } from '../utils/jwt';
+import { findRefreshToken } from '../services/refreshToken.service';
 import { AppError } from '../utils/appError';
 import { sendError } from '../utils/responseHandler';
 import { ErrorTypes } from '../utils/appError';
@@ -20,19 +21,130 @@ declare global {
 
 /**
  * Middleware to validate JWT and attach user to request
+ * Supports both Authorization header and HTTP-only cookies
+ * Handles different token names for admin and frontend applications
+ * Implements intelligent token selection to avoid conflicts
+ */
+/**
+ * Authenticate admin users using admin tokens
+ */
+export const authenticateAdmin = (req: Request, res: Response, next: NextFunction): void => {
+  try {
+    let token = extractTokenFromHeader(req.headers.authorization);
+
+    // If no token in header, try to get admin token from cookies
+    if (!token) {
+      token = req.cookies['accessToken'] || null;
+    }
+
+    if (!token) {
+      console.log('No admin token found');
+      sendError(res, 401, 'Admin authentication required');
+      return;
+    }
+
+    const decoded = verifyAccessToken(token);
+
+    if (!decoded) {
+      console.log('Admin token verification failed');
+      sendError(res, 401, 'Invalid or expired admin token');
+      return;
+    }
+
+    // Verify it's an admin user
+    if (decoded.role !== 'ADMIN') {
+      console.log('Non-admin user attempting to access admin route');
+      sendError(res, 403, 'Admin access required');
+      return;
+    }
+
+    // Attach user info to request
+    req.user = {
+      userId: decoded.userId,
+      email: decoded.email,
+      role: decoded.role,
+    };
+
+    next();
+  } catch (error) {
+    console.log('Admin authentication error:', error);
+    sendError(res, 401, 'Admin authentication failed');
+    return;
+  }
+};
+
+/**
+ * Authenticate student users using frontend tokens
+ */
+export const authenticateStudent = (req: Request, res: Response, next: NextFunction): void => {
+  try {
+    let token = extractTokenFromHeader(req.headers.authorization);
+
+    // If no token in header, try to get frontend token from cookies
+    if (!token) {
+      token = req.cookies['client-access-token-win'] || null;
+    }
+
+    if (!token) {
+      console.log('No student token found');
+      sendError(res, 401, 'Student authentication required');
+      return;
+    }
+
+    const decoded = verifyAccessToken(token);
+
+    if (!decoded) {
+      console.log('Student token verification failed');
+      sendError(res, 401, 'Invalid or expired student token');
+      return;
+    }
+
+    // Verify it's a student user
+    if (decoded.role !== 'STUDENT') {
+      console.log('Non-student user attempting to access student route');
+      sendError(res, 403, 'Student access required');
+      return;
+    }
+
+    // Attach user info to request
+    req.user = {
+      userId: decoded.userId,
+      email: decoded.email,
+      role: decoded.role,
+    };
+
+    next();
+  } catch (error) {
+    console.log('Student authentication error:', error);
+    sendError(res, 401, 'Student authentication failed');
+    return;
+  }
+};
+
+/**
+ * Generic authentication - tries both admin and student tokens
+ * Use this only when you need to support both user types
  */
 export const authenticate = (req: Request, res: Response, next: NextFunction): void => {
   try {
-    const token = extractTokenFromHeader(req.headers.authorization);
+    let token = extractTokenFromHeader(req.headers.authorization);
+
+    // If no token in header, try to get from cookies
+    if (!token) {
+      // Try admin token first, then student token
+      token = req.cookies['accessToken'] || req.cookies['client-access-token-win'] || null;
+    }
 
     if (!token) {
+      console.log('No token found in authentication middleware');
       sendError(res, 401, 'Authentication required');
       return;
     }
 
-    const decoded = verifyToken(token);
+    const decoded = verifyAccessToken(token);
 
     if (!decoded) {
+      console.log('Token verification failed in authentication middleware');
       sendError(res, 401, 'Invalid or expired token');
       return;
     }
@@ -46,6 +158,7 @@ export const authenticate = (req: Request, res: Response, next: NextFunction): v
 
     next();
   } catch (error) {
+    console.log('Authentication middleware error:', error);
     sendError(res, 401, 'Authentication failed');
     return;
   }
