@@ -1,18 +1,13 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import axios, { AxiosError } from "axios";
 import { toast } from "sonner";
-import { getAuthToken } from "@/common/services/auth";
-
-interface ErrorResponse {
-  message: string;
-}
 
 interface PreviewVideo {
   id: string;
   title: string;
   description: string;
   duration: number;
-  backblazeUrl: string;
+  vimeoId: string;
+  vimeoUrl: string;
 }
 
 interface PreviewChapter {
@@ -55,35 +50,33 @@ export const fetchCoursePreview = createAsyncThunk(
   "coursePreview/fetchCoursePreview",
   async (courseId: string, { rejectWithValue }) => {
     try {
-      const token = getAuthToken();
-
-      if (!token) {
-        toast.error("Authentication required");
-        return rejectWithValue("No authentication token found");
-      }
-
-      const response = await axios.get(
+      const response = await fetch(
         `${BASE_URL}/student/courses/${courseId}/preview`,
         {
+          method: "GET",
+          credentials: "include",
           headers: {
-            Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
           },
         }
       );
 
-      return response.data.data as CoursePreview;
-    } catch (error) {
-      const errorMessage =
-        (error as AxiosError<ErrorResponse>).response?.data?.message ||
-        "Failed to fetch course preview";
-
-      if ((error as AxiosError).response?.status === 401) {
-        toast.error("Session expired. Please login again.");
-      } else {
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        const errorMessage =
+          errorData.message || "Failed to fetch course preview";
         toast.error(errorMessage);
+        return rejectWithValue(errorMessage);
       }
 
+      const data = await response.json();
+      return data.data as CoursePreview;
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "Failed to fetch course preview";
+      toast.error(errorMessage);
       return rejectWithValue(errorMessage);
     }
   }

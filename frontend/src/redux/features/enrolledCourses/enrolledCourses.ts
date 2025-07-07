@@ -1,11 +1,5 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import axios, { AxiosError } from "axios";
 import { toast } from "sonner";
-import { getAuthToken } from "@/common/services/auth";
-
-interface ErrorResponse {
-  message: string;
-}
 
 interface EnrollmentData {
   id: string;
@@ -74,41 +68,42 @@ interface EnrolledCoursesState {
   error: string | null;
 }
 
-const BASE_URL =
-  process.env.NEXT_PUBLIC_BACKEND_API || "http://localhost:8080/api/v1";
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
 export const fetchEnrolledCourses = createAsyncThunk(
   "enrolledCourses/fetchEnrolledCourses",
   async (_, { rejectWithValue }) => {
     try {
-      const token = getAuthToken();
-
-      if (!token) {
-        toast.error("Authentication required");
-        return rejectWithValue("No authentication token found");
-      }
-
-      const response = await axios.get(`${BASE_URL}/student/courses`, {
+      const response = await fetch(`${BASE_URL}/mylearning/courses`, {
+        method: "GET",
+        credentials: "include",
         headers: {
-          Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
       });
-      return response.data.data as EnrolledCoursesResponse;
-    } catch (error) {
-      const errorMessage =
-        (error as AxiosError<ErrorResponse>).response?.data?.message ||
-        "Failed to fetch enrolled courses";
 
-      // Handle authentication errors specifically
-      if ((error as AxiosError).response?.status === 401) {
-        toast.error("Session expired. Please login again.");
-        // You might want to redirect to login page here
-        // window.location.href = '/login';
-      } else {
-        toast.error(errorMessage);
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        const errorMessage =
+          errorData.message || "Failed to fetch enrolled courses";
+
+        if (response.status === 401) {
+          toast.error("Session expired. Please login again.");
+        } else {
+          toast.error(errorMessage);
+        }
+
+        return rejectWithValue(errorMessage);
       }
 
+      const data = await response.json();
+      return data.data as EnrolledCoursesResponse;
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "Failed to fetch enrolled courses";
+      toast.error(errorMessage);
       return rejectWithValue(errorMessage);
     }
   }
@@ -140,10 +135,22 @@ const enrolledCoursesSlice = createSlice({
       })
       .addCase(fetchEnrolledCourses.fulfilled, (state, action) => {
         state.status = "succeeded";
-        state.enrolledCourses = action.payload.enrolled.courses;
-        state.recommendedCourses = action.payload.recommended.courses;
-        state.enrolledCount = action.payload.enrolled.count;
-        state.recommendedCount = action.payload.recommended.count;
+        if (action.payload && action.payload.enrolled) {
+          state.enrolledCourses = action.payload.enrolled.courses || [];
+          state.enrolledCount = action.payload.enrolled.count || 0;
+        } else {
+          state.enrolledCourses = [];
+          state.enrolledCount = 0;
+        }
+
+        if (action.payload && action.payload.recommended) {
+          state.recommendedCourses = action.payload.recommended.courses || [];
+          state.recommendedCount = action.payload.recommended.count || 0;
+        } else {
+          state.recommendedCourses = [];
+          state.recommendedCount = 0;
+        }
+
         state.error = null;
       })
       .addCase(fetchEnrolledCourses.rejected, (state, action) => {
