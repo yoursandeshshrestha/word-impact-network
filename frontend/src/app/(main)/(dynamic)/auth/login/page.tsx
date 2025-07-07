@@ -1,6 +1,5 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
 
 import { Lock, Mail, ArrowRight, Eye, EyeOff } from "lucide-react";
 import { useLoading } from "@/common/contexts/LoadingContext";
@@ -8,9 +7,7 @@ import { toast } from "sonner";
 import Link from "next/link";
 import { login, isAuthenticated, getCurrentUser } from "@/common/services/auth";
 
-
 const LoginPage = () => {
-  const router = useRouter();
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -21,17 +18,26 @@ const LoginPage = () => {
 
   // Check if user is already authenticated on component mount
   useEffect(() => {
-    if (isAuthenticated()) {
-      const user = getCurrentUser();
-      let redirectPath = "/my-learning";
+    const checkAuth = async () => {
+      if (isAuthenticated()) {
+        try {
+          const user = await getCurrentUser();
+          let redirectPath = "/my-learning";
 
-      if (user && user.role === "ADMIN") {
-        redirectPath = "/admin/dashboard";
+          if (user && user.role === "ADMIN") {
+            redirectPath = "/admin/dashboard";
+          }
+
+          // Use window.location.href to force a full page reload
+          window.location.href = redirectPath;
+        } catch (error) {
+          console.error("Failed to get current user:", error);
+        }
       }
+    };
 
-      router.push(redirectPath);
-    }
-  }, [router]);
+    checkAuth();
+  }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -53,8 +59,6 @@ const LoginPage = () => {
     if (result.success) {
       toast.success("Logged in successfully!");
 
-
-
       // Redirect based on user role if needed
       const user = result.user;
       let redirectPath = "/my-learning";
@@ -63,10 +67,11 @@ const LoginPage = () => {
         redirectPath = "/admin/dashboard";
       }
 
-      // Redirect after successful login (with delay to allow modal to show)
+      // Use window.location.href to force a full page reload so middleware can see the cookies
+      // Add a small delay to ensure cookies are set before redirection
       setTimeout(() => {
-        router.push(redirectPath);
-      }, 2000);
+        window.location.href = redirectPath;
+      }, 100);
     } else {
       setError(result.message || "Login failed");
       toast.error(result.message || "Login failed");
@@ -184,8 +189,6 @@ const LoginPage = () => {
           </form>
         </div>
       </main>
-
-
     </div>
   );
 };

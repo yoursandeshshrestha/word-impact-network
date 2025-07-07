@@ -34,7 +34,8 @@ interface VideoData {
   title: string;
   description: string;
   duration: number;
-  backblazeUrl: string;
+  vimeoId: string;
+  vimeoUrl: string;
 }
 
 interface ChapterData {
@@ -116,8 +117,8 @@ const CourseDetailPage = () => {
     }
   };
 
-  const handlePlayVideo = (videoUrl: string) => {
-    setCurrentVideo(videoUrl);
+  const handlePlayVideo = (videoId: string) => {
+    setCurrentVideo(videoId);
     setShowVideo(true);
   };
 
@@ -263,15 +264,14 @@ const CourseDetailPage = () => {
             >
               <X className="w-8 h-8" />
             </button>
-            <video
-              ref={videoRef}
-              controls
-              autoPlay
-              className="w-full rounded-lg"
-              src={currentVideo}
-            >
-              Your browser does not support the video tag.
-            </video>
+            <iframe
+              src={`https://player.vimeo.com/video/${currentVideo}?autoplay=1&title=0&byline=0&portrait=0&controls=1&responsive=1`}
+              className="w-full rounded-lg aspect-video"
+              frameBorder="0"
+              allow="autoplay; fullscreen; picture-in-picture"
+              allowFullScreen
+              title="Video player"
+            />
           </div>
         </div>
       )}
@@ -389,8 +389,7 @@ const CourseDetailPage = () => {
                       <button
                         onClick={() =>
                           handlePlayVideo(
-                            typedCourse.previewChapter.previewVideo!
-                              .backblazeUrl
+                            typedCourse.previewChapter.previewVideo!.vimeoId
                           )
                         }
                         className="absolute inset-0 flex items-center justify-center z-10"
@@ -486,9 +485,7 @@ const CourseDetailPage = () => {
                             {chapter.previewVideo && (
                               <button
                                 onClick={() =>
-                                  handlePlayVideo(
-                                    chapter.previewVideo!.backblazeUrl
-                                  )
+                                  handlePlayVideo(chapter.previewVideo!.vimeoId)
                                 }
                                 className="flex items-center text-gray-600 border border-gray-300 hover:bg-gray-50 px-4 py-2 rounded-md transition-colors whitespace-nowrap"
                               >
