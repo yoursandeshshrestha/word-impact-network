@@ -14,7 +14,7 @@ export const requestPasswordReset = createAsyncThunk(
   "passwordReset/request",
   async (email: string) => {
     const response = await fetch(
-      `${process.env.NEXT_PUBLIC_BACKEND_API}/student/request-password-reset`,
+      `${process.env.NEXT_PUBLIC_API_URL}/student/request-password-reset`,
       {
         method: "POST",
         headers: {
@@ -42,7 +42,7 @@ export const completePasswordReset = createAsyncThunk(
     newPassword: string;
   }) => {
     const response = await fetch(
-      `${process.env.NEXT_PUBLIC_BACKEND_API}/student/complete-password-reset`,
+      `${process.env.NEXT_PUBLIC_API_URL}/student/complete-password-reset`,
       {
         method: "POST",
         headers: {

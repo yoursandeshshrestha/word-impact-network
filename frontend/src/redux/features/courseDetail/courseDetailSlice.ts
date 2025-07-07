@@ -1,11 +1,5 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import axios, { AxiosError } from "axios";
 import { toast } from "sonner";
-import { getAuthToken } from "@/common/services/auth";
-
-interface ErrorResponse {
-  message: string;
-}
 
 export interface ChapterProgress {
   isCompleted: boolean;
@@ -70,43 +64,47 @@ export interface CourseDetailState {
 }
 
 const BASE_URL =
-  process.env.NEXT_PUBLIC_BACKEND_API || "http://localhost:8080/api/v1";
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api/v1";
 
 export const fetchCourseDetail = createAsyncThunk(
   "courseDetail/fetchCourseDetail",
   async (courseId: string, { rejectWithValue }) => {
     try {
-      const token = getAuthToken();
-
-      if (!token) {
-        toast.error("Authentication required");
-        return rejectWithValue("No authentication token found");
-      }
-
-      const response = await axios.get(
+      const response = await fetch(
         `${BASE_URL}/mylearning/courses/${courseId}`,
         {
+          method: "GET",
+          credentials: "include", // This will automatically send cookies
           headers: {
-            Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
           },
         }
       );
 
-      return response.data.data as CourseDetailData;
-    } catch (error) {
-      const errorMessage =
-        (error as AxiosError<ErrorResponse>).response?.data?.message ||
-        "Failed to fetch course details";
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        const errorMessage =
+          errorData.message || "Failed to fetch course details";
 
-      if ((error as AxiosError).response?.status === 401) {
-        toast.error("Session expired. Please login again.");
-      } else if ((error as AxiosError).response?.status === 404) {
-        toast.error("Course not found.");
-      } else {
-        toast.error(errorMessage);
+        if (response.status === 401) {
+          toast.error("Session expired. Please login again.");
+        } else if (response.status === 404) {
+          toast.error("Course not found.");
+        } else {
+          toast.error(errorMessage);
+        }
+
+        return rejectWithValue(errorMessage);
       }
 
+      const data = await response.json();
+      return data.data as CourseDetailData;
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "Failed to fetch course details";
+      toast.error(errorMessage);
       return rejectWithValue(errorMessage);
     }
   }

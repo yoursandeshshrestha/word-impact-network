@@ -48,11 +48,18 @@ export const useAutoChapterDetail = (courseId: string, chapterId: string) => {
     };
   }, [dispatch, courseId, chapterId]);
 
+  const refreshChapterDetail = () => {
+    if (courseId && chapterId) {
+      dispatch(fetchChapterDetail({ courseId, chapterId }));
+    }
+  };
+
   return {
     chapterDetail,
     isLoading: status === "loading",
     isError: status === "failed",
     isSuccess: status === "succeeded",
     error,
+    refreshChapterDetail,
   };
 };
