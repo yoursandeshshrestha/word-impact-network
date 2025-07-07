@@ -1,33 +1,34 @@
-import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { AppDispatch } from "@/redux/store";
+import { useCallback } from "react";
+import { AppDispatch, RootState } from "@/redux/store";
 import {
   fetchActiveAnnouncements,
   clearError,
   selectAnnouncements,
   selectAnnouncementsLoading,
   selectAnnouncementsError,
+  selectShouldFetchAnnouncements,
 } from "@/redux/features/announcements/announcementsSlice";
+import { isAuthenticated } from "@/common/services/auth";
 
 export const useAnnouncements = () => {
   const dispatch = useDispatch<AppDispatch>();
-  const announcements = useSelector(selectAnnouncements);
+  const announcements = useSelector(selectAnnouncements) || [];
   const loading = useSelector(selectAnnouncementsLoading);
   const error = useSelector(selectAnnouncementsError);
+  const shouldFetch = useSelector(selectShouldFetchAnnouncements);
+  const user = useSelector((state: RootState) => state.user.user);
 
-  const loadAnnouncements = () => {
-    dispatch(fetchActiveAnnouncements());
-  };
+  const loadAnnouncements = useCallback(() => {
+    // Only fetch if user is authenticated and we should fetch
+    if (isAuthenticated() && user && shouldFetch) {
+      dispatch(fetchActiveAnnouncements());
+    }
+  }, [dispatch, shouldFetch, user]);
 
-  const clearErrorMessage = () => {
+  const clearErrorMessage = useCallback(() => {
     dispatch(clearError());
-  };
-
-  useEffect(() => {
-    // Load announcements when the hook is first used
-    loadAnnouncements();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [dispatch]);
 
   return {
     announcements,

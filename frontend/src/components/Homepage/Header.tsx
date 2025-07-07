@@ -69,6 +69,7 @@ const Header: React.FC = () => {
         { name: "About WIN", href: "/about-win-impact-network" },
         { name: "Our Story", href: "/our-story" },
         { name: "Educational Programs", href: "/educational-programs" },
+        { name: "Faculty Profiles", href: "/faculty-profiles" },
       ],
     },
     {
@@ -83,6 +84,11 @@ const Header: React.FC = () => {
         { name: "Academic Leadership", href: "/academic-leadership" },
         { name: "Ambassadors", href: "/ambassadors" },
       ],
+    },
+    {
+      name: "TRAINING",
+      href: "/online-training",
+      hasDropdown: false,
     },
     {
       name: "FAQ",
