@@ -138,8 +138,8 @@ export async function sendMessage(senderId: string, content: string) {
             },
           };
 
-          // Attempt to send message via WebSocket
-          const delivered = sendMessageToUser(io, recipientId, SocketEvents.NEW_MESSAGE, {
+          // Attempt to send message via WebSocket to admin
+          sendMessageToUser(io, recipientId, SocketEvents.NEW_MESSAGE, {
             message: formattedMessage,
             notification: {
               id: notification.id,
@@ -149,12 +149,16 @@ export async function sendMessage(senderId: string, content: string) {
             },
           });
 
-          if (delivered) {
-            logger.info('Real-time message notification delivered', {
-              messageId: message.id,
-              recipientId,
-            });
-          }
+          // Also emit to the sender (student) so they get the real-time update
+          sendMessageToUser(io, senderId, SocketEvents.NEW_MESSAGE, {
+            message: formattedMessage,
+            notification: {
+              id: notification.id,
+              title: notification.title,
+              content: notification.content,
+              createdAt: notification.createdAt,
+            },
+          });
         }
 
         return message;
@@ -326,6 +330,11 @@ export async function sendAdminMessage(adminId: string, studentId: string, conte
     // and the recipient is online
     if ((global as any).io) {
       const io = (global as any).io;
+      logger.info('Socket.IO server available, attempting to send message', {
+        studentId,
+        messageId: message.id,
+        adminId,
+      });
 
       // Attempt to send message via WebSocket
       const delivered = sendMessageToUser(io, studentId, SocketEvents.NEW_MESSAGE, {
@@ -343,7 +352,17 @@ export async function sendAdminMessage(adminId: string, studentId: string, conte
           messageId: message.id,
           recipientId: studentId,
         });
+      } else {
+        logger.warn('Real-time message notification failed to deliver - user may be offline', {
+          messageId: message.id,
+          recipientId: studentId,
+        });
       }
+    } else {
+      logger.warn('Socket.IO server not available, skipping real-time notification', {
+        messageId: message.id,
+        recipientId: studentId,
+      });
     }
 
     logger.info('Admin message sent successfully', {

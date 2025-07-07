@@ -558,7 +558,8 @@ export async function getMyLearningChapterDetail(
         description: video.description,
         duration: video.duration,
         orderIndex: video.orderIndex,
-        backblazeUrl: isVideoLocked ? null : video.backblazeUrl, // Hide URL if locked
+        vimeoId: isVideoLocked ? null : video.vimeoId, // Hide ID if locked
+        vimeoUrl: isVideoLocked ? null : video.vimeoUrl, // Hide URL if locked
         isLocked: isVideoLocked,
         ...(isVideoLocked && {
           lockReason: `Complete previous video '${chapter.videos[index - 1]?.title}' to unlock`,

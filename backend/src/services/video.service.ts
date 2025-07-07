@@ -1,7 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 import { AppError, ErrorTypes } from '../utils/appError';
 import { logger } from '../utils/logger';
-import { uploadToBunny, deleteFromBunny } from '../utils/bunny';
+import { uploadToVimeo, deleteFromVimeo } from '../utils/vimeo';
 
 const prisma = new PrismaClient();
 
@@ -49,16 +49,8 @@ export async function createVideo(
       );
     }
 
-    // Create a safe title for the folder structure
-    const safeTitle = title.toLowerCase().replace(/\s+/g, '-');
-    const timestamp = Date.now();
-
-    // Upload video to Bunny CDN using file path
-    const bunnyUrl = await uploadToBunny(
-      videoFile.path,
-      `course-videos`,
-      `${safeTitle}-${timestamp}.mp4`,
-    );
+    // Upload video to Vimeo
+    const vimeoResult = await uploadToVimeo(videoFile.path, title, description);
 
     // Create the video record in the database
     const video = await prisma.video.create({
@@ -67,7 +59,8 @@ export async function createVideo(
         description,
         orderIndex,
         duration,
-        backblazeUrl: bunnyUrl,
+        vimeoId: vimeoResult.videoId,
+        vimeoUrl: vimeoResult.videoUrl,
         chapterId,
       },
       include: {
@@ -90,6 +83,92 @@ export async function createVideo(
     logger.error('Error creating video', {
       title,
       chapterId,
+      error: error instanceof Error ? error.message : String(error),
+    });
+    throw error;
+  }
+}
+
+/**
+ * Create a new video for a chapter with existing Vimeo ID (for direct-to-Vimeo uploads)
+ */
+export async function createVideoWithVimeoId(
+  title: string,
+  description: string | undefined,
+  orderIndex: number,
+  duration: number,
+  chapterId: string,
+  vimeoId: string,
+) {
+  try {
+    logger.info('Creating new video with Vimeo ID', { title, chapterId, vimeoId });
+
+    // Verify chapter exists
+    const chapter = await prisma.chapter.findUnique({
+      where: { id: chapterId },
+      include: {
+        course: true,
+      },
+    });
+
+    if (!chapter) {
+      logger.warn('Video creation failed - chapter not found', { chapterId });
+      throw new AppError('Chapter not found', 404, ErrorTypes.NOT_FOUND);
+    }
+
+    // Check if a video with the same orderIndex already exists for this chapter
+    const existingVideo = await prisma.video.findFirst({
+      where: {
+        chapterId,
+        orderIndex,
+      },
+    });
+
+    if (existingVideo) {
+      logger.warn('Video creation failed - order index already exists', { chapterId, orderIndex });
+      throw new AppError(
+        `A video with order index ${orderIndex} already exists for this chapter`,
+        400,
+        ErrorTypes.VALIDATION,
+      );
+    }
+
+    // Get video info from Vimeo to get the URL
+    const { getVimeoVideoInfo } = await import('../utils/vimeo');
+    const vimeoInfo = await getVimeoVideoInfo(vimeoId);
+
+    // Create the video record in the database
+    const video = await prisma.video.create({
+      data: {
+        title,
+        description,
+        orderIndex,
+        duration,
+        vimeoId,
+        vimeoUrl: vimeoInfo.link,
+        chapterId,
+      },
+      include: {
+        chapter: {
+          select: {
+            title: true,
+            course: {
+              select: {
+                title: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    logger.info('Video created successfully with Vimeo ID', { videoId: video.id, vimeoId });
+    return video;
+  } catch (error) {
+    logger.error('Error creating video with Vimeo ID', {
+      title,
+      chapterId,
+      vimeoId,
       error: error instanceof Error ? error.message : String(error),
     });
     throw error;
@@ -228,22 +307,18 @@ export async function updateVideoById(
     // Upload new video file if provided
     if (videoFile) {
       const title = updateData.title || existingVideo.title;
-      const safeTitle = title.toLowerCase().replace(/\s+/g, '-');
-      const timestamp = Date.now();
+      const description = updateData.description || existingVideo.description;
 
-      // Upload new video to Bunny CDN using file path
-      const newBunnyUrl = await uploadToBunny(
-        videoFile.path,
-        `course-videos`,
-        `${safeTitle}-${timestamp}.mp4`,
-      );
+      // Upload new video to Vimeo
+      const newVimeoResult = await uploadToVimeo(videoFile.path, title, description || undefined);
 
-      // Delete old video from Bunny CDN (if it exists)
-      if (existingVideo.backblazeUrl) {
-        await deleteFromBunny(existingVideo.backblazeUrl);
+      // Delete old video from Vimeo (if it exists)
+      if (existingVideo.vimeoId) {
+        await deleteFromVimeo(existingVideo.vimeoId);
       }
 
-      filteredUpdateData.backblazeUrl = newBunnyUrl;
+      filteredUpdateData.vimeoId = newVimeoResult.videoId;
+      filteredUpdateData.vimeoUrl = newVimeoResult.videoUrl;
     }
 
     // If no fields to update, return the current video
@@ -296,9 +371,9 @@ export async function deleteVideoById(id: string) {
       throw new AppError('Video not found', 404, ErrorTypes.NOT_FOUND);
     }
 
-    // Delete the video file from Bunny CDN if URL exists
-    if (video.backblazeUrl) {
-      await deleteFromBunny(video.backblazeUrl);
+    // Delete the video file from Vimeo if ID exists
+    if (video.vimeoId) {
+      await deleteFromVimeo(video.vimeoId);
     }
 
     // Delete the video record from the database

@@ -64,10 +64,10 @@ export async function getNotifications(
     return {
       notifications,
       pagination: {
-        totalItems: totalCount,
+        total: totalCount,
         totalPages,
         currentPage: page,
-        pageSize: limit,
+        limit: limit,
       },
     };
   } catch (error) {
@@ -128,6 +128,69 @@ export async function markAllNotificationsAsRead(userId: string) {
   } catch (error) {
     logger.error('Error in markAllNotificationsAsRead', {
       userId,
+      error: error instanceof Error ? error.message : String(error),
+    });
+    throw error;
+  }
+}
+  
+// Mark a single notification as read
+export async function markNotificationAsRead(userId: string, notificationId: string) {
+  try {
+    logger.info('Marking notification as read', { userId, notificationId });
+
+    // Check if user exists
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      logger.warn('Mark notification as read failed - user not found', { userId });
+      throw new AppError('User not found', 404, ErrorTypes.NOT_FOUND);
+    }
+
+    // Check if notification exists and belongs to the user
+    const notification = await prisma.notification.findFirst({
+      where: {
+        id: notificationId,
+        userId: userId,
+      },
+    });
+
+    if (!notification) {
+      logger.warn('Mark notification as read failed - notification not found', {
+        userId,
+        notificationId,
+      });
+      throw new AppError('Notification not found', 404, ErrorTypes.NOT_FOUND);
+    }
+
+    // If already read, return early
+    if (notification.isRead) {
+      logger.info('Notification already marked as read', { userId, notificationId });
+      return { notification };
+    }
+
+    // Mark as read
+    const updatedNotification = await prisma.notification.update({
+      where: {
+        id: notificationId,
+      },
+      data: {
+        isRead: true,
+      },
+    });
+
+    logger.info('Notification marked as read successfully', {
+      userId,
+      notificationId,
+    });
+
+    return { notification: updatedNotification };
+  } catch (error) {
+    logger.error('Error in markNotificationAsRead', {
+      userId,
+      notificationId,
       error: error instanceof Error ? error.message : String(error),
     });
     throw error;

@@ -1264,7 +1264,8 @@ export async function getChapterProgress(studentId: string, chapterId: string) {
             description: video.description,
             duration: video.duration,
             orderIndex: video.orderIndex,
-            backblazeUrl: video.backblazeUrl,
+            vimeoId: video.vimeoId,
+            vimeoUrl: video.vimeoUrl,
           },
           progress: progress
             ? {
@@ -2506,7 +2507,8 @@ export async function getPreviewCourse(courseId: string) {
                 title: true,
                 description: true,
                 duration: true,
-                backblazeUrl: true,
+                vimeoId: true,
+                vimeoUrl: true,
               },
             },
           },
@@ -2747,7 +2749,8 @@ export async function getEnrolledCourseContent(studentId: string, courseId: stri
           title: video.title,
           description: video.description,
           duration: video.duration,
-          backblazeUrl: isVideoUnlocked ? video.backblazeUrl : null, // Hide URL if locked
+          vimeoId: isVideoUnlocked ? video.vimeoId : null, // Hide ID if locked
+          vimeoUrl: isVideoUnlocked ? video.vimeoUrl : null, // Hide URL if locked
           orderIndex: video.orderIndex,
           isUnlocked: isVideoUnlocked,
           progress: videoProgress
