@@ -10,6 +10,7 @@ import {
   getStudentProfile,
   getStudentProgress,
   loginStudentController,
+  logoutStudent,
   previewCourse,
   registerStudent,
   startStudentExamAttempt,
@@ -18,6 +19,7 @@ import {
   updateStudentVideoProgress,
   requestPasswordResetController,
   completePasswordResetController,
+  refreshStudentToken,
 } from '../controllers/student.controller';
 import {
   validateExamSubmission,
@@ -26,7 +28,7 @@ import {
   validateStudentRegistration,
   validateVideoProgressUpdate,
 } from '../validations/student.validation';
-import { authenticate } from '../middlewares/auth.middleware';
+import { authenticateStudent } from '../middlewares/auth.middleware';
 import {
   validateStudent,
   validateVideoAccess,
@@ -59,27 +61,33 @@ router.post(
 // Student login route
 router.post('/login', validateStudentLogin, loginStudentController);
 
+// Student refresh token route
+router.post('/refresh-token', refreshStudentToken);
+
+// Student logout route
+router.post('/logout', logoutStudent);
+
 // Student profile routes
-router.get('/profile', authenticate, validateStudent, getStudentProfile);
+router.get('/profile', authenticateStudent, validateStudent, getStudentProfile);
 router.put(
   '/profile',
-  authenticate,
+  authenticateStudent,
   validateStudent,
   validateStudentProfileUpdate,
   updateStudentProfile,
 );
 
 // Course routes
-router.get('/courses', authenticate, validateStudent, getCourses);
-router.post('/courses/:courseId/enroll', authenticate, validateStudent, enrollInCourse);
+router.get('/courses', authenticateStudent, validateStudent, getCourses);
+router.post('/courses/:courseId/enroll', authenticateStudent, validateStudent, enrollInCourse);
 
 // Progress routes
-router.get('/progress', authenticate, validateStudent, getStudentProgress);
+router.get('/progress', authenticateStudent, validateStudent, getStudentProgress);
 
 // Chapter progress route with access validation
 router.get(
   '/chapters/:chapterId/progress',
-  authenticate,
+  authenticateStudent,
   validateStudent,
   validateChapterAccess,
   getStudentChapterProgress,
@@ -88,7 +96,7 @@ router.get(
 // Video progress route with access validation
 router.post(
   '/videos/:videoId/progress',
-  authenticate,
+  authenticateStudent,
   validateStudent,
   validateVideoAccess,
   validateVideoProgressUpdate,
@@ -98,7 +106,7 @@ router.post(
 // Exam routes with progressive access validation
 router.get(
   '/exams/:examId',
-  authenticate,
+  authenticateStudent,
   validateStudent,
   validateExamAccess,
   getStudentExamDetails,
@@ -106,7 +114,7 @@ router.get(
 
 router.post(
   '/exams/:examId/attempt',
-  authenticate,
+  authenticateStudent,
   validateStudent,
   validateExamAccess,
   startStudentExamAttempt,
@@ -114,13 +122,13 @@ router.post(
 
 router.post(
   '/exam-attempts/:attemptId/submit',
-  authenticate,
+  authenticateStudent,
   validateStudent,
   validateExamSubmission,
   submitStudentExamAttempt,
 );
 
-router.get('/exam-attempts/:attemptId/result', authenticate, validateStudent, getStudentExamResult);
+router.get('/exam-attempts/:attemptId/result', authenticateStudent, validateStudent, getStudentExamResult);
 
 // Preview courses - public access (no authentication required)
 router.get('/courses/:courseId/preview', previewCourse);
@@ -128,14 +136,14 @@ router.get('/courses/:courseId/preview', previewCourse);
 // Authorized route for enrolled students to access full course content with progressive unlocking
 router.get(
   '/courses/:courseId/content',
-  authenticate,
+  authenticateStudent,
   validateStudent,
   validateCourseEnrollment,
   getFullCourseContent,
 );
 
 // Additional routes for checking access status (useful for frontend)
-router.get('/videos/:videoId/access-status', authenticate, validateStudent, async (req, res) => {
+router.get('/videos/:videoId/access-status', authenticateStudent, validateStudent, async (req, res) => {
   const { videoId } = req.params;
   const { canAccessVideo } = await import('../utils/progressUtils');
 
@@ -151,7 +159,7 @@ router.get('/videos/:videoId/access-status', authenticate, validateStudent, asyn
   });
 });
 
-router.get('/exams/:examId/access-status', authenticate, validateStudent, async (req, res) => {
+router.get('/exams/:examId/access-status', authenticateStudent, validateStudent, async (req, res) => {
   const { examId } = req.params;
   const { canAccessExam } = await import('../utils/progressUtils');
 
@@ -170,7 +178,7 @@ router.get('/exams/:examId/access-status', authenticate, validateStudent, async 
 // Route to get unlocked content summary for a course
 router.get(
   '/courses/:courseId/unlocked-content',
-  authenticate,
+  authenticateStudent,
   validateStudent,
   validateCourseEnrollment,
   async (req, res) => {
