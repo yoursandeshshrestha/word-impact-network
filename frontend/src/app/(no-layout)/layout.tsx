@@ -18,16 +18,13 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { user, isLoading, isHydrated } = useSelector(
+  const { isLoading, isHydrated } = useSelector(
     (state: RootState) => state.user
   );
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   // Initialize WebSocket connection for real-time updates
   useWebSocketConnection();
-
-  // Provide consistent display name
-  const displayName = user?.fullName || "Student";
 
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
@@ -42,7 +39,6 @@ export default function DashboardLayout({
       <div className="md:ml-72 h-full flex flex-col">
         {/* Header */}
         <Header
-          studentName={displayName}
           isLoading={isLoading || !isHydrated}
           showSidebar={true}
           onMobileMenuToggle={toggleMobileMenu}

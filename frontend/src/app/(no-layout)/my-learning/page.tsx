@@ -6,8 +6,10 @@ import { useAutoMyLearning } from "@/redux/features/myLearningSlice/useMyLearnin
 import Image from "next/image";
 import { useAnnouncements } from "@/hooks/useAnnouncements";
 import AnnouncementModal from "@/components/Announcements/AnnouncementModal";
-import { useEffect, useState } from "react";
-
+import { useEffect, useState, useRef } from "react";
+import { useSelector } from "react-redux";
+import { RootState } from "@/redux/store";
+import { isAuthenticated } from "@/common/services/auth";
 
 interface CourseCardProps {
   id: string;
@@ -118,12 +120,24 @@ const CourseCard: React.FC<CourseCardProps> = ({
 const MyLearningPage: React.FC = () => {
   const router = useRouter();
   const { courses, isLoading, isError, error } = useAutoMyLearning();
-  const { announcements } = useAnnouncements();
+  const { announcements, loadAnnouncements } = useAnnouncements();
   const [showAnnouncementModal, setShowAnnouncementModal] = useState(false);
+  const hasLoadedRef = useRef(false);
+  const user = useSelector((state: RootState) => state.user.user);
+
+  // Load announcements when component mounts
+  useEffect(() => {
+    if (!hasLoadedRef.current && isAuthenticated() && user) {
+      hasLoadedRef.current = true;
+      loadAnnouncements();
+    }
+  }, [loadAnnouncements, user]);
 
   // Show announcement modal on page load if user hasn't seen it
   useEffect(() => {
     if (
+      isAuthenticated() &&
+      user &&
       announcements &&
       announcements.length > 0 &&
       !sessionStorage.getItem("announcementModalShown")
@@ -131,7 +145,7 @@ const MyLearningPage: React.FC = () => {
       setShowAnnouncementModal(true);
       sessionStorage.setItem("announcementModalShown", "true");
     }
-  }, [announcements]);
+  }, [announcements, user]);
 
   const handleContinueLearning = (courseId: string) => {
     router.push(`/my-learning/${courseId}`);
@@ -152,75 +166,73 @@ const MyLearningPage: React.FC = () => {
 
         {/* Main Content */}
         <div>
-            {/* Loading State */}
-            {isLoading && (
-              <div className="flex items-center justify-center py-12 sm:py-16">
-                <div className="text-center">
-                  <div className="animate-spin rounded-full h-8 w-8 border-2 border-slate-200 border-t-[#7a9e7e] mx-auto mb-3"></div>
-                  <p className="text-sm sm:text-base text-slate-600">
-                    Loading your courses...
-                  </p>
-                </div>
+          {/* Loading State */}
+          {isLoading && (
+            <div className="flex items-center justify-center py-12 sm:py-16">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-2 border-slate-200 border-t-[#7a9e7e] mx-auto mb-3"></div>
+                <p className="text-sm sm:text-base text-slate-600">
+                  Loading your courses...
+                </p>
               </div>
-            )}
+            </div>
+          )}
 
-            {/* Error State */}
-            {isError && (
-              <div className="flex items-center justify-center py-12 sm:py-16">
-                <div className="text-center max-w-lg mx-auto px-4">
-                  <div className="text-red-500 text-2xl sm:text-3xl mb-3">
-                    ⚠️
-                  </div>
-                  <h2 className="text-lg sm:text-xl font-semibold text-slate-900 mb-2">
-                    Something went wrong
-                  </h2>
-                  <p className="text-sm sm:text-base text-slate-600 mb-4">
-                    {error || "Failed to load your learning courses"}
-                  </p>
-                  <button
-                    onClick={() => window.location.reload()}
-                    className="bg-slate-800 hover:bg-slate-700 text-white px-4 sm:px-5 py-2 sm:py-2.5 rounded-lg sm:rounded-xl text-sm sm:text-base transition-colors cursor-pointer shadow-sm hover:shadow-md"
-                  >
-                    Try Again
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* Courses List */}
-            {courses.length === 0 ? (
-              <div className="text-center py-16">
-                <div className="text-6xl mb-6">📚</div>
-                <h3 className="text-2xl font-semibold text-slate-900 mb-4">
-                  No courses enrolled
-                </h3>
-                <p className="text-slate-600 text-lg max-w-2xl mx-auto mb-8">
-                  You haven&apos;t enrolled in any courses yet. Start learning
-                  today and discover new skills!
+          {/* Error State */}
+          {isError && (
+            <div className="flex items-center justify-center py-12 sm:py-16">
+              <div className="text-center max-w-lg mx-auto px-4">
+                <div className="text-red-500 text-2xl sm:text-3xl mb-3">⚠️</div>
+                <h2 className="text-lg sm:text-xl font-semibold text-slate-900 mb-2">
+                  Something went wrong
+                </h2>
+                <p className="text-sm sm:text-base text-slate-600 mb-4">
+                  {error || "Failed to load your learning courses"}
                 </p>
                 <button
-                  onClick={() => router.push("/courses")}
-                  className="bg-slate-800 hover:bg-slate-700 text-white px-6 py-3 rounded-xl font-semibold transition-colors cursor-pointer shadow-sm hover:shadow-md"
+                  onClick={() => window.location.reload()}
+                  className="bg-slate-800 hover:bg-slate-700 text-white px-4 sm:px-5 py-2 sm:py-2.5 rounded-lg sm:rounded-xl text-sm sm:text-base transition-colors cursor-pointer shadow-sm hover:shadow-md"
                 >
-                  Browse Courses
+                  Try Again
                 </button>
               </div>
-            ) : (
-              <div className="space-y-8">
-                {courses.map((course) => (
-                  <CourseCard
-                    key={course.id}
-                    id={course.id}
-                    title={course.title}
-                    description={course.description}
-                    coverImageUrl={course.coverImageUrl}
-                    progress={course.progress}
-                    onContinue={handleContinueLearning}
-                  />
-                ))}
-              </div>
-            )}
-          </div>
+            </div>
+          )}
+
+          {/* Courses List */}
+          {courses.length === 0 ? (
+            <div className="text-center py-16">
+              <div className="text-6xl mb-6">📚</div>
+              <h3 className="text-2xl font-semibold text-slate-900 mb-4">
+                No courses enrolled
+              </h3>
+              <p className="text-slate-600 text-lg max-w-2xl mx-auto mb-8">
+                You haven&apos;t enrolled in any courses yet. Start learning
+                today and discover new skills!
+              </p>
+              <button
+                onClick={() => router.push("/courses")}
+                className="bg-slate-800 hover:bg-slate-700 text-white px-6 py-3 rounded-xl font-semibold transition-colors cursor-pointer shadow-sm hover:shadow-md"
+              >
+                Browse Courses
+              </button>
+            </div>
+          ) : (
+            <div className="space-y-8">
+              {courses.map((course) => (
+                <CourseCard
+                  key={course.id}
+                  id={course.id}
+                  title={course.title}
+                  description={course.description}
+                  coverImageUrl={course.coverImageUrl}
+                  progress={course.progress}
+                  onContinue={handleContinueLearning}
+                />
+              ))}
+            </div>
+          )}
+        </div>
 
         <style jsx>{`
           .line-clamp-2 {
@@ -241,8 +253,8 @@ const MyLearningPage: React.FC = () => {
             to {
               transform: rotate(360deg);
             }
-                  }
-      `}</style>
+          }
+        `}</style>
       </div>
 
       {/* Announcement Modal */}

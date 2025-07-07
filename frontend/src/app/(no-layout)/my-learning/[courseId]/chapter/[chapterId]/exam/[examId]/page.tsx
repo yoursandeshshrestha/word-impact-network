@@ -298,7 +298,12 @@ function ExamPage() {
                         {new Date(attempt.startTime).toLocaleDateString()}
                       </p>
                       <p className="font-medium text-slate-900 whitespace-nowrap">
-                        Score: {attempt.score}%
+                        Score:{" "}
+                        {Math.round(
+                          (attempt.score / (examData.exam?.totalPoints || 1)) *
+                            100
+                        )}
+                        %
                       </p>
                     </div>
                     {attempt.isPassed ? (
@@ -431,7 +436,12 @@ function ExamPage() {
                         {new Date(attempt.startTime).toLocaleDateString()}
                       </p>
                       <p className="font-medium text-slate-900 whitespace-nowrap">
-                        Score: {attempt.score}%
+                        Score:{" "}
+                        {Math.round(
+                          (attempt.score / (examData.exam?.totalPoints || 1)) *
+                            100
+                        )}
+                        %
                       </p>
                     </div>
                     {attempt.isPassed ? (

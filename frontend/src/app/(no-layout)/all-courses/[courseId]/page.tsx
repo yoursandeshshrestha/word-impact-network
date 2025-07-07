@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useParams } from "next/navigation";
 import { useAutoCoursePreview } from "@/hooks/coursePreview";
 import { useCourseEnrollment } from "@/hooks/useCourseEnrollment";
+import { useAutoEnrolledCourses } from "@/hooks/useEnrolledCourses";
 import { BookOpen, Play, ChevronRight } from "lucide-react";
 import placeholderCourseImage from "@/assets/placeholder-image.png";
 
@@ -12,9 +13,15 @@ function CoursePreviewPage() {
   const params = useParams();
   const courseId = params?.courseId as string;
   const { enroll, isLoading: isEnrolling } = useCourseEnrollment();
+  const { enrolledCourses, isLoading: isLoadingEnrolled } = useAutoEnrolledCourses();
 
   const { coursePreview, isLoading, isError, error } =
     useAutoCoursePreview(courseId);
+
+  // Check if user is enrolled in this course
+  const isEnrolled = enrolledCourses.some(
+    (enrolledCourse) => enrolledCourse.course.id === courseId
+  );
 
   const stripHtml = (html: string) => {
     return html.replace(/<[^>]*>/g, "").trim();
@@ -27,6 +34,9 @@ function CoursePreviewPage() {
   };
 
   const handleEnroll = async () => {
+    if (isEnrolled) {
+      return; // Don't enroll if already enrolled
+    }
     await enroll(courseId);
   };
 
@@ -218,10 +228,20 @@ function CoursePreviewPage() {
 
               <button
                 onClick={handleEnroll}
-                disabled={isEnrolling}
-                className="w-full bg-slate-800 hover:bg-slate-700 text-white cursor-pointer py-3 px-6 rounded-xl transition-colors font-semibold mt-8 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+                disabled={isEnrolling || isEnrolled || isLoadingEnrolled}
+                className={`w-full text-white cursor-pointer py-3 px-6 rounded-xl transition-colors font-semibold mt-8 shadow-sm ${
+                  isEnrolled
+                    ? "bg-green-600 hover:bg-green-700"
+                    : "bg-slate-800 hover:bg-slate-700"
+                } disabled:opacity-50 disabled:cursor-not-allowed`}
               >
-                {isEnrolling ? "Enrolling..." : "Enroll in Course"}
+                {isLoadingEnrolled
+                  ? "Loading..."
+                  : isEnrolling
+                  ? "Enrolling..."
+                  : isEnrolled
+                  ? "Enrolled"
+                  : "Enroll in Course"}
               </button>
             </div>
           </div>
