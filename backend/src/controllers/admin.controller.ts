@@ -8,12 +8,14 @@ import {
   initiatePasswordReset,
   loginAdmin,
 } from '../services/admin.service';
-import { generateToken } from '../utils/jwt';
+import { generateAccessToken, generateRefreshToken } from '../utils/jwt';
+import { createRefreshToken } from '../services/refreshToken.service';
 import { sendSuccess } from '../utils/responseHandler';
 import { catchAsync } from '../utils/catchAsync';
 import { ErrorTypes } from '@/utils/appError';
 import { AppError } from '@/utils/appError';
 import { PrismaClient } from '@prisma/client';
+import { clearAdminAuthCookies } from '../utils/tokenUtils';
 
 const prisma = new PrismaClient();
 
@@ -36,10 +38,36 @@ export const loginAdminController = catchAsync(async (req: Request, res: Respons
   const { email, password } = req.body;
 
   const admin = await loginAdmin(email, password);
-  const token = generateToken({
+
+  // Create refresh token record
+  const refreshTokenRecord = await createRefreshToken(admin.userId);
+
+  // Generate tokens
+  const accessToken = generateAccessToken({
     userId: admin.userId,
     email: admin.email,
     role: admin.role,
+  });
+
+  const refreshToken = generateRefreshToken(admin.userId, refreshTokenRecord.tokenId);
+
+  // Set secure HTTP-only cookies
+  const isProduction = process.env.NODE_ENV === 'production';
+
+  res.cookie('accessToken', accessToken, {
+    httpOnly: true,
+    secure: isProduction,
+    sameSite: 'strict',
+    maxAge: 15 * 60 * 1000, // 15 minutes
+    path: '/',
+  });
+
+  res.cookie('refreshToken', refreshToken, {
+    httpOnly: true,
+    secure: isProduction,
+    sameSite: 'strict',
+    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    path: '/',
   });
 
   sendSuccess(res, 200, 'Login successful', {
@@ -49,7 +77,6 @@ export const loginAdminController = catchAsync(async (req: Request, res: Respons
       fullName: admin.fullName,
       role: admin.role,
     },
-    token,
   });
 });
 
@@ -113,6 +140,103 @@ export const verifyPasswordReset = catchAsync(async (req: Request, res: Response
   });
 });
 
+// Logout admin
+export const logoutAdmin = catchAsync(async (req: Request, res: Response) => {
+  if (!req.user) {
+    throw new AppError('Authentication required', 401, ErrorTypes.AUTHENTICATION);
+  }
+
+  // Clear only admin authentication cookies
+  clearAdminAuthCookies(res);
+
+  // Revoke all refresh tokens for the user
+  const { revokeAllUserRefreshTokens } = await import('../services/refreshToken.service');
+  await revokeAllUserRefreshTokens(req.user.userId);
+
+  sendSuccess(res, 200, 'Logout successful', null);
+});
+
+// Refresh access token
+export const refreshAccessToken = catchAsync(async (req: Request, res: Response) => {
+  // Get admin refresh token
+  const { getAdminTokens } = await import('../utils/tokenUtils');
+  const tokenSelection = getAdminTokens(req);
+
+  const refreshToken = tokenSelection.refreshToken;
+
+  if (!refreshToken) {
+    throw new AppError('Refresh token required', 401, ErrorTypes.AUTHENTICATION);
+  }
+
+  const { verifyRefreshToken } = await import('../utils/jwt');
+  const { findRefreshToken, revokeRefreshToken } = await import('../services/refreshToken.service');
+
+  // Verify refresh token
+  const decoded = verifyRefreshToken(refreshToken);
+  if (!decoded) {
+    throw new AppError('Invalid refresh token', 401, ErrorTypes.AUTHENTICATION);
+  }
+
+  // Check if refresh token exists in database and is not revoked
+  const refreshTokenRecord = await findRefreshToken(decoded.tokenId);
+  if (!refreshTokenRecord) {
+    throw new AppError('Refresh token not found or revoked', 401, ErrorTypes.AUTHENTICATION);
+  }
+
+  // Get user information
+  const user = await prisma.user.findUnique({
+    where: { id: decoded.userId },
+    include: { admin: true },
+  });
+
+  if (!user || !user.admin) {
+    throw new AppError('User not found', 404, ErrorTypes.NOT_FOUND);
+  }
+
+  // Generate new access token
+  const { generateAccessToken } = await import('../utils/jwt');
+  const newAccessToken = generateAccessToken({
+    userId: user.id,
+    email: user.email,
+    role: user.role,
+  });
+
+  // Revoke old refresh token and create new one (token rotation)
+  await revokeRefreshToken(decoded.tokenId);
+  const newRefreshTokenRecord = await createRefreshToken(user.id);
+  const newRefreshToken = generateRefreshToken(user.id, newRefreshTokenRecord.tokenId);
+
+  // Set new cookies using the appropriate cookie names
+  const isProduction = process.env.NODE_ENV === 'production';
+  const { getCookieNames } = await import('../utils/tokenUtils');
+  const cookieNames = getCookieNames('admin');
+
+  res.cookie(cookieNames.accessToken, newAccessToken, {
+    httpOnly: true,
+    secure: isProduction,
+    sameSite: 'strict',
+    maxAge: 15 * 60 * 1000, // 15 minutes
+    path: '/',
+  });
+
+  res.cookie(cookieNames.refreshToken, newRefreshToken, {
+    httpOnly: true,
+    secure: isProduction,
+    sameSite: 'strict',
+    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    path: '/',
+  });
+
+  sendSuccess(res, 200, 'Token refreshed successfully', {
+    admin: {
+      id: user.admin.id,
+      email: user.email,
+      fullName: user.admin.fullName,
+      role: user.role,
+    },
+  });
+});
+
 // get all students
 export const getAllStudentsController = catchAsync(async (req: Request, res: Response) => {
   const search = req.query.search as string | undefined;
@@ -121,99 +245,8 @@ export const getAllStudentsController = catchAsync(async (req: Request, res: Res
 
   const { students, total, totalPages } = await getAllStudentsWithSearch(search, page, limit);
 
-  // Get detailed information for each student
-  const studentsWithDetails = await Promise.all(
-    students.map(async (student) => {
-      // Get course enrollments
-      const enrollments = await prisma.courseEnrollment.findMany({
-        where: { studentId: student.id },
-        include: {
-          course: {
-            select: {
-              id: true,
-              title: true,
-              durationYears: true,
-            },
-          },
-        },
-      });
-
-      // Get chapter progress
-      const chapterProgress = await prisma.chapterProgress.findMany({
-        where: { studentId: student.id },
-        select: {
-          isCompleted: true,
-          chapter: {
-            select: {
-              courseId: true,
-            },
-          },
-        },
-      });
-
-      // Get exam attempts
-      const examAttempts = await prisma.examAttempt.findMany({
-        where: { studentId: student.id },
-        select: {
-          isPassed: true,
-          exam: {
-            select: {
-              chapter: {
-                select: {
-                  courseId: true,
-                },
-              },
-            },
-          },
-        },
-      });
-
-      // Calculate progress metrics
-      const coursesEnrolled = enrollments.length;
-      const chaptersCompleted = chapterProgress.filter((progress) => progress.isCompleted).length;
-      const examsCompleted = examAttempts.length;
-      const examsPassed = examAttempts.filter((attempt) => attempt.isPassed).length;
-
-      // Calculate course-wise progress
-      const courseProgress = enrollments.map((enrollment) => {
-        const courseChapters = chapterProgress.filter(
-          (progress) => progress.chapter.courseId === enrollment.courseId,
-        );
-        const completedChapters = courseChapters.filter((progress) => progress.isCompleted).length;
-        const courseExams = examAttempts.filter(
-          (attempt) => attempt.exam.chapter.courseId === enrollment.courseId,
-        );
-        const passedExams = courseExams.filter((attempt) => attempt.isPassed).length;
-
-        return {
-          courseId: enrollment.course.id,
-          courseTitle: enrollment.course.title,
-          durationYears: enrollment.course.durationYears,
-          enrollmentDate: enrollment.enrollmentDate,
-          progress: {
-            chaptersCompleted,
-            totalChapters: courseChapters.length,
-            examsPassed,
-            totalExams: courseExams.length,
-          },
-        };
-      });
-
-      return {
-        ...student,
-        statistics: {
-          coursesEnrolled,
-          chaptersCompleted,
-          examsCompleted,
-          examsPassed,
-        },
-        courseProgress,
-      };
-    }),
-  );
-
   sendSuccess(res, 200, 'Students retrieved successfully', {
-    students: studentsWithDetails,
+    students,
     pagination: {
       total,
       totalPages,

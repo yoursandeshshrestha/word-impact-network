@@ -50,6 +50,8 @@ initServices();
 
 // API Routes
 app.use(`${config.apiPrefix}`, routes);
+
+// Validate token route
 app.use(`${config.apiPrefix}`, validateToken);
 
 // Root route for base URL

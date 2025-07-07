@@ -3,7 +3,11 @@ import { PrismaClient } from '@prisma/client';
 import { catchAsync } from '../utils/catchAsync';
 import { sendSuccess } from '../utils/responseHandler';
 import { AppError, ErrorTypes } from '../utils/appError';
-import { getNotifications, markAllNotificationsAsRead } from '@/services/notification.service';
+import {
+  getNotifications,
+  markAllNotificationsAsRead,
+  markNotificationAsRead,
+} from '@/services/notification.service';
 
 const prisma = new PrismaClient();
 
@@ -26,6 +30,22 @@ export const getNotificationsController = catchAsync(async (req: Request, res: R
   const result = await getNotifications(userId, page, limit, unreadOnly);
 
   sendSuccess(res, 200, 'Notifications retrieved successfully', result);
+});
+
+// Mark a single notification as read
+export const markNotificationAsReadController = catchAsync(async (req: Request, res: Response) => {
+  // Ensure user is authenticated
+  if (!req.user) {
+    throw new AppError('Authentication required', 401, ErrorTypes.AUTHENTICATION);
+  }
+
+  const userId = req.user.userId;
+  const { id: notificationId } = req.params;
+
+  // Mark notification as read
+  const result = await markNotificationAsRead(userId, notificationId);
+
+  sendSuccess(res, 200, 'Notification marked as read', result);
 });
 
 // Mark all notifications as read
