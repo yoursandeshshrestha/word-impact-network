@@ -1,7 +1,6 @@
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import { RootState } from "../store";
-import { getAuthToken } from "@/utils/auth";
-import { toast } from "sonner";
+import { api } from "@/lib/api";
 import { setLoading } from "./loadingSlice";
 import { Chapter } from "./chaptersSlice";
 
@@ -45,29 +44,9 @@ export const createCourse = createAsyncThunk(
   async (courseData: FormData, { dispatch, rejectWithValue }) => {
     try {
       dispatch(setLoading(true));
-      const apiUrl =
-        process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api/v1";
+      const response = await api.upload<Course>(`/courses`, courseData);
 
-      const response = await fetch(`${apiUrl}/courses`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${getAuthToken()}`,
-        },
-        body: courseData,
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        console.error("API Error Response:", data);
-        const errorMessage =
-          data?.message || data?.error || "Failed to create course";
-        toast.error(errorMessage);
-        throw new Error(errorMessage);
-      }
-
-      toast.success(data.message || "Course created successfully");
-      return data;
+      return response;
     } catch (error: unknown) {
       console.error("Error creating course:", error);
       if (error instanceof Error) {
@@ -87,23 +66,9 @@ export const getCourses = createAsyncThunk(
   "courses/getCourses",
   async (_, { rejectWithValue }) => {
     try {
-      const apiUrl =
-        process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api/v1";
+      const response = await api.get<Course[]>(`/courses`);
 
-      const response = await fetch(`${apiUrl}/courses`, {
-        headers: {
-          Authorization: `Bearer ${getAuthToken()}`,
-          "Content-Type": "application/json",
-        },
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data?.message || "Failed to fetch courses");
-      }
-
-      return data;
+      return response;
     } catch (error: unknown) {
       console.error("Error fetching courses:", error);
       return rejectWithValue(
@@ -118,23 +83,9 @@ export const getCourseById = createAsyncThunk(
   "courses/getCourseById",
   async (id: string, { rejectWithValue }) => {
     try {
-      const apiUrl =
-        process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api/v1";
+      const response = await api.get<Course>(`/courses/${id}`);
 
-      const response = await fetch(`${apiUrl}/courses/${id}`, {
-        headers: {
-          Authorization: `Bearer ${getAuthToken()}`,
-          "Content-Type": "application/json",
-        },
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data?.message || "Failed to fetch course");
-      }
-
-      return data;
+      return response;
     } catch (error: unknown) {
       console.error("Error fetching course:", error);
       return rejectWithValue(
@@ -153,29 +104,9 @@ export const updateCourse = createAsyncThunk(
   ) => {
     try {
       dispatch(setLoading(true));
-      const apiUrl =
-        process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api/v1";
+      const response = await api.uploadWithMethod<Course>(`/courses/${id}`, courseData, "PUT");
 
-      const response = await fetch(`${apiUrl}/courses/${id}`, {
-        method: "PUT",
-        headers: {
-          Authorization: `Bearer ${getAuthToken()}`,
-        },
-        body: courseData,
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        console.error("API Error Response:", data);
-        const errorMessage =
-          data?.message || data?.error || "Failed to update course";
-        toast.error(errorMessage);
-        throw new Error(errorMessage);
-      }
-
-      toast.success(data.message || "Course updated successfully");
-      return data;
+      return response;
     } catch (error: unknown) {
       console.error("Error updating course:", error);
       if (error instanceof Error) {
@@ -195,24 +126,9 @@ export const deleteCourse = createAsyncThunk(
   "courses/deleteCourse",
   async (id: string, { rejectWithValue }) => {
     try {
-      const apiUrl =
-        process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api/v1";
+      const response = await api.delete<{ id: string }>(`/courses/${id}`);
 
-      const response = await fetch(`${apiUrl}/courses/${id}`, {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${getAuthToken()}`,
-          "Content-Type": "application/json",
-        },
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data?.message || "Failed to delete course");
-      }
-
-      return { ...data, id };
+      return response;
     } catch (error: unknown) {
       console.error("Error deleting course:", error);
       return rejectWithValue(
@@ -245,8 +161,10 @@ const coursesSlice = createSlice({
       .addCase(createCourse.fulfilled, (state, action) => {
         state.loading = false;
         state.success = true;
-        state.message = action.payload.message;
-        state.courses.push(action.payload.data);
+        state.message = action.payload.message || "";
+        if (action.payload.data) {
+          state.courses.push(action.payload.data);
+        }
       })
       .addCase(createCourse.rejected, (state, action) => {
         state.loading = false;
@@ -259,7 +177,7 @@ const coursesSlice = createSlice({
       })
       .addCase(getCourses.fulfilled, (state, action) => {
         state.loading = false;
-        state.courses = action.payload.data;
+        state.courses = action.payload.data || [];
       })
       .addCase(getCourses.rejected, (state, action) => {
         state.loading = false;
@@ -272,7 +190,7 @@ const coursesSlice = createSlice({
       })
       .addCase(getCourseById.fulfilled, (state, action) => {
         state.loading = false;
-        state.course = action.payload.data;
+        state.course = action.payload.data || null;
       })
       .addCase(getCourseById.rejected, (state, action) => {
         state.loading = false;
@@ -286,11 +204,11 @@ const coursesSlice = createSlice({
       .addCase(updateCourse.fulfilled, (state, action) => {
         state.loading = false;
         state.success = true;
-        state.message = action.payload.message;
+        state.message = action.payload.message || "";
         state.courses = state.courses.map((course) =>
-          course.id === action.payload.data.id ? action.payload.data : course
+          course.id === action.payload.data?.id ? action.payload.data : course
         );
-        state.course = action.payload.data;
+        state.course = action.payload.data || null;
       })
       .addCase(updateCourse.rejected, (state, action) => {
         state.loading = false;
@@ -304,9 +222,9 @@ const coursesSlice = createSlice({
       .addCase(deleteCourse.fulfilled, (state, action) => {
         state.loading = false;
         state.success = true;
-        state.message = action.payload.message;
+        state.message = action.payload.message || "";
         state.courses = state.courses.filter(
-          (course) => course.id !== action.payload.id
+          (course) => course.id !== action.payload.data?.id
         );
       })
       .addCase(deleteCourse.rejected, (state, action) => {

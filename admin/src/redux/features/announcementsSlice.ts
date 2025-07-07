@@ -1,6 +1,6 @@
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import { RootState } from "../store";
-import { getAuthToken } from "@/utils/auth";
+import { api } from "@/lib/api";
 import { Announcement } from "@/types/announcement";
 
 interface AnnouncementsState {
@@ -37,24 +37,24 @@ export const fetchAnnouncements = createAsyncThunk(
     { rejectWithValue }
   ) => {
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
-      const response = await fetch(
-        `${apiUrl}/announcements?page=${page}&limit=${limit}`,
-        {
-          headers: {
-            Authorization: `Bearer ${getAuthToken()}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to fetch announcements");
-      }
-
-      const responseData = await response.json();
-      return responseData.data;
+      const response = await api.get<{
+        announcements: Announcement[];
+        pagination: {
+          currentPage: number;
+          totalPages: number;
+          totalItems: number;
+          pageSize: number;
+        };
+      }>(`/announcements?page=${page}&limit=${limit}`);
+      return response.data as {
+        announcements: Announcement[];
+        pagination: {
+          currentPage: number;
+          totalPages: number;
+          totalItems: number;
+          pageSize: number;
+        };
+      };
     } catch (error) {
       return rejectWithValue((error as Error).message);
     }
@@ -66,23 +66,11 @@ export const createAnnouncement = createAsyncThunk(
   "announcements/createAnnouncement",
   async (formData: FormData, { rejectWithValue }) => {
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
-      const response = await fetch(`${apiUrl}/announcements`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${getAuthToken()}`,
-          // Don't set Content-Type for FormData, let the browser set it with boundary
-        },
-        body: formData,
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to create announcement");
-      }
-
-      const data = await response.json();
-      return data.data;
+      const response = await api.upload<Announcement>(
+        "/announcements",
+        formData
+      );
+      return response.data as Announcement;
     } catch (error) {
       return rejectWithValue((error as Error).message);
     }
@@ -97,23 +85,8 @@ export const updateAnnouncement = createAsyncThunk(
     { rejectWithValue }
   ) => {
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
-      const response = await fetch(`${apiUrl}/announcements/${id}`, {
-        method: "PUT",
-        headers: {
-          Authorization: `Bearer ${getAuthToken()}`,
-          // Don't set Content-Type for FormData, let the browser set it with boundary
-        },
-        body: formData,
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to update announcement");
-      }
-
-      const responseData = await response.json();
-      return responseData.data;
+      const response = await api.uploadWithMethod(`/announcements/${id}`, formData, "PUT");
+      return response.data;
     } catch (error) {
       return rejectWithValue((error as Error).message);
     }
@@ -125,20 +98,7 @@ export const deleteAnnouncement = createAsyncThunk(
   "announcements/deleteAnnouncement",
   async (id: string, { rejectWithValue }) => {
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
-      const response = await fetch(`${apiUrl}/announcements/${id}`, {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${getAuthToken()}`,
-          "Content-Type": "application/json",
-        },
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to delete announcement");
-      }
-
+      await api.delete(`/announcements/${id}`);
       return id;
     } catch (error) {
       return rejectWithValue((error as Error).message);
@@ -151,27 +111,8 @@ export const toggleAnnouncementStatus = createAsyncThunk(
   "announcements/toggleAnnouncementStatus",
   async (id: string, { rejectWithValue }) => {
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
-      const response = await fetch(
-        `${apiUrl}/announcements/${id}/toggle-status`,
-        {
-          method: "PATCH",
-          headers: {
-            Authorization: `Bearer ${getAuthToken()}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(
-          errorData.message || "Failed to toggle announcement status"
-        );
-      }
-
-      const data = await response.json();
-      return data.data;
+      const response = await api.patch(`/announcements/${id}/toggle-status`);
+      return response.data;
     } catch (error) {
       return rejectWithValue((error as Error).message);
     }
@@ -233,14 +174,15 @@ const announcementsSlice = createSlice({
       })
       .addCase(updateAnnouncement.fulfilled, (state, action) => {
         state.loading = false;
+        const payload = action.payload as Announcement;
         const index = state.announcements.findIndex(
-          (announcement) => announcement.id === action.payload.id
+          (announcement) => announcement.id === payload.id
         );
         if (index !== -1) {
-          state.announcements[index] = action.payload;
+          state.announcements[index] = payload;
         }
-        if (state.currentAnnouncement?.id === action.payload.id) {
-          state.currentAnnouncement = action.payload;
+        if (state.currentAnnouncement?.id === payload.id) {
+          state.currentAnnouncement = payload;
         }
       })
       .addCase(updateAnnouncement.rejected, (state, action) => {
@@ -277,14 +219,15 @@ const announcementsSlice = createSlice({
       })
       .addCase(toggleAnnouncementStatus.fulfilled, (state, action) => {
         state.loading = false;
+        const payload = action.payload as Announcement;
         const index = state.announcements.findIndex(
-          (announcement) => announcement.id === action.payload.id
+          (announcement) => announcement.id === payload.id
         );
         if (index !== -1) {
-          state.announcements[index] = action.payload;
+          state.announcements[index] = payload;
         }
-        if (state.currentAnnouncement?.id === action.payload.id) {
-          state.currentAnnouncement = action.payload;
+        if (state.currentAnnouncement?.id === payload.id) {
+          state.currentAnnouncement = payload;
         }
       })
       .addCase(toggleAnnouncementStatus.rejected, (state, action) => {

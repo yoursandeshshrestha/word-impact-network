@@ -1,6 +1,6 @@
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import { RootState } from "../store";
-import { getAuthToken } from "@/utils/auth";
+import { api } from "@/lib/api";
 
 // Types
 export interface Application {
@@ -63,22 +63,11 @@ export const fetchApplications = createAsyncThunk(
     { rejectWithValue }
   ) => {
     try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/applications?page=${page}&limit=${limit}`,
-        {
-          headers: {
-            Authorization: `Bearer ${getAuthToken()}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error("Failed to fetch applications");
-      }
-
-      const data = await response.json();
-      return data.data;
+      const response = await api.get<{
+        applications: Application[];
+        pagination: Pagination;
+      }>(`/applications?page=${page}&limit=${limit}`);
+      return response.data;
     } catch (error) {
       return rejectWithValue((error as Error).message);
     }
@@ -89,22 +78,8 @@ export const fetchApplicationById = createAsyncThunk(
   "applications/fetchApplicationById",
   async (id: string, { rejectWithValue }) => {
     try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/applications/${id}`,
-        {
-          headers: {
-            Authorization: `Bearer ${getAuthToken()}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error("Failed to fetch application");
-      }
-
-      const data = await response.json();
-      return data.data.application;
+      const response = await api.get<Application>(`/applications/${id}`);
+      return response.data;
     } catch (error) {
       return rejectWithValue((error as Error).message);
     }
@@ -132,24 +107,12 @@ export const updateApplicationStatus = createAsyncThunk(
         payload.rejectionReason = rejectionReason;
       }
 
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/applications/update-status/${id}`,
-        {
-          method: "PATCH",
-          headers: {
-            Authorization: `Bearer ${getAuthToken()}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(payload),
-        }
+          const response = await api.patch<Application>(
+        `/applications/update-status/${id}`,
+        payload
       );
 
-      if (!response.ok) {
-        throw new Error("Failed to update application status");
-      }
-
-      const data = await response.json();
-      return { id, ...data.data.application };
+      return response.data;
     } catch (error) {
       return rejectWithValue((error as Error).message);
     }
@@ -160,22 +123,8 @@ export const deleteApplication = createAsyncThunk(
   "applications/deleteApplication",
   async (id: string, { rejectWithValue }) => {
     try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/applications/${id}`,
-        {
-          method: "DELETE",
-          headers: {
-            Authorization: `Bearer ${getAuthToken()}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error("Failed to delete application");
-      }
-
-      return id;
+      const response = await api.delete<Application>(`/applications/${id}`);
+      return response.data;
     } catch (error) {
       return rejectWithValue((error as Error).message);
     }
@@ -209,8 +158,8 @@ const applicationsSlice = createSlice({
       })
       .addCase(fetchApplications.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.applications = action.payload.applications;
-        state.pagination = action.payload.pagination;
+        state.applications = action.payload?.applications || [];
+        state.pagination = action.payload?.pagination || initialState.pagination;
       })
       .addCase(fetchApplications.rejected, (state, action) => {
         state.isLoading = false;
@@ -224,7 +173,7 @@ const applicationsSlice = createSlice({
       })
       .addCase(fetchApplicationById.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.selectedApplication = action.payload;
+        state.selectedApplication = action.payload || null;
       })
       .addCase(fetchApplicationById.rejected, (state, action) => {
         state.isLoading = false;
@@ -241,27 +190,27 @@ const applicationsSlice = createSlice({
 
         // Update the application in the list
         const index = state.applications.findIndex(
-          (app) => app.applicationId === action.payload.id
+          (app) => app.applicationId === action.payload?.applicationId
         );
 
         if (index !== -1) {
           state.applications[index] = {
             ...state.applications[index],
-            status: action.payload.status,
-            rejectionReason: action.payload.rejectionReason || null,
+            status: action.payload?.status as "APPROVED" | "REJECTED" | "PENDING",
+            rejectionReason: action.payload?.rejectionReason || null,
             reviewedAt: new Date().toISOString(),
           };
         }
 
         // Update selected application if it's the one being updated
-        if (state.selectedApplication?.applicationId === action.payload.id) {
+        if (state.selectedApplication?.applicationId === action.payload?.applicationId) {
           state.selectedApplication = {
             ...state.selectedApplication,
-            status: action.payload.status as
+            status: action.payload?.status as
               | "APPROVED"
               | "REJECTED"
               | "PENDING",
-            rejectionReason: action.payload.rejectionReason || null,
+            rejectionReason: action.payload?.rejectionReason || null,
             reviewedAt: new Date().toISOString(),
           } as Application;
         }
@@ -279,10 +228,10 @@ const applicationsSlice = createSlice({
       .addCase(deleteApplication.fulfilled, (state, action) => {
         state.isLoading = false;
         state.applications = state.applications.filter(
-          (app) => app.applicationId !== action.payload
+          (app) => app.applicationId !== action.payload?.applicationId
         );
 
-        if (state.selectedApplication?.applicationId === action.payload) {
+        if (state.selectedApplication?.applicationId === action.payload?.applicationId) { 
           state.selectedApplication = null;
         }
       })

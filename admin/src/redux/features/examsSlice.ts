@@ -1,6 +1,6 @@
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import { RootState } from "../store";
-import { getAuthToken } from "@/utils/auth";
+import { api } from "@/lib/api";
 
 export interface Option {
   text: string;
@@ -88,32 +88,13 @@ export const createExam = createAsyncThunk(
     { rejectWithValue }
   ) => {
     try {
-      const apiUrl =
-        process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api/v1";
-
-      // Create a clean payload with only the allowed fields
-      const cleanPayload = {
+      const response = await api.post<Exam>(`/exams/chapters/${chapterId}`, {
         title: examData.title,
         description: examData.description,
         timeLimit: examData.timeLimit,
-      };
-
-      const response = await fetch(`${apiUrl}/exams/chapters/${chapterId}`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${getAuthToken()}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(cleanPayload),
       });
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data?.message || "Failed to create exam");
-      }
-
-      return data;
+      return response;
     } catch (error: unknown) {
       console.error("Error creating exam:", error);
       return rejectWithValue(
@@ -128,23 +109,9 @@ export const getExamById = createAsyncThunk(
   "exams/getExamById",
   async (id: string, { rejectWithValue }) => {
     try {
-      const apiUrl =
-        process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api/v1";
+      const response = await api.get<Exam>(`/exams/${id}`);
 
-      const response = await fetch(`${apiUrl}/exams/${id}`, {
-        headers: {
-          Authorization: `Bearer ${getAuthToken()}`,
-          "Content-Type": "application/json",
-        },
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data?.message || "Failed to fetch exam");
-      }
-
-      return data;
+      return response;
     } catch (error: unknown) {
       console.error("Error fetching exam:", error);
       return rejectWithValue(
@@ -178,9 +145,6 @@ export const updateExam = createAsyncThunk(
     { rejectWithValue }
   ) => {
     try {
-      const apiUrl =
-        process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api/v1";
-
       // Create a clean payload with only the allowed fields
       const cleanPayload: Partial<{
         title: string;
@@ -197,22 +161,9 @@ export const updateExam = createAsyncThunk(
       if (examData.timeLimit !== undefined)
         cleanPayload.timeLimit = examData.timeLimit;
 
-      const response = await fetch(`${apiUrl}/exams/${id}`, {
-        method: "PUT",
-        headers: {
-          Authorization: `Bearer ${getAuthToken()}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(cleanPayload),
-      });
+      const response = await api.put<Exam>(`/exams/${id}`, cleanPayload);
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data?.message || "Failed to update exam");
-      }
-
-      return data;
+      return response;
     } catch (error: unknown) {
       console.error("Error updating exam:", error);
       return rejectWithValue(
@@ -227,24 +178,9 @@ export const deleteExam = createAsyncThunk(
   "exams/deleteExam",
   async (id: string, { rejectWithValue }) => {
     try {
-      const apiUrl =
-        process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api/v1";
+      const response = await api.delete<{ id: string }>(`/exams/${id}`);
 
-      const response = await fetch(`${apiUrl}/exams/${id}`, {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${getAuthToken()}`,
-          "Content-Type": "application/json",
-        },
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data?.message || "Failed to delete exam");
-      }
-
-      return { ...data, id };
+      return response;
     } catch (error: unknown) {
       console.error("Error deleting exam:", error);
       return rejectWithValue(
@@ -268,9 +204,6 @@ export const addQuestion = createAsyncThunk(
     { rejectWithValue }
   ) => {
     try {
-      const apiUrl =
-        process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api/v1";
-
       // Create a clean payload with only the fields expected by the API
       const cleanPayload: QuestionApiPayload = {
         text: questionData.text,
@@ -285,22 +218,12 @@ export const addQuestion = createAsyncThunk(
 
       console.log("Clean API payload:", cleanPayload);
 
-      const response = await fetch(`${apiUrl}/exams/${examId}/questions`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${getAuthToken()}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(cleanPayload),
-      });
+      const response = await api.post<Question>(
+        `/exams/${examId}/questions`,
+        cleanPayload
+      );
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data?.message || "Failed to add question");
-      }
-
-      return data;
+      return response;
     } catch (error: unknown) {
       console.error("Error adding question:", error);
       return rejectWithValue(
@@ -326,9 +249,6 @@ export const updateQuestion = createAsyncThunk(
     { rejectWithValue }
   ) => {
     try {
-      const apiUrl =
-        process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api/v1";
-
       // Create a clean payload with only the fields expected by the API
       const cleanPayload: Partial<QuestionApiPayload> = {};
 
@@ -351,25 +271,12 @@ export const updateQuestion = createAsyncThunk(
 
       console.log("Clean update payload:", cleanPayload);
 
-      const response = await fetch(
-        `${apiUrl}/exams/${examId}/questions/${questionId}`,
-        {
-          method: "PUT",
-          headers: {
-            Authorization: `Bearer ${getAuthToken()}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(cleanPayload),
-        }
+      const response = await api.put<Question>(
+        `/exams/${examId}/questions/${questionId}`,
+        cleanPayload
       );
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data?.message || "Failed to update question");
-      }
-
-      return data;
+      return response;
     } catch (error: unknown) {
       console.error("Error updating question:", error);
       return rejectWithValue(
@@ -387,27 +294,11 @@ export const deleteQuestion = createAsyncThunk(
     { rejectWithValue }
   ) => {
     try {
-      const apiUrl =
-        process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api/v1";
-
-      const response = await fetch(
-        `${apiUrl}/exams/${examId}/questions/${questionId}`,
-        {
-          method: "DELETE",
-          headers: {
-            Authorization: `Bearer ${getAuthToken()}`,
-            "Content-Type": "application/json",
-          },
-        }
+      const response = await api.delete<{ id: string }>(
+        `/exams/${examId}/questions/${questionId}`
       );
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data?.message || "Failed to delete question");
-      }
-
-      return { ...data, questionId };
+      return response;
     } catch (error: unknown) {
       console.error("Error deleting question:", error);
       return rejectWithValue(
@@ -447,9 +338,11 @@ const examsSlice = createSlice({
       .addCase(createExam.fulfilled, (state, action) => {
         state.loading = false;
         state.success = true;
-        state.message = action.payload.message;
-        state.exam = action.payload.data;
-        state.exams.push(action.payload.data);
+        state.message = action.payload.message || "";
+        state.exam = action.payload.data || null;
+        if (action.payload.data) {
+          state.exams.push(action.payload.data);
+        }
       })
       .addCase(createExam.rejected, (state, action) => {
         state.loading = false;
@@ -462,8 +355,8 @@ const examsSlice = createSlice({
       })
       .addCase(getExamById.fulfilled, (state, action) => {
         state.loading = false;
-        state.exam = action.payload.data;
-        state.questions = action.payload.data.questions || [];
+        state.exam = action.payload.data || null;
+        state.questions = action.payload.data?.questions || [];
       })
       .addCase(getExamById.rejected, (state, action) => {
         state.loading = false;
@@ -477,10 +370,10 @@ const examsSlice = createSlice({
       .addCase(updateExam.fulfilled, (state, action) => {
         state.loading = false;
         state.success = true;
-        state.message = action.payload.message;
-        state.exam = action.payload.data;
+        state.message = action.payload.message || "";
+        state.exam = action.payload.data || null;
         state.exams = state.exams.map((exam) =>
-          exam.id === action.payload.data.id ? action.payload.data : exam
+          exam.id === action.payload.data?.id ? action.payload.data : exam
         );
       })
       .addCase(updateExam.rejected, (state, action) => {
@@ -495,11 +388,11 @@ const examsSlice = createSlice({
       .addCase(deleteExam.fulfilled, (state, action) => {
         state.loading = false;
         state.success = true;
-        state.message = action.payload.message;
+        state.message = action.payload.message || "";
         state.exams = state.exams.filter(
-          (exam) => exam.id !== action.payload.id
+          (exam) => exam.id !== action.payload.data?.id
         );
-        if (state.exam?.id === action.payload.id) {
+        if (state.exam?.id === action.payload.data?.id) {
           state.exam = null;
           state.questions = [];
         }
@@ -516,11 +409,15 @@ const examsSlice = createSlice({
       .addCase(addQuestion.fulfilled, (state, action) => {
         state.loading = false;
         state.success = true;
-        state.message = action.payload.message;
-        state.questions.push(action.payload.data);
+        state.message = action.payload.message || "";
+        if (action.payload.data) {
+          state.questions.push(action.payload.data);
+        }
         // Update the questions array in the exam if it exists
         if (state.exam && state.exam.questions) {
-          state.exam.questions.push(action.payload.data);
+          if (action.payload.data) {
+            state.exam.questions.push(action.payload.data);
+          }
         }
       })
       .addCase(addQuestion.rejected, (state, action) => {
@@ -535,16 +432,16 @@ const examsSlice = createSlice({
       .addCase(updateQuestion.fulfilled, (state, action) => {
         state.loading = false;
         state.success = true;
-        state.message = action.payload.message;
+        state.message = action.payload.message || "";
         state.questions = state.questions.map((question) =>
-          question.id === action.payload.data.id
+          question.id === action.payload.data?.id
             ? action.payload.data
             : question
         );
         // Update the question in the exam's questions array if it exists
         if (state.exam && state.exam.questions) {
           state.exam.questions = state.exam.questions.map((question) =>
-            question.id === action.payload.data.id
+            question.id === action.payload.data?.id
               ? action.payload.data
               : question
           );
@@ -562,14 +459,14 @@ const examsSlice = createSlice({
       .addCase(deleteQuestion.fulfilled, (state, action) => {
         state.loading = false;
         state.success = true;
-        state.message = action.payload.message;
+        state.message = action.payload.message || "";
         state.questions = state.questions.filter(
-          (question) => question.id !== action.payload.questionId
+          (question) => question.id !== action.payload.data?.id
         );
         // Remove the question from the exam's questions array if it exists
         if (state.exam && state.exam.questions) {
           state.exam.questions = state.exam.questions.filter(
-            (question) => question.id !== action.payload.questionId
+            (question) => question.id !== action.payload.data?.id
           );
         }
       })

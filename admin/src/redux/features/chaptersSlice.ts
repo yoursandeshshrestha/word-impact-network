@@ -1,6 +1,6 @@
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import { RootState } from "../store";
-import { getAuthToken } from "@/utils/auth";
+import { api } from "@/lib/api";
 import { Question } from "./examsSlice";
 
 export interface Video {
@@ -86,25 +86,12 @@ export const createChapter = createAsyncThunk(
     { rejectWithValue }
   ) => {
     try {
-      const apiUrl =
-        process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api/v1";
+      const response = await api.post<Chapter>(
+        `/courses/${courseId}/chapters`,
+        chapterData
+      );
 
-      const response = await fetch(`${apiUrl}/courses/${courseId}/chapters`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${getAuthToken()}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(chapterData),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data?.message || "Failed to create chapter");
-      }
-
-      return data;
+      return response;
     } catch (error: unknown) {
       console.error("Error creating chapter:", error);
       return rejectWithValue(
@@ -119,23 +106,11 @@ export const getChaptersByCourse = createAsyncThunk(
   "chapters/getChaptersByCourse",
   async (courseId: string, { rejectWithValue }) => {
     try {
-      const apiUrl =
-        process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api/v1";
+      const response = await api.get<Chapter[]>(
+        `/courses/${courseId}/chapters`
+      );
 
-      const response = await fetch(`${apiUrl}/courses/${courseId}/chapters`, {
-        headers: {
-          Authorization: `Bearer ${getAuthToken()}`,
-          "Content-Type": "application/json",
-        },
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data?.message || "Failed to fetch chapters");
-      }
-
-      return data;
+      return response;
     } catch (error: unknown) {
       console.error("Error fetching chapters:", error);
       return rejectWithValue(
@@ -150,23 +125,9 @@ export const getChapterById = createAsyncThunk(
   "chapters/getChapterById",
   async (id: string, { rejectWithValue }) => {
     try {
-      const apiUrl =
-        process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api/v1";
+      const response = await api.get<Chapter>(`/chapters/${id}`);
 
-      const response = await fetch(`${apiUrl}/chapters/${id}`, {
-        headers: {
-          Authorization: `Bearer ${getAuthToken()}`,
-          "Content-Type": "application/json",
-        },
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data?.message || "Failed to fetch chapter");
-      }
-
-      return data;
+      return response;
     } catch (error: unknown) {
       console.error("Error fetching chapter:", error);
       return rejectWithValue(
@@ -184,25 +145,9 @@ export const updateChapter = createAsyncThunk(
     { rejectWithValue }
   ) => {
     try {
-      const apiUrl =
-        process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api/v1";
+      const response = await api.put<Chapter>(`/chapters/${id}`, chapterData);
 
-      const response = await fetch(`${apiUrl}/chapters/${id}`, {
-        method: "PUT",
-        headers: {
-          Authorization: `Bearer ${getAuthToken()}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(chapterData),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data?.message || "Failed to update chapter");
-      }
-
-      return data;
+      return response;
     } catch (error: unknown) {
       console.error("Error updating chapter:", error);
       return rejectWithValue(
@@ -217,24 +162,9 @@ export const deleteChapter = createAsyncThunk(
   "chapters/deleteChapter",
   async (id: string, { rejectWithValue }) => {
     try {
-      const apiUrl =
-        process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api/v1";
+      const response = await api.delete<{ id: string }>(`/chapters/${id}`);
 
-      const response = await fetch(`${apiUrl}/chapters/${id}`, {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${getAuthToken()}`,
-          "Content-Type": "application/json",
-        },
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data?.message || "Failed to delete chapter");
-      }
-
-      return { ...data, id };
+      return response;
     } catch (error: unknown) {
       console.error("Error deleting chapter:", error);
       return rejectWithValue(
@@ -270,8 +200,10 @@ const chaptersSlice = createSlice({
       .addCase(createChapter.fulfilled, (state, action) => {
         state.loading = false;
         state.success = true;
-        state.message = action.payload.message;
-        state.chapters.push(action.payload.data);
+        state.message = action.payload.message || "";
+        if (action.payload.data) {
+          state.chapters.push(action.payload.data);
+        }
       })
       .addCase(createChapter.rejected, (state, action) => {
         state.loading = false;
@@ -284,7 +216,7 @@ const chaptersSlice = createSlice({
       })
       .addCase(getChaptersByCourse.fulfilled, (state, action) => {
         state.loading = false;
-        state.chapters = action.payload.data;
+        state.chapters = action.payload.data || [];
       })
       .addCase(getChaptersByCourse.rejected, (state, action) => {
         state.loading = false;
@@ -297,7 +229,7 @@ const chaptersSlice = createSlice({
       })
       .addCase(getChapterById.fulfilled, (state, action) => {
         state.loading = false;
-        state.chapter = action.payload.data;
+        state.chapter = action.payload.data || null;
       })
       .addCase(getChapterById.rejected, (state, action) => {
         state.loading = false;
@@ -311,11 +243,11 @@ const chaptersSlice = createSlice({
       .addCase(updateChapter.fulfilled, (state, action) => {
         state.loading = false;
         state.success = true;
-        state.message = action.payload.message;
+        state.message = action.payload.message || "";
         state.chapters = state.chapters.map((chapter) =>
-          chapter.id === action.payload.data.id ? action.payload.data : chapter
+          chapter.id === action.payload.data?.id ? action.payload.data : chapter
         );
-        state.chapter = action.payload.data;
+        state.chapter = action.payload.data || null;
       })
       .addCase(updateChapter.rejected, (state, action) => {
         state.loading = false;
@@ -329,9 +261,9 @@ const chaptersSlice = createSlice({
       .addCase(deleteChapter.fulfilled, (state, action) => {
         state.loading = false;
         state.success = true;
-        state.message = action.payload.message;
+        state.message = action.payload.message || "";
         state.chapters = state.chapters.filter(
-          (chapter) => chapter.id !== action.payload.id
+          (chapter) => chapter.id !== action.payload.data?.id
         );
       })
       .addCase(deleteChapter.rejected, (state, action) => {

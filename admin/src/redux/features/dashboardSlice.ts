@@ -1,6 +1,6 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import { RootState } from "../store";
-import { getAuthToken } from "@/utils/auth";
+import { api } from "@/lib/api";
 
 // Dashboard statistics types
 export interface DashboardStats {
@@ -74,29 +74,18 @@ export const fetchDashboardStats = createAsyncThunk(
   "dashboard/fetchStats",
   async (_, { rejectWithValue }) => {
     try {
-      const apiUrl =
-        process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api/v1";
+      const response = await api.get<DashboardStats>(`/admin/dashboard`);
 
-      const response = await fetch(`${apiUrl}/admin/dashboard`, {
-        headers: {
-          Authorization: `Bearer ${getAuthToken()}`,
-          "Content-Type": "application/json",
-        },
-      });
-
-      if (!response.ok) {
-        let errorMessage = "Failed to fetch dashboard statistics";
-        try {
-          const errorData = await response.json();
-          errorMessage = errorData?.message || errorMessage;
-        } catch {
-          errorMessage = response.statusText || errorMessage;
-        }
-        throw new Error(errorMessage);
+      // Check if this is an authentication error response
+      if (
+        response.status === "error" &&
+        response.message.includes("Authentication failed")
+      ) {
+        // For auth errors, throw immediately to stop all retries
+        throw new Error("Authentication failed - redirecting to login");
       }
 
-      const data = await response.json();
-      return data.data;
+      return response.data;
     } catch (error) {
       console.error("Error fetching dashboard statistics:", error);
       return rejectWithValue((error as Error).message);
@@ -122,7 +111,7 @@ const dashboardSlice = createSlice({
       })
       .addCase(fetchDashboardStats.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.data = action.payload;
+        state.data = action.payload || null;
         state.lastFetched = new Date().toISOString();
       })
       .addCase(fetchDashboardStats.rejected, (state, action) => {
