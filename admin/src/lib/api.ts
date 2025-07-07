@@ -298,6 +298,45 @@ class ApiClient {
     }
   }
 
+  // File upload request with custom method
+  async uploadWithMethod<T>(
+    endpoint: string,
+    formData: FormData,
+    method: string = "POST"
+  ): Promise<ApiResponse<T>> {
+    const url = `${this.baseUrl}${endpoint}`;
+
+    try {
+      const response = await fetch(url, {
+        method,
+        credentials: "include",
+        body: formData, // Don't set Content-Type for FormData
+      });
+
+      // For uploads, we should NOT automatically refresh tokens during the upload process
+      // as this can cause the FormData to be consumed and the upload to fail
+      // Instead, we should let the upload complete and handle auth issues separately
+      if (response.status === 401) {
+        // Don't redirect immediately for uploads - let the calling code handle this
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(
+          errorData.message || "Authentication failed during upload"
+        );
+      }
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(
+          errorData.message || `HTTP error! status: ${response.status}`
+        );
+      }
+
+      return await response.json();
+    } catch (error) {
+      throw error;
+    }
+  }
+
   // Manual token refresh method for when uploads are complete
   async manualRefreshToken(): Promise<ApiResponse> {
     return this.refreshToken();
@@ -342,6 +381,8 @@ export const api = {
   delete: <T>(endpoint: string) => apiClient.delete<T>(endpoint),
   upload: <T>(endpoint: string, formData: FormData) =>
     apiClient.upload<T>(endpoint, formData),
+  uploadWithMethod: <T>(endpoint: string, formData: FormData, method?: string) =>
+    apiClient.uploadWithMethod<T>(endpoint, formData, method),
   manualRefreshToken: () => apiClient.manualRefreshToken(),
   checkTokenValidity: () => apiClient.checkTokenValidity(),
   clearExpiredTokens: () => apiClient.clearExpiredTokens(),
