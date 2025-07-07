@@ -1,6 +1,6 @@
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import { RootState } from "../store";
-import { getAuthToken } from "@/utils/auth";
+import { api } from "@/lib/api";
 
 // Types
 interface CourseProgress {
@@ -11,16 +11,66 @@ interface CourseProgress {
   progress: {
     chaptersCompleted: number;
     totalChapters: number;
+    chapterCompletionPercentage: number;
     examsPassed: number;
     totalExams: number;
+    examCompletionPercentage: number;
   };
 }
 
 interface StudentStatistics {
   coursesEnrolled: number;
   chaptersCompleted: number;
+  totalChapters: number;
+  overallChapterProgress: number;
   examsCompleted: number;
   examsPassed: number;
+  totalExams: number;
+  overallExamProgress: number;
+  videosWatched: number;
+  videosInProgress: number;
+  certificationsEarned: number;
+}
+
+interface RecentExamAttempt {
+  id: string;
+  examTitle: string;
+  chapterTitle: string;
+  courseTitle: string;
+  score: number;
+  isPassed: boolean;
+  startTime: string;
+}
+
+interface RecentVideoProgress {
+  videoTitle: string;
+  chapterTitle: string;
+  courseTitle: string;
+  watchedPercent: number;
+  lastWatchedAt: string;
+}
+
+interface RecentActivity {
+  recentExamAttempts: RecentExamAttempt[];
+  recentVideoProgress: RecentVideoProgress[];
+}
+
+interface Application {
+  id: string;
+  status: string;
+  appliedAt: string;
+  reviewedAt: string | null;
+  rejectionReason: string | null;
+  reviewedBy: string | null;
+}
+
+interface Payment {
+  id: string;
+  amount: string;
+  status: string;
+  paymentMethod: string;
+  paidAt: string | null;
+  paymentDueDate: string | null;
 }
 
 export interface Student {
@@ -29,8 +79,18 @@ export interface Student {
   gender: string;
   phoneNumber: string;
   email: string;
+  country: string;
+  academicQualification: string;
+  desiredDegree: string;
+  applicationStatus: string;
+  paymentStatus: string;
+  createdAt: string;
+  updatedAt: string;
   statistics: StudentStatistics;
   courseProgress: CourseProgress[];
+  recentActivity: RecentActivity;
+  application: Application | null;
+  payments: Payment[];
 }
 
 export interface PaginationMeta {
@@ -78,27 +138,28 @@ export const fetchStudents = createAsyncThunk(
       queryParams.append("page", page.toString());
       queryParams.append("limit", limit.toString());
 
-      const response = await fetch(
-        `${
-          process.env.NEXT_PUBLIC_API_URL
-        }/admin/students?${queryParams.toString()}`,
-        {
-          headers: {
-            Authorization: `Bearer ${getAuthToken()}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
+      const response = await api.get<{
+        students: Student[];
+        pagination: PaginationMeta;
+      }>(`/admin/students?${queryParams.toString()}`);
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => null);
-        throw new Error(errorData?.message || "Failed to fetch students");
+      // Check if this is an authentication error response
+      if (
+        response.status === "error" &&
+        response.message.includes("Authentication failed")
+      ) {
+        // For auth errors, throw immediately to stop all retries
+        throw new Error("Authentication failed - redirecting to login");
       }
 
-      const data = await response.json();
       return {
-        students: data.data.students,
-        pagination: data.data.pagination,
+        students: response.data?.students || [],
+        pagination: response.data?.pagination || {
+          total: 0,
+          totalPages: 0,
+          currentPage: 1,
+          limit: 10,
+        },
       };
     } catch (error) {
       return rejectWithValue((error as Error).message);

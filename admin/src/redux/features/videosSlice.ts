@@ -1,18 +1,19 @@
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import { RootState } from "../store";
-import { getAuthToken } from "@/utils/auth";
+import { api } from "@/lib/api";
 
 export interface Video {
   id: string;
   title: string;
   description: string | null;
-  backblazeUrl: string;
+  vimeoId: string;
+  vimeoUrl: string;
   duration: number; // in seconds
   orderIndex: number;
   chapterId: string;
   createdAt: string;
   updatedAt: string;
-  thumbnailUrl: string;
+  thumbnailUrl?: string;
 }
 
 interface VideosState {
@@ -24,6 +25,8 @@ interface VideosState {
   message: string;
   uploadProgress: number;
   isUploading: boolean;
+  shouldCloseModal: boolean;
+  shouldCloseDeleteModal: boolean;
 }
 
 interface AddVideoPayload {
@@ -40,6 +43,8 @@ const initialState: VideosState = {
   message: "",
   uploadProgress: 0,
   isUploading: false,
+  shouldCloseModal: false,
+  shouldCloseDeleteModal: false,
 };
 
 // Add video to chapter
@@ -48,73 +53,93 @@ export const addVideo = createAsyncThunk<
   { chapterId: string; videoData: FormData }
 >(
   "videos/addVideo",
-  async ({ chapterId, videoData }, { rejectWithValue, dispatch }) => {
+  async (
+    { chapterId, videoData },
+    { rejectWithValue, dispatch }
+  ): Promise<AddVideoPayload | ReturnType<typeof rejectWithValue>> => {
     try {
-      const apiUrl =
-        process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api/v1";
-
-      // Create a new XMLHttpRequest to track upload progress
-      const xhr = new XMLHttpRequest();
-
-      const promise: Promise<AddVideoPayload> = new Promise(
-        (resolve, reject) => {
-          xhr.open("POST", `${apiUrl}/chapters/${chapterId}/videos`);
-
-          // Set authorization header
-          xhr.setRequestHeader("Authorization", `Bearer ${getAuthToken()}`);
-
-          // Track progress
-          xhr.upload.onprogress = (event) => {
-            if (event.lengthComputable) {
-              const progress = Math.round((event.loaded / event.total) * 100);
-              dispatch(setUploadProgress(progress));
-            }
-          };
-
-          xhr.onload = () => {
-            if (xhr.status >= 200 && xhr.status < 300) {
-              const responseData = JSON.parse(xhr.responseText);
-              resolve({
-                message: responseData.message || "Video added successfully",
-                data: responseData.data,
-              });
-            } else {
-              let errorMessage;
-              try {
-                const errorData = JSON.parse(xhr.responseText);
-                errorMessage = errorData?.message || "Failed to upload video";
-              } catch {
-                errorMessage = "Failed to upload video";
-              }
-              reject(new Error(errorMessage));
-            }
-          };
-
-          xhr.onerror = () => {
-            reject(new Error("Network error"));
-          };
-
-          // Send the FormData
-          xhr.send(videoData);
-        }
-      );
-
       // Set isUploading to true
       dispatch(setIsUploading(true));
 
-      const data = await promise;
+      const response = await api.upload<Video>(
+        `/chapters/${chapterId}/videos`,
+        videoData
+      );
 
       // Reset upload progress and isUploading once done
       dispatch(setUploadProgress(0));
       dispatch(setIsUploading(false));
 
-      return data;
+      if (!response.data) {
+        throw new Error("Failed to upload video");
+      }
+
+      // Transform the response to match AddVideoPayload structure
+      return {
+        message: response.message,
+        data: response.data,
+      };
     } catch (error: unknown) {
       console.error("Error uploading video:", error);
       dispatch(setUploadProgress(0));
       dispatch(setIsUploading(false));
+
+      // Handle authentication errors specifically
+      if (error instanceof Error) {
+        if (
+          error.message.includes("Authentication failed") ||
+          error.message.includes("401")
+        ) {
+          return rejectWithValue(
+            "Your session has expired. Please refresh the page and try uploading again."
+          );
+        }
+        return rejectWithValue(error.message);
+      }
+
+      return rejectWithValue("Failed to upload video");
+    }
+  }
+);
+
+// Add video to chapter with Vimeo ID (for direct-to-Vimeo uploads)
+export const addVideoWithVimeo = createAsyncThunk<
+  AddVideoPayload,
+  { chapterId: string; videoData: FormData }
+>(
+  "videos/addVideoWithVimeo",
+  async (
+    { chapterId, videoData },
+    { rejectWithValue }
+  ): Promise<AddVideoPayload | ReturnType<typeof rejectWithValue>> => {
+    try {
+      // Convert FormData to JSON object
+      const jsonData = {
+        title: videoData.get("title"),
+        description: videoData.get("description"),
+        orderIndex: videoData.get("orderIndex"),
+        duration: videoData.get("duration"),
+        vimeoId: videoData.get("vimeoId"),
+      };
+
+      const response = await api.post<Video>(
+        `/chapters/${chapterId}/videos/vimeo`,
+        jsonData
+      );
+
+      if (!response.data) {
+        throw new Error("Failed to add video with Vimeo");
+      }
+
+      // Transform the response to match AddVideoPayload structure
+      return {
+        message: response.message,
+        data: response.data,
+      };
+    } catch (error: unknown) {
+      console.error("Error adding video with Vimeo:", error);
       return rejectWithValue(
-        error instanceof Error ? error.message : "Failed to upload video"
+        error instanceof Error ? error.message : "Failed to add video"
       );
     }
   }
@@ -125,23 +150,8 @@ export const getVideosByChapter = createAsyncThunk(
   "videos/getVideosByChapter",
   async (chapterId: string, { rejectWithValue }) => {
     try {
-      const apiUrl =
-        process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api/v1";
-
-      const response = await fetch(`${apiUrl}/chapters/${chapterId}/videos`, {
-        headers: {
-          Authorization: `Bearer ${getAuthToken()}`,
-          "Content-Type": "application/json",
-        },
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data?.message || "Failed to fetch videos");
-      }
-
-      return data;
+      const response = await api.get<Video[]>(`/chapters/${chapterId}/videos`);
+      return response;
     } catch (error: unknown) {
       console.error("Error fetching videos:", error);
       return rejectWithValue(
@@ -156,23 +166,8 @@ export const getVideoById = createAsyncThunk(
   "videos/getVideoById",
   async (id: string, { rejectWithValue }) => {
     try {
-      const apiUrl =
-        process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api/v1";
-
-      const response = await fetch(`${apiUrl}/videos/${id}`, {
-        headers: {
-          Authorization: `Bearer ${getAuthToken()}`,
-          "Content-Type": "application/json",
-        },
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data?.message || "Failed to fetch video");
-      }
-
-      return data;
+      const response = await api.get<Video>(`/videos/${id}`);
+      return response;
     } catch (error: unknown) {
       console.error("Error fetching video:", error);
       return rejectWithValue(
@@ -190,75 +185,21 @@ export const updateVideo = createAsyncThunk(
     { rejectWithValue, dispatch }
   ) => {
     try {
-      const apiUrl =
-        process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api/v1";
-
       let response;
 
       // Check if videoData is FormData (for file uploads) or plain object
       if (videoData instanceof FormData) {
-        // Create a new XMLHttpRequest to track upload progress
-        const xhr = new XMLHttpRequest();
-
-        const promise = new Promise((resolve, reject) => {
-          xhr.open("PUT", `${apiUrl}/videos/${id}`);
-
-          // Set authorization header
-          xhr.setRequestHeader("Authorization", `Bearer ${getAuthToken()}`);
-
-          // Track progress
-          xhr.upload.onprogress = (event) => {
-            if (event.lengthComputable) {
-              const progress = Math.round((event.loaded / event.total) * 100);
-              dispatch(setUploadProgress(progress));
-            }
-          };
-
-          xhr.onload = () => {
-            if (xhr.status >= 200 && xhr.status < 300) {
-              resolve(JSON.parse(xhr.responseText));
-            } else {
-              let errorMessage;
-              try {
-                const errorData = JSON.parse(xhr.responseText);
-                errorMessage = errorData?.message || "Failed to update video";
-              } catch {
-                errorMessage = "Failed to update video";
-              }
-              reject(new Error(errorMessage));
-            }
-          };
-
-          xhr.onerror = () => {
-            reject(new Error("Network error"));
-          };
-
-          // Send the FormData
-          xhr.send(videoData);
-        });
-
         // Set isUploading to true
         dispatch(setIsUploading(true));
 
-        response = await promise;
+        response = await api.uploadWithMethod<Video>(`/videos/${id}`, videoData, "PUT");
 
         // Reset upload progress and isUploading once done
         dispatch(setUploadProgress(0));
         dispatch(setIsUploading(false));
       } else {
         // For regular JSON data updates
-        response = await fetch(`${apiUrl}/videos/${id}`, {
-          method: "PUT",
-          headers: {
-            Authorization: `Bearer ${getAuthToken()}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(videoData),
-        }).then((res) => res.json());
-
-        if (!response.success) {
-          throw new Error(response?.message || "Failed to update video");
-        }
+        response = await api.put<Video>(`/videos/${id}`, videoData);
       }
 
       return response;
@@ -266,9 +207,21 @@ export const updateVideo = createAsyncThunk(
       console.error("Error updating video:", error);
       dispatch(setUploadProgress(0));
       dispatch(setIsUploading(false));
-      return rejectWithValue(
-        error instanceof Error ? error.message : "Failed to update video"
-      );
+
+      // Handle authentication errors specifically
+      if (error instanceof Error) {
+        if (
+          error.message.includes("Authentication failed") ||
+          error.message.includes("401")
+        ) {
+          return rejectWithValue(
+            "Your session has expired. Please refresh the page and try updating again."
+          );
+        }
+        return rejectWithValue(error.message);
+      }
+
+      return rejectWithValue("Failed to update video");
     }
   }
 );
@@ -278,24 +231,8 @@ export const deleteVideo = createAsyncThunk(
   "videos/deleteVideo",
   async (id: string, { rejectWithValue }) => {
     try {
-      const apiUrl =
-        process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api/v1";
-
-      const response = await fetch(`${apiUrl}/videos/${id}`, {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${getAuthToken()}`,
-          "Content-Type": "application/json",
-        },
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data?.message || "Failed to delete video");
-      }
-
-      return { ...data, id };
+      const response = await api.delete<{ id: string }>(`/videos/${id}`);
+      return response;
     } catch (error: unknown) {
       console.error("Error deleting video:", error);
       return rejectWithValue(
@@ -313,6 +250,19 @@ const videosSlice = createSlice({
       state.error = null;
       state.success = false;
       state.message = "";
+      state.loading = false;
+      state.isUploading = false;
+      state.uploadProgress = 0;
+      state.shouldCloseModal = false;
+      state.shouldCloseDeleteModal = false;
+    },
+    resetVideoStatusOnly: (state) => {
+      state.error = null;
+      state.success = false;
+      state.message = "";
+      state.loading = false;
+      state.isUploading = false;
+      state.uploadProgress = 0;
     },
     setVideo: (state, action: PayloadAction<Video | null>) => {
       state.video = action.payload;
@@ -326,6 +276,12 @@ const videosSlice = createSlice({
     setIsUploading: (state, action: PayloadAction<boolean>) => {
       state.isUploading = action.payload;
     },
+    setShouldCloseModal: (state, action: PayloadAction<boolean>) => {
+      state.shouldCloseModal = action.payload;
+    },
+    setShouldCloseDeleteModal: (state, action: PayloadAction<boolean>) => {
+      state.shouldCloseDeleteModal = action.payload;
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -337,15 +293,51 @@ const videosSlice = createSlice({
       .addCase(
         addVideo.fulfilled,
         (state, action: PayloadAction<AddVideoPayload>) => {
+          console.log("addVideo fulfilled:", action.payload);
           state.loading = false;
           state.success = true;
-          state.message = action.payload.message;
-          state.videos.push(action.payload.data);
+          state.message = action.payload?.message || "";
+          state.shouldCloseModal = true;
+          if (action.payload?.data) {
+            state.videos.push(action.payload.data);
+            console.log(
+              "Video added to state, total videos:",
+              state.videos.length
+            );
+          }
         }
       )
       .addCase(addVideo.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload as string;
+        state.shouldCloseModal = false;
+      })
+      // Add video with Vimeo
+      .addCase(addVideoWithVimeo.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(
+        addVideoWithVimeo.fulfilled,
+        (state, action: PayloadAction<AddVideoPayload>) => {
+          console.log("addVideoWithVimeo fulfilled:", action.payload);
+          state.loading = false;
+          state.success = true;
+          state.message = action.payload?.message || "";
+          state.shouldCloseModal = true;
+          if (action.payload?.data) {
+            state.videos.push(action.payload.data);
+            console.log(
+              "Video added to state, total videos:",
+              state.videos.length
+            );
+          }
+        }
+      )
+      .addCase(addVideoWithVimeo.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
+        state.shouldCloseModal = false;
       })
       // Get videos by chapter
       .addCase(getVideosByChapter.pending, (state) => {
@@ -354,7 +346,7 @@ const videosSlice = createSlice({
       })
       .addCase(getVideosByChapter.fulfilled, (state, action) => {
         state.loading = false;
-        state.videos = action.payload.data;
+        state.videos = action.payload.data || [];
       })
       .addCase(getVideosByChapter.rejected, (state, action) => {
         state.loading = false;
@@ -367,7 +359,7 @@ const videosSlice = createSlice({
       })
       .addCase(getVideoById.fulfilled, (state, action) => {
         state.loading = false;
-        state.video = action.payload.data;
+        state.video = action.payload.data || null;
       })
       .addCase(getVideoById.rejected, (state, action) => {
         state.loading = false;
@@ -381,15 +373,19 @@ const videosSlice = createSlice({
       .addCase(updateVideo.fulfilled, (state, action) => {
         state.loading = false;
         state.success = true;
-        state.message = action.payload.message;
-        state.videos = state.videos.map((video) =>
-          video.id === action.payload.data.id ? action.payload.data : video
-        );
-        state.video = action.payload.data;
+        state.message = action.payload.message || "";
+        state.shouldCloseModal = true;
+        if (action.payload.data) {
+          state.videos = state.videos.map((video) =>
+            video.id === action.payload.data?.id ? action.payload.data : video
+          );
+          state.video = action.payload.data;
+        }
       })
       .addCase(updateVideo.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload as string;
+        state.shouldCloseModal = false;
       })
       // Delete video
       .addCase(deleteVideo.pending, (state) => {
@@ -399,14 +395,18 @@ const videosSlice = createSlice({
       .addCase(deleteVideo.fulfilled, (state, action) => {
         state.loading = false;
         state.success = true;
-        state.message = action.payload.message;
-        state.videos = state.videos.filter(
-          (video) => video.id !== action.payload.id
-        );
+        state.message = action.payload.message || "";
+        state.shouldCloseDeleteModal = true;
+        if (action.payload.data?.id) {
+          state.videos = state.videos.filter(
+            (video) => video.id !== action.payload.data?.id
+          );
+        }
       })
       .addCase(deleteVideo.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload as string;
+        state.shouldCloseDeleteModal = false;
       });
   },
 });
@@ -421,13 +421,20 @@ export const selectVideosMessage = (state: RootState) => state.videos.message;
 export const selectUploadProgress = (state: RootState) =>
   state.videos.uploadProgress;
 export const selectIsUploading = (state: RootState) => state.videos.isUploading;
+export const selectShouldCloseModal = (state: RootState) =>
+  state.videos.shouldCloseModal;
+export const selectShouldCloseDeleteModal = (state: RootState) =>
+  state.videos.shouldCloseDeleteModal;
 
 export const {
   resetVideoStatus,
+  resetVideoStatusOnly,
   setVideo,
   clearVideos,
   setUploadProgress,
   setIsUploading,
+  setShouldCloseModal,
+  setShouldCloseDeleteModal,
 } = videosSlice.actions;
 
 export default videosSlice.reducer;

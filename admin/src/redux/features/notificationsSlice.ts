@@ -1,6 +1,7 @@
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import { RootState } from "../store";
-import { getAuthToken } from "@/utils/auth";
+import { api } from "@/lib/api";
+import { PaginationMeta } from "./studentsSlice";
 
 // Types
 export interface Notification {
@@ -50,24 +51,26 @@ export const fetchNotifications = createAsyncThunk(
     { rejectWithValue }
   ) => {
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
-      const response = await fetch(
-        `${apiUrl}/notifications?page=${page}&limit=${limit}&unreadOnly=${unreadOnly}`,
-        {
-          headers: {
-            Authorization: `Bearer ${getAuthToken()}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
+      const response = await api.get<{
+        notifications: Notification[];
+        pagination: PaginationMeta;
+      }>(`/notifications?page=${page}&limit=${limit}&unreadOnly=${unreadOnly}`);
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to fetch notifications");
+
+
+      if (!response.data) {
+        throw new Error("Failed to fetch notifications - no response data");
       }
 
-      const data = await response.json();
-      return { data: data.data, page };
+      // Check if the expected structure exists
+      if (!response.data.notifications) {
+        throw new Error(
+          "Invalid response structure - missing notifications property"
+        );
+      }
+
+      const result = { data: response.data, page };
+      return result;
     } catch (error) {
       return rejectWithValue((error as Error).message);
     }
@@ -78,27 +81,24 @@ export const markNotificationAsRead = createAsyncThunk(
   "notifications/markNotificationAsRead",
   async (notificationId: string, { rejectWithValue }) => {
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
-      const response = await fetch(
-        `${apiUrl}/notifications/${notificationId}/read`,
-        {
-          method: "PUT",
-          headers: {
-            Authorization: `Bearer ${getAuthToken()}`,
-            "Content-Type": "application/json",
-          },
-        }
+      const response = await api.put<{ notification: Notification }>(
+        `/notifications/${notificationId}/read`
       );
 
-      if (!response.ok) {
-        const errorData = await response.json();
+      if (!response.data) {
         throw new Error(
-          errorData.message || "Failed to mark notification as read"
+          "Failed to mark notification as read - no response data"
         );
       }
 
-      const data = await response.json();
-      return { id: notificationId, data: data.data };
+      // Check if the expected structure exists
+      if (!response.data.notification) {
+        throw new Error(
+          "Invalid response structure - missing notification data"
+        );
+      }
+
+      return { id: notificationId, data: response.data.notification };
     } catch (error) {
       return rejectWithValue((error as Error).message);
     }
@@ -109,28 +109,27 @@ export const markAllNotificationsAsRead = createAsyncThunk(
   "notifications/markAllNotificationsAsRead",
   async (_, { rejectWithValue, dispatch }) => {
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
-      const response = await fetch(`${apiUrl}/notifications/read-all`, {
-        method: "PUT",
-        headers: {
-          Authorization: `Bearer ${getAuthToken()}`,
-          "Content-Type": "application/json",
-        },
-      });
+      const response = await api.put<{ markedAsRead: number }>(
+        `/notifications/read-all`
+      );
 
-      if (!response.ok) {
-        const errorData = await response.json();
+      if (!response.data) {
         throw new Error(
-          errorData.message || "Failed to mark all notifications as read"
+          "Failed to mark all notifications as read - no response data"
         );
       }
 
-      const data = await response.json();
+      // Check if the expected structure exists
+      if (typeof response.data.markedAsRead !== "number") {
+        throw new Error(
+          "Invalid response structure - missing markedAsRead property"
+        );
+      }
 
       // Refresh the notifications after marking all as read
       dispatch(fetchNotifications({ page: 1 }));
 
-      return data.data;
+      return response.data;
     } catch (error) {
       return rejectWithValue((error as Error).message);
     }
@@ -172,17 +171,31 @@ const notificationsSlice = createSlice({
         // Extract page parameter from the action meta
         const page = action.meta.arg?.page || 1;
 
+        // Check if payload and data exist
+        if (!action.payload || !action.payload.data) {
+          state.error = "Invalid response structure";
+          return;
+        }
+
+        // Safely access the data with fallbacks
+        const notifications = action.payload.data.notifications || [];
+        const pagination = action.payload.data.pagination || {
+          totalPages: 1,
+          total: 0,
+          limit: 10,
+        };
+
         // Update the state with notifications
-        state.items = action.payload.data.notifications;
+        state.items = notifications;
         state.pagination = {
           currentPage: page,
-          totalPages: action.payload.data.pagination.totalPages,
-          totalItems: action.payload.data.pagination.totalItems,
-          pageSize: action.payload.data.pagination.pageSize,
+          totalPages: pagination.totalPages,
+          totalItems: pagination.total,
+          pageSize: pagination.limit,
         };
 
         // Update unread count
-        state.unreadCount = action.payload.data.notifications.filter(
+        state.unreadCount = notifications.filter(
           (notification: Notification) => !notification.isRead
         ).length;
       })
@@ -197,6 +210,12 @@ const notificationsSlice = createSlice({
         state.error = null;
       })
       .addCase(markNotificationAsRead.fulfilled, (state, action) => {
+        // Check if payload exists
+        if (!action.payload) {
+          state.error = "Invalid response structure";
+          return;
+        }
+
         // Update the notification in the list
         const index = state.items.findIndex(
           (item) => item.id === action.payload.id
@@ -221,7 +240,13 @@ const notificationsSlice = createSlice({
         // Don't set loading to true, to allow for optimistic updates
         state.error = null;
       })
-      .addCase(markAllNotificationsAsRead.fulfilled, (state) => {
+      .addCase(markAllNotificationsAsRead.fulfilled, (state, action) => {
+        // Check if payload exists
+        if (!action.payload) {
+          state.error = "Invalid response structure";
+          return;
+        }
+
         // Mark all notifications as read in the current state
         state.items = state.items.map((item) => ({
           ...item,

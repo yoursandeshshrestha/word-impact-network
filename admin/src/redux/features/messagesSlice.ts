@@ -1,6 +1,6 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import { RootState } from "../store";
-import { getAuthToken } from "@/utils/auth";
+import { api } from "@/lib/api";
 
 // Types
 export interface User {
@@ -52,6 +52,10 @@ export interface ConversationResponse {
   pagination: PaginationInfo;
 }
 
+export interface ConversationsApiResponse {
+  conversations: Conversation[];
+}
+
 interface MessageState {
   messages: Message[];
   conversations: Conversation[];
@@ -81,31 +85,12 @@ export const fetchConversations = createAsyncThunk(
   "messages/fetchConversations",
   async (_, { rejectWithValue }) => {
     try {
-      const apiUrl =
-        process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api/v1";
-
-      const response = await fetch(`${apiUrl}/messages/conversations`, {
-        headers: {
-          Authorization: `Bearer ${getAuthToken()}`,
-          "Content-Type": "application/json",
-        },
-      });
-
-      if (!response.ok) {
-        let errorMessage = "Failed to fetch conversations";
-        try {
-          const errorData = await response.json();
-          errorMessage = errorData?.message || errorMessage;
-        } catch {
-          errorMessage = response.statusText || errorMessage;
-        }
-        throw new Error(errorMessage);
-      }
-
-      const data = await response.json();
-      return data.data;
+      const response = await api.get<ConversationsApiResponse>(
+        `/messages/conversations`
+      );
+      // The response structure is: { status, message, data: { conversations: [...] } }
+      return response;
     } catch (error) {
-      console.error("Error fetching conversations:", error);
       return rejectWithValue((error as Error).message);
     }
   }
@@ -120,37 +105,19 @@ export const fetchConversationMessages = createAsyncThunk(
     const { partnerId, page = 1, limit = 20 } = params;
 
     try {
-      const apiUrl =
-        process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api/v1";
-
-      const response = await fetch(
-        `${apiUrl}/messages/conversations/${partnerId}?page=${page}&limit=${limit}`,
-        {
-          headers: {
-            Authorization: `Bearer ${getAuthToken()}`,
-            "Content-Type": "application/json",
-          },
-        }
+      const response = await api.get<ConversationResponse>(
+        `/messages/conversations/${partnerId}?page=${page}&limit=${limit}`
       );
 
-      if (!response.ok) {
-        let errorMessage = "Failed to fetch conversation messages";
-        try {
-          const errorData = await response.json();
-          errorMessage = errorData?.message || errorMessage;
-        } catch {
-          errorMessage = response.statusText || errorMessage;
-        }
-        throw new Error(errorMessage);
+      if (!response.data) {
+        throw new Error("Failed to fetch conversation messages");
       }
 
-      const data = await response.json();
       return {
-        data: data.data as ConversationResponse,
+        data: response.data as ConversationResponse,
         partnerId,
       };
     } catch (error) {
-      console.error("Error fetching conversation messages:", error);
       return rejectWithValue((error as Error).message);
     }
   }
@@ -163,33 +130,17 @@ export const sendMessage = createAsyncThunk(
     { rejectWithValue }
   ) => {
     try {
-      const apiUrl =
-        process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api/v1";
+      const response = await api.post<{ data: Message; message: string }>(
+        `/messages/admin`,
+        messageData
+      );
 
-      const response = await fetch(`${apiUrl}/messages/admin`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${getAuthToken()}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(messageData),
-      });
-
-      if (!response.ok) {
-        let errorMessage = "Failed to send message";
-        try {
-          const errorData = await response.json();
-          errorMessage = errorData?.message || errorMessage;
-        } catch {
-          errorMessage = response.statusText || errorMessage;
-        }
-        throw new Error(errorMessage);
+      if (!response.data) {
+        throw new Error("Failed to send message");
       }
 
-      const data = await response.json();
-      return { data: data, recipientId: messageData.recipientId };
+      return { data: response.data, recipientId: messageData.recipientId };
     } catch (error) {
-      console.error("Error sending message:", error);
       return rejectWithValue((error as Error).message);
     }
   }
@@ -199,35 +150,17 @@ export const markConversationAsRead = createAsyncThunk(
   "messages/markConversationAsRead",
   async (partnerId: string, { rejectWithValue }) => {
     try {
-      const apiUrl =
-        process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api/v1";
-
-      const response = await fetch(
-        `${apiUrl}/messages/conversations/${partnerId}/read`,
-        {
-          method: "PUT",
-          headers: {
-            Authorization: `Bearer ${getAuthToken()}`,
-            "Content-Type": "application/json",
-          },
-        }
+      const response = await api.put<{ markedAsRead: number }>(
+        `/messages/conversations/${partnerId}/read`,
+        {}
       );
 
-      if (!response.ok) {
-        let errorMessage = "Failed to mark conversation as read";
-        try {
-          const errorData = await response.json();
-          errorMessage = errorData?.message || errorMessage;
-        } catch {
-          errorMessage = response.statusText || errorMessage;
-        }
-        throw new Error(errorMessage);
+      if (!response.data) {
+        throw new Error("Failed to mark conversation as read");
       }
 
-      const data = await response.json();
-      return { partnerId, data: data.data };
+      return { partnerId, markedAsRead: response.data.markedAsRead };
     } catch (error) {
-      console.error("Error marking conversation as read:", error);
       return rejectWithValue((error as Error).message);
     }
   }
@@ -237,31 +170,16 @@ export const fetchUnreadCount = createAsyncThunk(
   "messages/fetchUnreadCount",
   async (_, { rejectWithValue }) => {
     try {
-      const apiUrl =
-        process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api/v1";
+      const response = await api.get<{ unreadCount: number }>(
+        `/messages/unread-count`
+      );
 
-      const response = await fetch(`${apiUrl}/messages/unread-count`, {
-        headers: {
-          Authorization: `Bearer ${getAuthToken()}`,
-          "Content-Type": "application/json",
-        },
-      });
-
-      if (!response.ok) {
-        let errorMessage = "Failed to fetch unread count";
-        try {
-          const errorData = await response.json();
-          errorMessage = errorData?.message || errorMessage;
-        } catch {
-          errorMessage = response.statusText || errorMessage;
-        }
-        throw new Error(errorMessage);
+      if (!response.data) {
+        throw new Error("Failed to fetch unread count");
       }
 
-      const data = await response.json();
-      return data.data.unreadCount;
+      return response.data.unreadCount || 0;
     } catch (error) {
-      console.error("Error fetching unread count:", error);
       return rejectWithValue((error as Error).message);
     }
   }
@@ -291,6 +209,36 @@ const messagesSlice = createSlice({
       );
       if (!messageExists) {
         state.messages.push(action.payload); // Add to end of array
+
+        // Update conversation last message if this is from a student
+        if (action.payload.sender.role === "STUDENT") {
+          const conversationIndex = state.conversations.findIndex(
+            (conv) => conv.partner.id === action.payload.sender.id
+          );
+
+          if (conversationIndex !== -1) {
+            // Update the last message in the conversation
+            state.conversations[conversationIndex].lastMessage = {
+              id: action.payload.id,
+              content: action.payload.content,
+              createdAt: action.payload.createdAt,
+              isFromUser: false,
+            };
+
+            // If we're currently viewing this conversation, mark the message as read immediately
+            if (
+              state.selectedStudent &&
+              state.selectedStudent.id === action.payload.sender.id
+            ) {
+              action.payload.isRead = true;
+              // Don't increment unread count since we're viewing the conversation
+            } else {
+              // Increment the conversation's unread count and global unread count
+              state.conversations[conversationIndex].unreadCount += 1;
+              state.unreadCount += 1;
+            }
+          }
+        }
       }
     },
     incrementUnreadCount: (state) => {
@@ -306,8 +254,8 @@ const messagesSlice = createSlice({
       })
       .addCase(fetchConversations.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.conversations = action.payload.conversations;
-        state.unreadCount = action.payload.totalUnreadCount || 0;
+        // The payload is ApiResponse<T>, so conversations are at action.payload.data.conversations
+        state.conversations = action.payload?.data?.conversations || [];
       })
       .addCase(fetchConversations.rejected, (state, action) => {
         state.isLoading = false;
@@ -383,6 +331,13 @@ const messagesSlice = createSlice({
         );
 
         if (conversationIndex !== -1) {
+          // Subtract the unread count from this conversation from the global unread count
+          const conversationUnreadCount =
+            state.conversations[conversationIndex].unreadCount;
+          state.unreadCount = Math.max(
+            0,
+            state.unreadCount - conversationUnreadCount
+          );
           state.conversations[conversationIndex].unreadCount = 0;
         }
 
@@ -397,14 +352,6 @@ const messagesSlice = createSlice({
             msg.isRead = true;
           }
         });
-
-        // Update global unread count
-        if (
-          action.payload.data.markedAsRead &&
-          state.unreadCount >= action.payload.data.markedAsRead
-        ) {
-          state.unreadCount -= action.payload.data.markedAsRead;
-        }
       })
       .addCase(markConversationAsRead.rejected, (state, action) => {
         state.error = action.payload as string;
