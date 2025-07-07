@@ -3,7 +3,8 @@ import { CorsOptions } from 'cors';
 const corsOptions: CorsOptions = {
   origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
     const allowedOrigins = (
-      process.env.CORS_ORIGINS || 'http://localhost:3000,http://localhost:4000'
+      process.env.CORS_ORIGINS ||
+      'http://localhost:3000,http://localhost:4000,https://admin.wordimpactnetwork.org,https://wordimpactnetwork.org'
     ).split(',');
 
     if (!origin) return callback(null, true);
@@ -21,6 +22,7 @@ const corsOptions: CorsOptions = {
     if (isAllowed || process.env.NODE_ENV === 'development') {
       callback(null, true);
     } else {
+      console.log(`CORS blocked origin: ${origin}. Allowed origins: ${allowedOrigins.join(', ')}`);
       callback(new Error(`Origin ${origin} not allowed by CORS policy`));
     }
   },

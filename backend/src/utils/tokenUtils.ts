@@ -77,8 +77,17 @@ export const clearAllAuthCookies = (res: any) => {
  * @param res Express response object
  */
 export const clearAdminAuthCookies = (res: any) => {
-  res.clearCookie('accessToken');
-  res.clearCookie('refreshToken');
+  const isProduction = process.env.NODE_ENV === 'production';
+  const cookieDomain = isProduction ? '.wordimpactnetwork.org' : undefined;
+  
+  res.clearCookie('accessToken', { 
+    path: '/',
+    domain: cookieDomain 
+  });
+  res.clearCookie('refreshToken', { 
+    path: '/',
+    domain: cookieDomain 
+  });
 };
 
 /**
@@ -86,8 +95,17 @@ export const clearAdminAuthCookies = (res: any) => {
  * @param res Express response object
  */
 export const clearFrontendAuthCookies = (res: any) => {
-  res.clearCookie('client-access-token-win', { path: '/' });
-  res.clearCookie('client-refresh-token-win', { path: '/' });
+  const isProduction = process.env.NODE_ENV === 'production';
+  const cookieDomain = isProduction ? '.wordimpactnetwork.org' : undefined;
+  
+  res.clearCookie('client-access-token-win', { 
+    path: '/',
+    domain: cookieDomain 
+  });
+  res.clearCookie('client-refresh-token-win', { 
+    path: '/',
+    domain: cookieDomain 
+  });
 };
 
 /**

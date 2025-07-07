@@ -111,12 +111,16 @@ export async function middleware(request: NextRequest) {
   const response = NextResponse.next();
 
   // Set new tokens in cookies if we got them from refresh
+  const isProduction = process.env.NODE_ENV === "production";
+  const cookieDomain = isProduction ? ".wordimpactnetwork.org" : undefined;
+  
   if (newAccessToken) {
     response.cookies.set("accessToken", newAccessToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
+      secure: isProduction,
       sameSite: "strict",
       path: "/",
+      domain: cookieDomain,
       maxAge: 15 * 60, // 15 minutes
     });
   }
@@ -124,9 +128,10 @@ export async function middleware(request: NextRequest) {
   if (newRefreshToken) {
     response.cookies.set("refreshToken", newRefreshToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
+      secure: isProduction,
       sameSite: "strict",
       path: "/",
+      domain: cookieDomain,
       maxAge: 7 * 24 * 60 * 60, // 7 days
     });
   }
@@ -138,9 +143,10 @@ export async function middleware(request: NextRequest) {
     if (newAccessToken) {
       redirectResponse.cookies.set("accessToken", newAccessToken, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
+        secure: isProduction,
         sameSite: "strict",
         path: "/",
+        domain: cookieDomain,
         maxAge: 15 * 60, // 15 minutes
       });
     }
@@ -148,9 +154,10 @@ export async function middleware(request: NextRequest) {
     if (newRefreshToken) {
       redirectResponse.cookies.set("refreshToken", newRefreshToken, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
+        secure: isProduction,
         sameSite: "strict",
         path: "/",
+        domain: cookieDomain,
         maxAge: 7 * 24 * 60 * 60, // 7 days
       });
     }

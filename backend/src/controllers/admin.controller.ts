@@ -54,12 +54,16 @@ export const loginAdminController = catchAsync(async (req: Request, res: Respons
   // Set secure HTTP-only cookies
   const isProduction = process.env.NODE_ENV === 'production';
 
+  // Determine cookie domain for production
+  const cookieDomain = isProduction ? '.wordimpactnetwork.org' : undefined;
+
   res.cookie('accessToken', accessToken, {
     httpOnly: true,
     secure: isProduction,
     sameSite: 'strict',
     maxAge: 15 * 60 * 1000, // 15 minutes
     path: '/',
+    domain: cookieDomain,
   });
 
   res.cookie('refreshToken', refreshToken, {
@@ -68,6 +72,7 @@ export const loginAdminController = catchAsync(async (req: Request, res: Respons
     sameSite: 'strict',
     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     path: '/',
+    domain: cookieDomain,
   });
 
   sendSuccess(res, 200, 'Login successful', {
@@ -211,12 +216,16 @@ export const refreshAccessToken = catchAsync(async (req: Request, res: Response)
   const { getCookieNames } = await import('../utils/tokenUtils');
   const cookieNames = getCookieNames('admin');
 
+  // Determine cookie domain for production
+  const cookieDomain = isProduction ? '.wordimpactnetwork.org' : undefined;
+
   res.cookie(cookieNames.accessToken, newAccessToken, {
     httpOnly: true,
     secure: isProduction,
     sameSite: 'strict',
     maxAge: 15 * 60 * 1000, // 15 minutes
     path: '/',
+    domain: cookieDomain,
   });
 
   res.cookie(cookieNames.refreshToken, newRefreshToken, {
@@ -225,6 +234,7 @@ export const refreshAccessToken = catchAsync(async (req: Request, res: Response)
     sameSite: 'strict',
     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     path: '/',
+    domain: cookieDomain,
   });
 
   sendSuccess(res, 200, 'Token refreshed successfully', {

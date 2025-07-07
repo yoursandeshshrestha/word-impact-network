@@ -126,6 +126,9 @@ export const loginStudentController = catchAsync(async (req: Request, res: Respo
   const refreshToken = generateRefreshToken(student.userId, refreshTokenRecord.tokenId);
 
   const isProduction = process.env.NODE_ENV === 'production';
+  
+  // Determine cookie domain for production
+  const cookieDomain = isProduction ? '.wordimpactnetwork.org' : undefined;
 
   res.cookie('client-access-token-win', token, {
     httpOnly: false, // Allow JavaScript access for frontend
@@ -133,6 +136,7 @@ export const loginStudentController = catchAsync(async (req: Request, res: Respo
     sameSite: 'strict',
     maxAge: 15 * 60 * 1000, // 15 minutes
     path: '/',
+    domain: cookieDomain,
   });
 
   res.cookie('client-refresh-token-win', refreshToken, {
@@ -141,6 +145,7 @@ export const loginStudentController = catchAsync(async (req: Request, res: Respo
     sameSite: 'strict',
     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     path: '/',
+    domain: cookieDomain,
   });
 
   sendSuccess(res, 200, 'Login successful', {
@@ -925,6 +930,9 @@ export const refreshStudentToken = catchAsync(async (req: Request, res: Response
   // Set new cookies using the appropriate cookie names
   const isProduction = process.env.NODE_ENV === 'production';
   const cookieNames = getCookieNames('frontend');
+  
+  // Determine cookie domain for production
+  const cookieDomain = isProduction ? '.wordimpactnetwork.org' : undefined;
 
   res.cookie(cookieNames.accessToken, newAccessToken, {
     httpOnly: false, // Allow JavaScript access for frontend
@@ -932,6 +940,7 @@ export const refreshStudentToken = catchAsync(async (req: Request, res: Response
     sameSite: 'strict',
     maxAge: 15 * 60 * 1000, // 15 minutes
     path: '/',
+    domain: cookieDomain,
   });
 
   res.cookie(cookieNames.refreshToken, newRefreshToken, {
@@ -940,6 +949,7 @@ export const refreshStudentToken = catchAsync(async (req: Request, res: Response
     sameSite: 'strict',
     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     path: '/',
+    domain: cookieDomain,
   });
 
   sendSuccess(res, 200, 'Token refreshed successfully', {
