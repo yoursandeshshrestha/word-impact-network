@@ -47,6 +47,7 @@ model User {
   messages          Message[]
   receivedMessages  Message[]        @relation("MessageRecipient")
   notifications     Notification[]
+  refreshTokens     RefreshToken[]
 
   @@map("users")
 }
@@ -202,7 +203,8 @@ model Video {
   id                String           @id @default(uuid())
   title             String
   description       String?          @db.Text
-  backblazeUrl      String
+  vimeoId           String           // Vimeo video ID
+  vimeoUrl          String           // Vimeo video URL
   duration          Int              // Duration in seconds
   orderIndex        Int              // For ordering videos within a chapter
   chapter           Chapter          @relation(fields: [chapterId], references: [id], onDelete: Cascade)
@@ -383,4 +385,16 @@ model Announcement {
   updatedAt DateTime @updatedAt
 
   @@map("announcements")
+}
+
+model RefreshToken {
+  id          String   @id @default(uuid())
+  tokenId     String   @unique
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt   DateTime
+  isRevoked   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  @@map("refresh_tokens")
 }
