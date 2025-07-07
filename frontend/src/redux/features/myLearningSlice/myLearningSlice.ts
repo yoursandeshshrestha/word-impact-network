@@ -1,11 +1,5 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import axios, { AxiosError } from "axios";
 import { toast } from "sonner";
-import { getAuthToken } from "@/common/services/auth";
-
-interface ErrorResponse {
-  message: string;
-}
 
 interface MyLearningCourse {
   id: string;
@@ -28,39 +22,42 @@ export interface MyLearningState {
   error: string | null;
 }
 
-const BASE_URL =
-  process.env.NEXT_PUBLIC_BACKEND_API || "http://localhost:8080/api/v1";
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
 export const fetchMyLearningCourses = createAsyncThunk(
   "myLearning/fetchMyLearningCourses",
   async (_, { rejectWithValue }) => {
     try {
-      const token = getAuthToken();
-
-      if (!token) {
-        toast.error("Authentication required");
-        return rejectWithValue("No authentication token found");
-      }
-
-      const response = await axios.get(`${BASE_URL}/mylearning/courses`, {
+      const response = await fetch(`${BASE_URL}/mylearning/courses`, {
+        method: "GET",
+        credentials: "include", // This will automatically send cookies
         headers: {
-          Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
       });
 
-      return response.data.data as MyLearningCourse[];
-    } catch (error) {
-      const errorMessage =
-        (error as AxiosError<ErrorResponse>).response?.data?.message ||
-        "Failed to fetch learning courses";
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        const errorMessage =
+          errorData.message || "Failed to fetch learning courses";
 
-      if ((error as AxiosError).response?.status === 401) {
-        toast.error("Session expired. Please login again.");
-      } else {
-        toast.error(errorMessage);
+        if (response.status === 401) {
+          toast.error("Session expired. Please login again.");
+        } else {
+          toast.error(errorMessage);
+        }
+
+        return rejectWithValue(errorMessage);
       }
 
+      const data = await response.json();
+      return data.data as MyLearningCourse[];
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "Failed to fetch learning courses";
+      toast.error(errorMessage);
       return rejectWithValue(errorMessage);
     }
   }

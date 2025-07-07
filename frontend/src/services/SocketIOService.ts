@@ -1,6 +1,3 @@
-import { fetchUnreadCount } from "@/redux/features/Message/messagesSlice";
-import { store } from "@/redux/store";
-import { getAuthToken } from "@/common/services/auth";
 import { io, Socket } from "socket.io-client";
 
 export enum SocketEvents {
@@ -25,12 +22,6 @@ class SocketIOService {
   // Initialize Socket.IO connection
   connect(): void {
     try {
-      const token = getAuthToken();
-      if (!token) {
-        console.warn("Socket.IO: No auth token available");
-        return;
-      }
-
       // Don't create a new connection if one already exists and is connected
       if (this.socket && this.connected) {
         return;
@@ -40,18 +31,17 @@ class SocketIOService {
       this.disconnect();
 
       const apiUrl =
-        process.env.NEXT_PUBLIC_BACKEND_API || "http://localhost:8080/api/v1";
+        process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api/v1";
       // Remove /api/v1 from the URL as Socket.IO needs the base URL
       const socketUrl = apiUrl.replace(/\/api\/v1$/, "");
 
       // Reset connection attempts on manual connect
       this.connectionAttempts = 0;
 
-      // Create Socket.IO connection with auth token
+      // Create Socket.IO connection with cookies (no need for explicit token)
       this.socket = io(socketUrl, {
         path: "/socket.io",
-        auth: { token },
-        query: { token }, // Including in query for backward compatibility
+        withCredentials: true, // This will send cookies automatically
         reconnection: true,
         reconnectionAttempts: 5,
         reconnectionDelay: 1000,
@@ -62,7 +52,8 @@ class SocketIOService {
 
       // Set up event handlers
       this.setupEventHandlers();
-    } catch {
+    } catch (error) {
+      console.error("SocketIOService: Connection error", error);
       this.scheduleReconnect();
     }
   }
@@ -106,6 +97,7 @@ class SocketIOService {
 
     // Connection error
     this.socket.on("connect_error", (error) => {
+      console.error("SocketIOService: Connection error", error);
       this.connected = false;
       this.wasDisconnected = true;
       this.scheduleReconnect();
@@ -116,9 +108,6 @@ class SocketIOService {
 
     // New message received
     this.socket.on(SocketEvents.NEW_MESSAGE, (data) => {
-      // Immediately update unread count in Redux store
-      store.dispatch(fetchUnreadCount());
-
       // Emit event to any listeners
       this.emitToListeners(SocketEvents.NEW_MESSAGE, data);
     });
@@ -131,9 +120,6 @@ class SocketIOService {
 
     // Message read event
     this.socket.on(SocketEvents.MESSAGE_READ, (data) => {
-      // Update unread count in Redux store
-      store.dispatch(fetchUnreadCount());
-
       // Emit event to any listeners
       this.emitToListeners(SocketEvents.MESSAGE_READ, data);
     });
@@ -146,6 +132,7 @@ class SocketIOService {
 
     // Error event
     this.socket.on(SocketEvents.ERROR, (error) => {
+      console.error("SocketIOService: Received ERROR event", error);
       // Emit event to any listeners
       this.emitToListeners(SocketEvents.ERROR, { error });
     });
@@ -158,8 +145,8 @@ class SocketIOService {
       listeners.forEach((listener) => {
         try {
           listener(data);
-        } catch {
-          // Silent error handling
+        } catch (error) {
+          console.error("SocketIOService: Error in listener", error);
         }
       });
     }
@@ -181,12 +168,8 @@ class SocketIOService {
       );
 
       this.reconnectTimer = setTimeout(() => {
-        // Only attempt to reconnect if we have a valid token
-        if (getAuthToken()) {
-          this.connect();
-        } else {
-          this.connectionAttempts = 0; // Reset attempts
-        }
+        // Always attempt to reconnect (cookies will be sent automatically)
+        this.connect();
       }, delay);
     } else {
       // Reset connection attempts after max attempts
@@ -196,10 +179,7 @@ class SocketIOService {
 
   // Method to refresh all real-time data
   private refreshData(): void {
-    // Fetch updated data after reconnection
-    Promise.all([store.dispatch(fetchUnreadCount())]).catch(() => {
-      // Silent error handling
-    });
+    // No need to fetch unread counts anymore
   }
 
   // Send a message through Socket.IO

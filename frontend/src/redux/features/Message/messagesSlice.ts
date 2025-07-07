@@ -1,6 +1,4 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import axios from "axios";
-import { withAuth } from "@/common/services/auth";
 
 interface User {
   id: string;
@@ -33,71 +31,64 @@ interface AdminConversation {
 }
 
 interface MessagesState {
+  messages: Message[];
   adminConversation: AdminConversation | null;
   loading: boolean;
   error: string | null;
-  unreadCount: number;
 }
 
 const initialState: MessagesState = {
+  messages: [],
   adminConversation: null,
   loading: false,
   error: null,
-  unreadCount: 0,
 };
 
 // Async thunks
 export const sendMessage = createAsyncThunk(
   "messages/sendMessage",
   async (content: string) => {
-    const response = await axios.post(
-      `${process.env.NEXT_PUBLIC_BACKEND_API}/messages`,
-      { content },
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_API_URL}/messages`,
       {
-        headers: withAuth() as Record<string, string>,
+        method: "POST",
+        credentials: "include", // This will automatically send cookies
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ content }),
       }
     );
-    return response.data;
+
+    if (!response.ok) {
+      throw new Error("Failed to send message");
+    }
+
+    const data = await response.json();
+    return data;
   }
 );
 
 export const getAdminConversation = createAsyncThunk(
   "messages/getAdminConversation",
   async (page: number = 1) => {
-    const response = await axios.get(
-      `${process.env.NEXT_PUBLIC_BACKEND_API}/messages/admin-conversation?page=${page}`,
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_API_URL}/messages/admin-conversation?page=${page}`,
       {
-        headers: withAuth() as Record<string, string>,
+        method: "GET",
+        credentials: "include", // This will automatically send cookies
+        headers: {
+          "Content-Type": "application/json",
+        },
       }
     );
-    return response.data.data;
-  }
-);
 
-export const markConversationAsRead = createAsyncThunk(
-  "messages/markConversationAsRead",
-  async (partnerId: string) => {
-    const response = await axios.put(
-      `${process.env.NEXT_PUBLIC_BACKEND_API}/messages/conversations/${partnerId}/read`,
-      {},
-      {
-        headers: withAuth() as Record<string, string>,
-      }
-    );
-    return response.data.data;
-  }
-);
+    if (!response.ok) {
+      throw new Error("Failed to fetch admin conversation");
+    }
 
-export const fetchUnreadCount = createAsyncThunk(
-  "messages/fetchUnreadCount",
-  async () => {
-    const response = await axios.get(
-      `${process.env.NEXT_PUBLIC_BACKEND_API}/messages/unread-count`,
-      {
-        headers: withAuth() as Record<string, string>,
-      }
-    );
-    return response.data.data;
+    const data = await response.json();
+    return data.data;
   }
 );
 
@@ -107,6 +98,7 @@ const messagesSlice = createSlice({
   reducers: {
     clearMessages: (state) => {
       state.adminConversation = null;
+      state.messages = [];
       state.error = null;
     },
     prependMessages: (state, action) => {
@@ -118,12 +110,24 @@ const messagesSlice = createSlice({
       }
     },
     addNewMessage: (state, action) => {
-      console.log("Redux: Adding new message", action.payload);
-      if (state.adminConversation) {
-        state.adminConversation.messages.push(action.payload);
-        console.log("Redux: Message added to conversation");
-      } else {
-        console.log("Redux: No admin conversation available, message not added");
+      // Check if message already exists to prevent duplicates
+      const messageExists = state.messages.some(
+        (msg) => msg.id === action.payload.id
+      );
+      // Prevent empty or whitespace-only messages
+      if (!action.payload.content || action.payload.content.trim() === "")
+        return;
+      // Remove any optimistic (temp) message with the same content
+      state.messages = state.messages.filter(
+        (msg) =>
+          !(
+            msg.id &&
+            msg.id.startsWith("temp-") &&
+            msg.content === action.payload.content
+          )
+      );
+      if (!messageExists) {
+        state.messages.push(action.payload);
       }
     },
   },
@@ -136,13 +140,21 @@ const messagesSlice = createSlice({
       })
       .addCase(sendMessage.fulfilled, (state, action) => {
         state.loading = false;
-        if (state.adminConversation) {
-          const newMessage = {
-            ...action.payload,
-            isFromStudent: true,
-          };
-          state.adminConversation.messages.push(newMessage);
-        }
+        const backendMsg = action.payload;
+        // Prevent empty or whitespace-only messages
+        if (!backendMsg.content || backendMsg.content.trim() === "") return;
+        const newMessage = {
+          id: backendMsg.id,
+          content: backendMsg.content,
+          senderId: backendMsg.sender?.id,
+          receiverId: backendMsg.recipient?.id,
+          createdAt: backendMsg.createdAt,
+          updatedAt: backendMsg.updatedAt,
+          isRead: backendMsg.isRead,
+          isFromStudent: backendMsg.sender?.role === "STUDENT",
+          sender: backendMsg.sender,
+        };
+        state.messages.push(newMessage);
       })
       .addCase(sendMessage.rejected, (state, action) => {
         state.loading = false;
@@ -155,39 +167,31 @@ const messagesSlice = createSlice({
       })
       .addCase(getAdminConversation.fulfilled, (state, action) => {
         state.loading = false;
-        if (action.payload.pagination.currentPage === 1) {
+
+        if (action.payload?.pagination?.currentPage === 1) {
+          // For page 1, replace the conversation and sync messages array
           state.adminConversation = action.payload;
-        } else if (state.adminConversation) {
+          state.messages = action.payload.messages || [];
+        } else if (state.adminConversation && action.payload) {
           // Prepend older messages
           state.adminConversation.messages = [
-            ...action.payload.messages,
+            ...(action.payload.messages || []),
             ...state.adminConversation.messages,
           ];
           // Update pagination info
-          state.adminConversation.pagination = action.payload.pagination;
+          if (action.payload.pagination) {
+            state.adminConversation.pagination = action.payload.pagination;
+          }
         }
       })
       .addCase(getAdminConversation.rejected, (state, action) => {
         state.loading = false;
         state.error =
           action.error.message || "Failed to fetch admin conversation";
-      })
-      // Mark Conversation as Read
-      .addCase(markConversationAsRead.fulfilled, (state) => {
-        if (state.adminConversation) {
-          state.adminConversation.messages =
-            state.adminConversation.messages.map((message) => ({
-              ...message,
-              read: true,
-            }));
-        }
-      })
-      // Fetch Unread Count
-      .addCase(fetchUnreadCount.fulfilled, (state, action) => {
-        state.unreadCount = action.payload.count || 0;
       });
   },
 });
 
-export const { clearMessages, prependMessages, addNewMessage } = messagesSlice.actions;
+export const { clearMessages, prependMessages, addNewMessage } =
+  messagesSlice.actions;
 export default messagesSlice.reducer;

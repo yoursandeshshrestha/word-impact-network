@@ -1,18 +1,13 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import axios, { AxiosError } from "axios";
 import { toast } from "sonner";
-import { withAuth } from "@/common/services/auth";
-
-interface ErrorResponse {
-  message: string;
-}
 
 interface VideoData {
   id: string;
   title: string;
   description: string;
   duration: number;
-  backblazeUrl: string;
+  vimeoId: string;
+  vimeoUrl: string;
 }
 
 interface ChapterData {
@@ -57,18 +52,24 @@ interface PublicCoursesState {
 }
 
 const BASE_URL =
-  process.env.NEXT_PUBLIC_BACKEND_API || "http://localhost:8080/api/v1";
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api/v1";
 
 export const fetchCourses = createAsyncThunk(
-  "courses/fetchCourses",
+  "publicCourses/fetchCourses",
   async (_, { rejectWithValue }) => {
     try {
-      const response = await axios.get(`${BASE_URL}/courses`);
-      return response.data.data;
+      const response = await fetch(`${BASE_URL}/courses`);
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        const errorMessage = errorData.message || "Failed to fetch courses";
+        toast.error(errorMessage);
+        return rejectWithValue(errorMessage);
+      }
+      const data = await response.json();
+      return data.data;
     } catch (error) {
       const errorMessage =
-        (error as AxiosError<ErrorResponse>).response?.data?.message ||
-        "Failed to fetch courses";
+        error instanceof Error ? error.message : "Failed to fetch courses";
       toast.error(errorMessage);
       return rejectWithValue(errorMessage);
     }
@@ -76,17 +77,33 @@ export const fetchCourses = createAsyncThunk(
 );
 
 export const fetchPreviewCourseById = createAsyncThunk(
-  "courses/fetchPreviewCourseById",
+  "publicCourses/fetchPreviewCourseById",
   async (courseId: string, { rejectWithValue }) => {
     try {
-      const response = await axios.get(
-        `${BASE_URL}/student/courses/${courseId}/preview`
+      const response = await fetch(
+        `${BASE_URL}/student/courses/${courseId}/preview`,
+        {
+          method: "GET",
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
       );
-      return response.data.data;
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        const errorMessage =
+          errorData.message || "Failed to fetch course details";
+        toast.error(errorMessage);
+        return rejectWithValue(errorMessage);
+      }
+      const data = await response.json();
+      return data.data;
     } catch (error) {
       const errorMessage =
-        (error as AxiosError<ErrorResponse>).response?.data?.message ||
-        "Failed to fetch course details";
+        error instanceof Error
+          ? error.message
+          : "Failed to fetch course details";
       toast.error(errorMessage);
       return rejectWithValue(errorMessage);
     }
@@ -94,22 +111,32 @@ export const fetchPreviewCourseById = createAsyncThunk(
 );
 
 export const enrollInCourse = createAsyncThunk(
-  "courses/enrollInCourse",
+  "publicCourses/enrollInCourse",
   async (courseId: string, { rejectWithValue }) => {
     try {
-      const response = await axios.post(
+      const response = await fetch(
         `${BASE_URL}/student/courses/${courseId}/enroll`,
-        {},
         {
-          headers: withAuth() as Record<string, string>,
+          method: "POST",
+          credentials: "include", // This will automatically send cookies
+          headers: {
+            "Content-Type": "application/json",
+          },
         }
       );
 
-      return response.data.data;
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        const errorMessage = errorData.message || "Failed to enroll in course";
+        toast.error(errorMessage);
+        return rejectWithValue(errorMessage);
+      }
+
+      const data = await response.json();
+      return data.data;
     } catch (error) {
       const errorMessage =
-        (error as AxiosError<ErrorResponse>).response?.data?.message ||
-        "Failed to enroll in course";
+        error instanceof Error ? error.message : "Failed to enroll in course";
       toast.error(errorMessage);
       return rejectWithValue(errorMessage);
     }
@@ -117,7 +144,7 @@ export const enrollInCourse = createAsyncThunk(
 );
 
 const courseSlice = createSlice({
-  name: "courses",
+  name: "publicCourses",
   initialState: {
     courses: [],
     coursePreviews: [],
