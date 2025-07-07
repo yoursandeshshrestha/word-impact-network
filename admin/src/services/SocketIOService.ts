@@ -1,7 +1,6 @@
 import { fetchUnreadCount } from "@/redux/features/messagesSlice";
 import { fetchNotifications } from "@/redux/features/notificationsSlice";
 import { store } from "@/redux/store";
-import { getAuthToken } from "@/utils/auth";
 import { io, Socket } from "socket.io-client";
 
 export enum SocketEvents {
@@ -26,12 +25,6 @@ class SocketIOService {
   // Initialize Socket.IO connection
   connect(): void {
     try {
-      const token = getAuthToken();
-      if (!token) {
-        console.warn("Socket.IO: No auth token available");
-        return;
-      }
-
       // Don't create a new connection if one already exists and is connected
       if (this.socket && this.connected) {
         return;
@@ -47,11 +40,10 @@ class SocketIOService {
       // Reset connection attempts on manual connect
       this.connectionAttempts = 0;
 
-      // Create Socket.IO connection with auth token
+      // Create Socket.IO connection with cookies (HTTP-only cookies will be included automatically)
       this.socket = io(socketUrl, {
         path: "/socket.io",
-        auth: { token },
-        query: { token }, // Including in query for backward compatibility
+        withCredentials: true, // Include cookies in the connection
         reconnection: true,
         reconnectionAttempts: 5,
         reconnectionDelay: 1000,
@@ -118,8 +110,9 @@ class SocketIOService {
 
     // New message received
     this.socket.on(SocketEvents.NEW_MESSAGE, (data) => {
-      // Immediately update unread count in Redux store
-      store.dispatch(fetchUnreadCount());
+      // Don't automatically fetch unread count here since the frontend
+      // is now handling this manually in the useWebSocketConnection hook
+      // This prevents conflicts with our manual unread count management
 
       // Emit event to any listeners
       this.emitToListeners(SocketEvents.NEW_MESSAGE, data);
@@ -138,8 +131,9 @@ class SocketIOService {
 
     // Message read event
     this.socket.on(SocketEvents.MESSAGE_READ, (data) => {
-      // Update unread count in Redux store
-      store.dispatch(fetchUnreadCount());
+      // Don't automatically fetch unread count here since the frontend
+      // is already handling this through the markConversationAsRead action
+      // This prevents conflicts with local state updates
 
       // Emit event to any listeners
       this.emitToListeners(SocketEvents.MESSAGE_READ, data);
@@ -197,15 +191,7 @@ class SocketIOService {
       );
 
       this.reconnectTimer = setTimeout(() => {
-        // Only attempt to reconnect if we have a valid token
-        if (getAuthToken()) {
-          this.connect();
-        } else {
-          console.warn(
-            "Socket.IO: No auth token available, skipping reconnect"
-          );
-          this.connectionAttempts = 0; // Reset attempts
-        }
+        this.connect();
       }, delay);
     } else {
       console.warn(
@@ -278,11 +264,6 @@ class SocketIOService {
     const listeners = this.eventListeners.get(event);
     if (listeners) {
       listeners.add(listener);
-    }
-
-    // If we're already connected and listener is being added for an existing event
-    if (this.socket) {
-      this.socket.on(event, listener);
     }
   }
 
