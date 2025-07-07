@@ -102,6 +102,7 @@ const VideoForm: React.FC<VideoFormProps> = ({
         description: "Description must be at least 10 characters long",
       }));
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleChange = (
@@ -296,11 +297,6 @@ const VideoForm: React.FC<VideoFormProps> = ({
 
     setIsUploadingToVimeo(true);
     setUploadStatus("Creating upload session...");
-
-    // Generate a unique upload ID for tracking
-    const uploadId = `vimeo-upload-${Date.now()}-${Math.random()
-      .toString(36)
-      .substr(2, 9)}`;
 
     try {
       // 1. Get Vimeo upload URL from backend

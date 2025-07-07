@@ -10,19 +10,6 @@ const StudentsList: React.FC<StudentsListProps> = ({
   students,
   onViewDetails,
 }) => {
-  const getStatusBadgeClass = (status: string) => {
-    switch (status.toUpperCase()) {
-      case "APPROVED":
-        return "bg-green-100 text-green-800";
-      case "PENDING":
-        return "bg-yellow-100 text-yellow-800";
-      case "REJECTED":
-        return "bg-red-100 text-red-800";
-      default:
-        return "bg-gray-100 text-gray-800";
-    }
-  };
-
   const getPaymentStatusBadgeClass = (status: string) => {
     switch (status.toUpperCase()) {
       case "PAID":
@@ -97,20 +84,28 @@ const StudentsList: React.FC<StudentsListProps> = ({
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="text-sm text-gray-900">
                     <div className="flex items-center space-x-2">
-                      <span>Chapters: {student.statistics.overallChapterProgress}%</span>
+                      <span>
+                        Chapters: {student.statistics.overallChapterProgress}%
+                      </span>
                       <div className="w-16 bg-gray-200 rounded-full h-1">
                         <div
                           className="bg-blue-600 h-1 rounded-full"
-                          style={{ width: `${student.statistics.overallChapterProgress}%` }}
+                          style={{
+                            width: `${student.statistics.overallChapterProgress}%`,
+                          }}
                         />
                       </div>
                     </div>
                     <div className="flex items-center space-x-2 mt-1">
-                      <span>Exams: {student.statistics.overallExamProgress}%</span>
+                      <span>
+                        Exams: {student.statistics.overallExamProgress}%
+                      </span>
                       <div className="w-16 bg-gray-200 rounded-full h-1">
                         <div
                           className="bg-green-600 h-1 rounded-full"
-                          style={{ width: `${student.statistics.overallExamProgress}%` }}
+                          style={{
+                            width: `${student.statistics.overallExamProgress}%`,
+                          }}
                         />
                       </div>
                     </div>

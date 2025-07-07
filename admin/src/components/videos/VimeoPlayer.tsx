@@ -43,6 +43,7 @@ const VimeoPlayer: React.FC<VimeoPlayerProps> = ({ video, onClose }) => {
   useEffect(() => {
     return () => {
       if (iframeRef.current) {
+        // eslint-disable-next-line react-hooks/exhaustive-deps
         iframeRef.current.src = "";
       }
     };

@@ -3,11 +3,13 @@ import { useAppDispatch } from "./hooks";
 import {
   fetchUnreadCount,
   addNewMessage,
+  markConversationAsRead,
 } from "@/redux/features/messagesSlice";
 import { fetchNotifications } from "@/redux/features/notificationsSlice";
 import websocketService, { SocketEvents } from "@/services/SocketIOService";
 import { toast } from "sonner";
 import { AuthService } from "@/utils/auth";
+import { store } from "@/redux/store";
 
 // Define the types for message and new message data
 interface Message {
@@ -169,28 +171,24 @@ export const useWebSocketConnection = () => {
           })
         );
 
-        // Show a toast notification (disabled temporarily to fix multiple toasts)
-        // const sender = message.sender;
-        // toast(
-        //   <div className="flex flex-col">
-        //     <span className="font-medium">{sender.fullName}</span>
-        //     <span className="text-sm truncate">{message.content}</span>
-        //   </div>,
-        //   {
-        //     description: "New message received",
-        //     action: {
-        //       label: "View",
-        //       onClick: () => {
-        //         // Open the chat
-        //         const chatButton =
-        //           document.getElementById("global-chat-button");
-        //         if (chatButton) {
-        //           chatButton.click();
-        //         }
-        //       },
-        //     },
-        //   }
-        // );
+        // If we're currently in a conversation with this student, mark the message as read
+        const currentState = store.getState();
+        const selectedStudent = currentState.messages.selectedStudent;
+        const isInConversation = currentState.messages.conversations.some(
+          (conv) => conv.partner.id === message.sender.id
+        );
+
+        if (
+          selectedStudent &&
+          selectedStudent.id === message.sender.id &&
+          isInConversation
+        ) {
+          // Automatically mark the conversation as read since we're viewing it
+          // Add a small delay to ensure the addNewMessage action has completed
+          setTimeout(() => {
+            dispatchRef.current(markConversationAsRead(message.sender.id));
+          }, 50);
+        }
       }
     };
 
