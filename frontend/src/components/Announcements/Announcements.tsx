@@ -1,17 +1,36 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useAnnouncements } from "@/hooks/useAnnouncements";
 import { formatDistanceToNow } from "date-fns";
 import { Megaphone, Calendar, User, X, ChevronRight } from "lucide-react";
 import Image from "next/image";
 import { Announcement } from "@/redux/features/announcements/announcementsSlice";
+import { useSelector } from "react-redux";
+import { RootState } from "@/redux/store";
+import { isAuthenticated } from "@/common/services/auth";
 
 const Announcements: React.FC = () => {
-  const { announcements, loading, error } = useAnnouncements();
+  const { announcements, loading, error, loadAnnouncements } =
+    useAnnouncements();
   const [selectedAnnouncement, setSelectedAnnouncement] =
     useState<Announcement | null>(null);
   const [showModal, setShowModal] = useState(false);
+  const hasLoadedRef = useRef(false);
+  const user = useSelector((state: RootState) => state.user.user);
+
+  // Load announcements when component mounts
+  useEffect(() => {
+    if (!hasLoadedRef.current) {
+      hasLoadedRef.current = true;
+      loadAnnouncements();
+    }
+  }, [loadAnnouncements]);
+
+  // Don't render anything if user is not authenticated
+  if (!isAuthenticated() || !user) {
+    return null;
+  }
 
   const handleAnnouncementClick = (announcement: Announcement) => {
     setSelectedAnnouncement(announcement);
@@ -46,8 +65,9 @@ const Announcements: React.FC = () => {
     );
   }
 
+  // Don't show anything if no announcements
   if (!announcements || announcements.length === 0) {
-    return null; // Don't show anything if no announcements
+    return null;
   }
 
   return (

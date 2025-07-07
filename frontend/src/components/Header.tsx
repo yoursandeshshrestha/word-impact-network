@@ -13,7 +13,6 @@ import {
   Home,
   BookOpen,
   MessageCircle,
-
 } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useAutoCourses } from "@/hooks/useCourses";
@@ -21,15 +20,14 @@ import { useSelector } from "react-redux";
 import { RootState } from "@/redux/store";
 import Link from "next/link";
 
-
 const Header: React.FC<{
-  studentName: string;
+  studentName?: string;
   isLoading?: boolean;
   showSidebar?: boolean;
   onMobileMenuToggle?: () => void;
   isMobileMenuOpen?: boolean;
 }> = ({
-  studentName,
+  studentName: propStudentName,
   isLoading: externalLoading,
   showSidebar = false,
   onMobileMenuToggle,
@@ -43,8 +41,11 @@ const Header: React.FC<{
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const { searchQuery, updateSearchQuery } = useAutoCourses();
-  const { unreadCount } = useSelector((state: RootState) => state.messages);
-
+  const {
+    user,
+    isLoading: userLoading,
+    isHydrated,
+  } = useSelector((state: RootState) => state.user);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -68,14 +69,17 @@ const Header: React.FC<{
   }, []);
 
   useEffect(() => {
-    if (studentName) {
+    // Use user data from Redux if available, otherwise fall back to prop
+    const nameToUse = user?.fullName || propStudentName || "Student";
+
+    if (nameToUse) {
       const timer = setTimeout(() => {
-        setDisplayName(studentName);
+        setDisplayName(nameToUse);
         setIsNameLoading(false);
       }, 100);
       return () => clearTimeout(timer);
     }
-  }, [studentName]);
+  }, [user?.fullName, propStudentName]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -106,7 +110,8 @@ const Header: React.FC<{
     }
   }, [isSearchOpen]);
 
-  const isLoading = externalLoading ?? isNameLoading;
+  const isLoading =
+    externalLoading ?? userLoading ?? (isNameLoading || !isHydrated);
 
   const getInitials = useMemo(
     () => (name: string) => {
@@ -267,7 +272,9 @@ const Header: React.FC<{
                           }`}
                         />
                       </div>
-                      <div className="text-xs text-slate-500">Student</div>
+                      <div className="text-xs text-slate-500">
+                        {user?.role === "ADMIN" ? "Administrator" : "Student"}
+                      </div>
                     </div>
                   </div>
                 </button>
@@ -275,22 +282,6 @@ const Header: React.FC<{
                 {/* Dropdown Menu */}
                 {isDropdownOpen && (
                   <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-lg border border-slate-200 py-2 z-50">
-                    <div className="px-4 py-3 border-b border-slate-200">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-[#7a9e7e] to-[#b7773a] flex items-center justify-center text-white font-semibold shadow-sm">
-                          {getInitials(displayName)}
-                        </div>
-                        <div>
-                          <div className="font-medium text-slate-900">
-                            {displayName}
-                          </div>
-                          <div className="text-sm text-slate-500">
-                            Student Account
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
                     <div className="py-2">
                       <a
                         href="/profile"
@@ -305,16 +296,9 @@ const Header: React.FC<{
                       >
                         <div className="relative">
                           <MessageCircle className="h-4 w-4" />
-                          {unreadCount > 0 && (
-                            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[8px] rounded-full px-1 py-0.5 font-bold shadow-md border border-white">
-                              {unreadCount > 9 ? "9+" : unreadCount}
-                            </span>
-                          )}
                         </div>
                         Support
                       </a>
-                    </div>
-                    <div className="py-2">
                       <a
                         href="/forgot-password"
                         className="flex items-center gap-3 px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors"
@@ -363,7 +347,7 @@ const Header: React.FC<{
                 <ul className="space-y-2">
                   {menuItems.map((item) => {
                     const isActive = pathname === item.path;
-                    const isSupport = item.path === "/support";
+
                     return (
                       <li key={item.path}>
                         <Link
@@ -374,14 +358,7 @@ const Header: React.FC<{
                               : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
                           }`}
                         >
-                          <div className="relative">
-                            {item.icon}
-                            {isSupport && unreadCount > 0 && (
-                              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] rounded-full px-1.5 py-0.5 font-bold shadow-md border-2 border-white">
-                                {unreadCount > 9 ? "9+" : unreadCount}
-                              </span>
-                            )}
-                          </div>
+                          <div className="relative">{item.icon}</div>
                           {item.name}
                         </Link>
                       </li>

@@ -1,30 +1,10 @@
 "use client";
 
+import { apiClient, type User, type AuthResult } from "@/lib/api-client";
 import Cookies from "js-cookie";
 
-// Types
-export interface User {
-  id: string;
-  email: string;
-  fullName: string;
-  role: string;
-  applicationStatus: string;
-}
-
-export interface LoginResponse {
-  status: string;
-  message: string;
-  data: {
-    student: User;
-    token: string;
-  };
-}
-
-export interface AuthResult {
-  success: boolean;
-  message?: string;
-  user?: User;
-}
+// Re-export types for backward compatibility
+export type { User, AuthResult };
 
 /**
  * Handles user login
@@ -36,68 +16,7 @@ export const login = async (
   email: string,
   password: string
 ): Promise<AuthResult> => {
-  try {
-    const response = await fetch(
-      `${process.env.NEXT_PUBLIC_BACKEND_API}/student/login`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email, password }),
-      }
-    );
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      return {
-        success: false,
-        message: errorData.message || "Failed to login",
-      };
-    }
-
-    const data: LoginResponse = await response.json();
-
-    // Check if the login was successful based on status
-    if (data.status !== "success") {
-      return {
-        success: false,
-        message: data.message || "Login failed",
-      };
-    }
-
-    // Store auth token in cookie
-    Cookies.set("client-token-win", data.data.token, {
-      expires: 7,
-      path: "/",
-      sameSite: "strict",
-    });
-
-    // Store user data in client-accessible cookie
-    Cookies.set(
-      "user",
-      JSON.stringify({
-        id: data.data.student.id,
-        email: data.data.student.email,
-        fullName: data.data.student.fullName,
-        role: data.data.student.role,
-        applicationStatus: data.data.student.applicationStatus,
-      }),
-      { expires: 7, path: "/", sameSite: "strict" }
-    );
-
-    return {
-      success: true,
-      user: data.data.student,
-    };
-  } catch (err) {
-    const errorMessage =
-      err instanceof Error ? err.message : "An error occurred";
-    return {
-      success: false,
-      message: errorMessage,
-    };
-  }
+  return apiClient.login(email, password);
 };
 
 /**
@@ -106,16 +25,8 @@ export const login = async (
  */
 export const logout = (): AuthResult => {
   try {
-    // Remove auth cookies
-    Cookies.remove("client-token-win", { path: "/" });
-    Cookies.remove("user", { path: "/" });
-
-    // Redirect to login page
-    window.location.href = "/auth/login";
-
-    return {
-      success: true,
-    };
+    apiClient.logout();
+    return { success: true };
   } catch (err) {
     const errorMessage =
       err instanceof Error ? err.message : "An error occurred during logout";
@@ -127,41 +38,37 @@ export const logout = (): AuthResult => {
 };
 
 /**
- * Checks if the user is currently authenticated
+ * Checks if the user is currently authenticated by checking for auth cookies
  * @returns boolean indicating auth status
  */
 export const isAuthenticated = (): boolean => {
-  const token = Cookies.get("client-token-win");
-  return !!token;
+  const accessToken = Cookies.get("client-access-token-win");
+  const refreshToken = Cookies.get("client-refresh-token-win");
+  return !!(accessToken || refreshToken);
 };
 
 /**
- * Gets the current user from cookies
- * @returns User object or null if not authenticated
+ * Gets the current user from API
+ * @returns Promise<User | null> User object or null if not authenticated
  */
-export const getCurrentUser = (): User | null => {
-  const userJson = Cookies.get("user");
-  if (!userJson) return null;
-
-  try {
-    return JSON.parse(userJson) as User;
-  } catch {
-    return null;
-  }
+export const getCurrentUser = async (): Promise<User | null> => {
+  return apiClient.getCurrentUser();
 };
 
 /**
  * Gets the auth token from cookies
  * @returns Auth token or null if not present
+ * @deprecated Use credentials: "include" instead
  */
 export const getAuthToken = (): string | null => {
-  return Cookies.get("client-token-win") || null;
+  return apiClient.getAuthToken();
 };
 
 /**
  * Adds auth token to request headers
  * @param headers Initial headers object
  * @returns Headers with auth token added
+ * @deprecated Use credentials: "include" instead
  */
 export const withAuth = (headers: HeadersInit = {}): HeadersInit => {
   const token = getAuthToken();

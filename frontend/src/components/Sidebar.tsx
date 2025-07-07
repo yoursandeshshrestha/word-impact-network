@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -15,13 +15,30 @@ import { useAnnouncements } from "@/hooks/useAnnouncements";
 import { formatDistanceToNow } from "date-fns";
 import AnnouncementModal from "@/components/Announcements/AnnouncementModal";
 import { Announcement } from "@/redux/features/announcements/announcementsSlice";
+import { useSelector } from "react-redux";
+import { RootState } from "@/redux/store";
+import { isAuthenticated } from "@/common/services/auth";
 
 const Sidebar: React.FC = () => {
   const pathname = usePathname();
-  const { announcements } = useAnnouncements();
+  const {
+    announcements,
+    loadAnnouncements,
+    loading: announcementsLoading,
+  } = useAnnouncements();
   const [selectedAnnouncement, setSelectedAnnouncement] =
     useState<Announcement | null>(null);
   const [showModal, setShowModal] = useState(false);
+  const hasLoadedRef = useRef(false);
+  const user = useSelector((state: RootState) => state.user.user);
+
+  // Load announcements when component mounts
+  useEffect(() => {
+    if (!hasLoadedRef.current && isAuthenticated() && user) {
+      hasLoadedRef.current = true;
+      loadAnnouncements();
+    }
+  }, [loadAnnouncements, user]);
 
   const menuItems = [
     {
@@ -120,53 +137,79 @@ const Sidebar: React.FC = () => {
             ))}
 
             {/* Announcements Section */}
-            {announcements && announcements.length > 0 && (
+            {isAuthenticated() && user && (
               <div>
                 <h3 className="px-3 text-xs font-semibold text-white/50 uppercase tracking-wider mb-3">
                   Announcements
                 </h3>
-                <div className="space-y-2">
-                  {announcements.slice(0, 3).map((announcement) => (
-                    <div
-                      key={announcement.id}
-                      className="p-3 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all duration-200 cursor-pointer"
-                      onClick={() => {
-                        setSelectedAnnouncement(announcement);
-                        setShowModal(true);
-                      }}
-                    >
-                      <div className="flex items-start gap-2">
-                        <Megaphone className="w-4 h-4 text-blue-400 mt-0.5 flex-shrink-0" />
-                        <div className="flex-1 min-w-0">
-                          <h4 className="text-sm font-medium text-white truncate">
-                            {announcement.title}
-                          </h4>
-                          <p className="text-xs text-white/60 mt-1 line-clamp-2">
-                            {announcement.content
-                              .replace(/<[^>]*>/g, "")
-                              .slice(0, 60)}
-                            {announcement.content.length > 60 ? "..." : ""}
-                          </p>
-                          <p className="text-xs text-white/40 mt-1">
-                            {formatDistanceToNow(
-                              new Date(announcement.createdAt),
-                              {
-                                addSuffix: true,
-                              }
-                            )}
-                          </p>
+                {announcementsLoading ? (
+                  <div className="space-y-2">
+                    {[1, 2, 3].map((i) => (
+                      <div
+                        key={i}
+                        className="p-3 rounded-xl bg-white/5 border border-white/10"
+                      >
+                        <div className="flex items-start gap-2">
+                          <div className="w-4 h-4 bg-white/20 rounded animate-pulse"></div>
+                          <div className="flex-1 space-y-2">
+                            <div className="h-3 bg-white/20 rounded animate-pulse"></div>
+                            <div className="h-2 bg-white/10 rounded animate-pulse w-3/4"></div>
+                            <div className="h-2 bg-white/10 rounded animate-pulse w-1/2"></div>
+                          </div>
                         </div>
                       </div>
+                    ))}
+                  </div>
+                ) : announcements && announcements.length > 0 ? (
+                  <div className="space-y-2">
+                    {announcements.slice(0, 3).map((announcement) => (
+                      <div
+                        key={announcement.id}
+                        className="p-3 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all duration-200 cursor-pointer"
+                        onClick={() => {
+                          setSelectedAnnouncement(announcement);
+                          setShowModal(true);
+                        }}
+                      >
+                        <div className="flex items-start gap-2">
+                          <Megaphone className="w-4 h-4 text-blue-400 mt-0.5 flex-shrink-0" />
+                          <div className="flex-1 min-w-0">
+                            <h4 className="text-sm font-medium text-white truncate">
+                              {announcement.title}
+                            </h4>
+                            <p className="text-xs text-white/60 mt-1 line-clamp-2">
+                              {announcement.content
+                                .replace(/<[^>]*>/g, "")
+                                .slice(0, 60)}
+                              {announcement.content.length > 60 ? "..." : ""}
+                            </p>
+                            <p className="text-xs text-white/40 mt-1">
+                              {formatDistanceToNow(
+                                new Date(announcement.createdAt),
+                                {
+                                  addSuffix: true,
+                                }
+                              )}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                    {announcements.length > 3 && (
+                      <div className="text-center">
+                        <span className="text-xs text-white/50">
+                          +{announcements.length - 3} more
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="text-center py-4">
+                    <div className="text-white/30 text-xs">
+                      No announcements
                     </div>
-                  ))}
-                  {announcements.length > 3 && (
-                    <div className="text-center">
-                      <span className="text-xs text-white/50">
-                        +{announcements.length - 3} more
-                      </span>
-                    </div>
-                  )}
-                </div>
+                  </div>
+                )}
               </div>
             )}
           </div>

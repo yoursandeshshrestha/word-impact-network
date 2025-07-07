@@ -33,6 +33,10 @@ const CourseCard: React.FC<CourseCardProps> = ({ course }) => {
   });
 
   const handleEnroll = async () => {
+    if (course.isEnrolled) {
+      return; // Don't enroll if already enrolled
+    }
+
     try {
       setIsEnrolling(true);
       await enrollInCourse(course.id);
@@ -115,10 +119,18 @@ const CourseCard: React.FC<CourseCardProps> = ({ course }) => {
         <div className="flex gap-3">
           <button
             onClick={handleEnroll}
-            disabled={isEnrolling}
-            className="flex-1 bg-white/20 backdrop-blur-sm border border-gray-200 hover:bg-white/30 text-gray-700 text-sm text-center py-2.5 px-4 rounded-md font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+            disabled={isEnrolling || course.isEnrolled}
+            className={`flex-1 backdrop-blur-sm border border-gray-200 text-sm text-center py-2.5 px-4 rounded-md font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer ${
+              course.isEnrolled
+                ? "bg-green-600/20 hover:bg-green-600/30 text-green-700"
+                : "bg-white/20 hover:bg-white/30 text-gray-700"
+            }`}
           >
-            {isEnrolling ? "Enrolling..." : "Enroll Now"}
+            {isEnrolling
+              ? "Enrolling..."
+              : course.isEnrolled
+              ? "Enrolled"
+              : "Enroll Now"}
           </button>
           <Link
             href={`/courses/${course.id}`}
