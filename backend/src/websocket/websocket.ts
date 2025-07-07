@@ -1,6 +1,6 @@
 import { Server as HttpServer } from 'http';
 import { Server as SocketIOServer, Socket } from 'socket.io';
-import { verifyToken } from '../utils/jwt';
+import { verifyAccessToken } from '../utils/jwt';
 import { logger } from '../utils/logger';
 import { SocketEvents } from './types';
 
@@ -20,14 +20,34 @@ export function initializeSocketIO(httpServer: HttpServer): SocketIOServer {
   // Authentication middleware
   io.use((socket: Socket, next) => {
     try {
-      const token = socket.handshake.auth.token || socket.handshake.query.token;
+      let token = socket.handshake.auth.token || socket.handshake.query.token;
+
+      // If no token in auth or query, try to get from cookies
+      if (!token) {
+        // Parse cookies from handshake headers
+        const cookieHeader = socket.handshake.headers.cookie;
+        if (cookieHeader) {
+          const cookies = cookieHeader
+            .split(';')
+            .reduce((acc: Record<string, string>, cookie: string) => {
+              const [key, value] = cookie.trim().split('=');
+              if (key && value) {
+                acc[key] = value;
+              }
+              return acc;
+            }, {});
+
+          // Check for both cookie names (admin and frontend)
+          token = cookies.accessToken || cookies['client-access-token-win'];
+        }
+      }
 
       if (!token) {
         logger.warn('Socket connection rejected - no token provided');
         return next(new Error('Authentication required'));
       }
 
-      const decoded = verifyToken(token as string);
+      const decoded = verifyAccessToken(token as string);
 
       if (!decoded) {
         logger.warn('Socket connection rejected - invalid token');
@@ -40,6 +60,12 @@ export function initializeSocketIO(httpServer: HttpServer): SocketIOServer {
         email: decoded.email,
         role: decoded.role,
       };
+
+      logger.info('Socket authentication successful', {
+        userId: decoded.userId,
+        userRole: decoded.role,
+        socketId: socket.id,
+      });
 
       next();
     } catch (error) {
@@ -58,7 +84,13 @@ export function initializeSocketIO(httpServer: HttpServer): SocketIOServer {
       // Store user connection
       connectedUsers.set(userId, socket.id);
 
-      logger.info('User connected to socket', { userId, socketId: socket.id });
+      logger.info('User connected to socket', {
+        userId,
+        socketId: socket.id,
+        userRole: socket.data.user.role,
+        totalConnectedUsers: connectedUsers.size,
+        allConnectedUserIds: Array.from(connectedUsers.keys()),
+      });
 
       // Notify user that connection is established
       socket.emit(SocketEvents.CONNECTED, {
@@ -72,7 +104,11 @@ export function initializeSocketIO(httpServer: HttpServer): SocketIOServer {
       // Handle disconnection
       socket.on('disconnect', () => {
         connectedUsers.delete(userId);
-        logger.info('User disconnected from socket', { userId, socketId: socket.id });
+        logger.info('User disconnected from socket', {
+          userId,
+          socketId: socket.id,
+          totalConnectedUsers: connectedUsers.size,
+        });
       });
 
       // Handle ping messages to keep connection alive
@@ -100,6 +136,13 @@ export function sendMessageToUser(
   data: any,
 ): boolean {
   try {
+    logger.info('Attempting to send message to user', {
+      userId,
+      event,
+      connectedUsersCount: connectedUsers.size,
+      connectedUserIds: Array.from(connectedUsers.keys()),
+    });
+
     const socketId = connectedUsers.get(userId);
 
     if (!socketId) {
@@ -108,6 +151,7 @@ export function sendMessageToUser(
       return false;
     }
 
+    logger.info('User is online, sending message', { userId, socketId, event });
     io.to(socketId).emit(event, data);
     logger.info('Message sent to user via socket', { userId, socketId, event });
     return true;
