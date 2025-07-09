@@ -94,7 +94,7 @@ function StudentProfile() {
 
   if (isLoading) {
     return (
-      <div className="h-[calc(100vh-4rem)] bg-white flex items-center justify-center">
+      <div className="min-h-[calc(100vh-4rem)] bg-white flex items-center justify-center px-4">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-2 border-gray-200 border-t-blue-600 mx-auto mb-3"></div>
           <p className="text-gray-600 text-sm">Loading your profile...</p>
@@ -105,7 +105,7 @@ function StudentProfile() {
 
   if (isError) {
     return (
-      <div className="h-[calc(100vh-4rem)] bg-white flex items-center justify-center">
+      <div className="min-h-[calc(100vh-4rem)] bg-white flex items-center justify-center px-4">
         <div className="text-center">
           <div className="text-red-500 text-2xl mb-3">⚠️</div>
           <h2 className="text-lg font-semibold text-gray-900 mb-2">
@@ -127,7 +127,7 @@ function StudentProfile() {
 
   if (!profileData) {
     return (
-      <div className="h-[calc(100vh-4rem)] bg-white flex items-center justify-center">
+      <div className="min-h-[calc(100vh-4rem)] bg-white flex items-center justify-center px-4">
         <div className="text-center py-16">
           <div className="text-6xl mb-6">👤</div>
           <h3 className="text-2xl font-semibold text-slate-900 mb-4">
@@ -163,11 +163,11 @@ function StudentProfile() {
 
   return (
     <div className="min-h-[calc(100vh-4rem)] overflow-auto pb-10">
-      <div className="px-5 pt-4">
+      <div className="px-4 sm:px-5 pt-4">
         {/* Hero Section */}
-        <div className="relative mb-8">
+        <div className="relative mb-6 sm:mb-8">
           <div className="absolute inset-0 bg-gradient-to-r from-[#2c3e50] via-[#7a9e7e] to-[#b7773a] rounded-3xl blur-3xl opacity-10"></div>
-          <div className="relative bg-gradient-to-br from-[#2c3e50] via-[#2c3e50] to-[#2c3e50] rounded-3xl p-8 text-white overflow-hidden">
+          <div className="relative bg-gradient-to-br from-[#2c3e50] via-[#2c3e50] to-[#2c3e50] rounded-3xl p-4 sm:p-6 lg:p-8 text-white overflow-hidden">
             {/* Background Pattern */}
             <div className="absolute inset-0 opacity-10">
               <div className="absolute top-10 left-10 w-20 h-20 border border-white/20 rounded-full"></div>
@@ -176,18 +176,18 @@ function StudentProfile() {
               <div className="absolute bottom-20 right-1/3 w-8 h-8 border border-white/10 rounded-full"></div>
             </div>
 
-            <div className="relative flex items-center justify-between">
-              <div className="flex items-center gap-6">
+            <div className="relative flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6">
                 <div className="relative">
-                  <div className="w-24 h-24 bg-gradient-to-br from-white/20 to-white/10 rounded-2xl flex items-center justify-center backdrop-blur-sm border border-white/20">
-                    <User className="w-12 h-12 text-white" />
+                  <div className="w-20 h-20 sm:w-24 sm:h-24 bg-gradient-to-br from-white/20 to-white/10 rounded-2xl flex items-center justify-center backdrop-blur-sm border border-white/20">
+                    <User className="w-10 h-10 sm:w-12 sm:h-12 text-white" />
                   </div>
-                  <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-gradient-to-br from-[#7a9e7e] to-[#7a9e7e] rounded-full flex items-center justify-center border-4 border-[#2c3e50]">
-                    <CheckCircle className="w-4 h-4 text-white" />
+                  <div className="absolute -bottom-2 -right-2 w-6 h-6 sm:w-8 sm:h-8 bg-gradient-to-br from-[#7a9e7e] to-[#7a9e7e] rounded-full flex items-center justify-center border-4 border-[#2c3e50]">
+                    <CheckCircle className="w-3 h-3 sm:w-4 sm:h-4 text-white" />
                   </div>
                 </div>
 
-                <div>
+                <div className="flex-1">
                   {isEditing ? (
                     <input
                       type="text"
@@ -195,40 +195,48 @@ function StudentProfile() {
                       onChange={(e) =>
                         handleInputChange("fullName", e.target.value)
                       }
-                      className="text-3xl font-bold bg-transparent border-b-2 border-white/50 focus:border-white text-white placeholder-white/70 outline-none mb-2"
+                      className="text-2xl sm:text-3xl font-bold bg-transparent border-b-2 border-white/50 focus:border-white text-white placeholder-white/70 outline-none mb-2 w-full"
                       placeholder="Full Name"
                     />
                   ) : (
-                    <h1 className="text-3xl font-bold text-white mb-2">
+                    <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2">
                       {profile.fullName}
                     </h1>
                   )}
                   <div className="flex items-center gap-2 mb-4">
-                    <Mail className="w-5 h-5 text-white/80" />
-                    <p className="text-white/90">{profile.email}</p>
+                    <Mail className="w-4 h-4 sm:w-5 sm:h-5 text-white/80" />
+                    <p className="text-white/90 text-sm sm:text-base">
+                      {profile.email}
+                    </p>
                   </div>
 
                   {/* Quick Stats in Hero */}
-                  <div className="flex items-center gap-6">
+                  <div className="flex items-center gap-4 sm:gap-6">
                     <div className="text-center">
-                      <div className="text-2xl font-bold text-white">
+                      <div className="text-xl sm:text-2xl font-bold text-white">
                         {totalCourses}
                       </div>
-                      <div className="text-white/70 text-sm">Courses</div>
+                      <div className="text-white/70 text-xs sm:text-sm">
+                        Courses
+                      </div>
                     </div>
-                    <div className="w-px h-8 bg-white/20"></div>
+                    <div className="w-px h-6 sm:h-8 bg-white/20"></div>
                     <div className="text-center">
-                      <div className="text-2xl font-bold text-white">
+                      <div className="text-xl sm:text-2xl font-bold text-white">
                         {overallProgress}%
                       </div>
-                      <div className="text-white/70 text-sm">Progress</div>
+                      <div className="text-white/70 text-xs sm:text-sm">
+                        Progress
+                      </div>
                     </div>
-                    <div className="w-px h-8 bg-white/20"></div>
+                    <div className="w-px h-6 sm:h-8 bg-white/20"></div>
                     <div className="text-center">
-                      <div className="text-2xl font-bold text-white">
+                      <div className="text-xl sm:text-2xl font-bold text-white">
                         {totalCertificates}
                       </div>
-                      <div className="text-white/70 text-sm">Certificates</div>
+                      <div className="text-white/70 text-xs sm:text-sm">
+                        Certificates
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -238,28 +246,32 @@ function StudentProfile() {
                 {!isEditing ? (
                   <button
                     onClick={handleEdit}
-                    className="group flex items-center gap-2 bg-white/10 hover:bg-white/20 backdrop-blur-sm border border-white/20 px-6 py-3 rounded-xl transition-all duration-300 cursor-pointer"
+                    className="group flex items-center gap-2 bg-white/10 hover:bg-white/20 backdrop-blur-sm border border-white/20 px-4 sm:px-6 py-2 sm:py-3 rounded-xl transition-all duration-300 cursor-pointer w-full sm:w-auto justify-center"
                   >
-                    <Edit3 className="w-5 h-5 text-white group-hover:scale-110 transition-transform" />
-                    <span className="text-white font-medium">Edit Profile</span>
+                    <Edit3 className="w-4 h-4 sm:w-5 sm:h-5 text-white group-hover:scale-110 transition-transform" />
+                    <span className="text-white font-medium text-sm sm:text-base">
+                      Edit Profile
+                    </span>
                   </button>
                 ) : (
-                  <div className="flex items-center gap-3">
+                  <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
                     <button
                       onClick={handleSave}
-                      className="flex items-center gap-2 bg-gradient-to-r from-[#7a9e7e] to-[#7a9e7e] hover:from-[#7a9e7e]/90 hover:to-[#7a9e7e]/90 px-6 py-3 rounded-xl transition-all duration-300 cursor-pointer shadow-lg"
+                      className="flex items-center gap-2 bg-gradient-to-r from-[#7a9e7e] to-[#7a9e7e] hover:from-[#7a9e7e]/90 hover:to-[#7a9e7e]/90 px-4 sm:px-6 py-2 sm:py-3 rounded-xl transition-all duration-300 cursor-pointer shadow-lg w-full sm:w-auto justify-center"
                     >
-                      <Save className="w-5 h-5 text-white" />
-                      <span className="text-white font-medium">
+                      <Save className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+                      <span className="text-white font-medium text-sm sm:text-base">
                         Save Changes
                       </span>
                     </button>
                     <button
                       onClick={handleCancel}
-                      className="flex items-center gap-2 bg-white/10 hover:bg-white/20 backdrop-blur-sm border border-white/20 px-6 py-3 rounded-xl transition-all duration-300 cursor-pointer"
+                      className="flex items-center gap-2 bg-white/10 hover:bg-white/20 backdrop-blur-sm border border-white/20 px-4 sm:px-6 py-2 sm:py-3 rounded-xl transition-all duration-300 cursor-pointer w-full sm:w-auto justify-center"
                     >
-                      <X className="w-5 h-5 text-white" />
-                      <span className="text-white font-medium">Cancel</span>
+                      <X className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+                      <span className="text-white font-medium text-sm sm:text-base">
+                        Cancel
+                      </span>
                     </button>
                   </div>
                 )}
@@ -268,23 +280,23 @@ function StudentProfile() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+        <div className="grid grid-cols-1 xl:grid-cols-4 gap-6 lg:gap-8">
           {/* Personal Information Sidebar */}
-          <div className="lg:col-span-1 space-y-6">
-            <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-white/50 shadow-sm hover:shadow-md transition-all duration-300">
-              <h3 className="text-xl font-bold text-[#2c3e50] mb-4 flex items-center gap-2">
-                <User className="w-5 h-5 text-[#7a9e7e]" />
+          <div className="xl:col-span-1 space-y-6">
+            <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-4 sm:p-6 border border-white/50 shadow-sm hover:shadow-md transition-all duration-300">
+              <h3 className="text-lg sm:text-xl font-bold text-[#2c3e50] mb-4 flex items-center gap-2">
+                <User className="w-4 h-4 sm:w-5 sm:h-5 text-[#7a9e7e]" />
                 Personal Info
               </h3>
 
-              <div className="space-y-7">
+              <div className="space-y-5 sm:space-y-7">
                 <div className="group">
                   <div className="flex items-center gap-2 p-2 rounded-xl hover:bg-slate-50 transition-colors">
-                    <div className="w-10 h-10 bg-gradient-to-br from-[#2c3e50] to-[#2c3e50] rounded-xl flex items-center justify-center">
-                      <Calendar className="w-5 h-5 text-white" />
+                    <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-[#2c3e50] to-[#2c3e50] rounded-xl flex items-center justify-center">
+                      <Calendar className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
                     </div>
                     <div className="flex-1">
-                      <p className="text-sm font-medium text-slate-600">
+                      <p className="text-xs sm:text-sm font-medium text-slate-600">
                         Date of Birth
                       </p>
                       {isEditing ? (
@@ -294,10 +306,10 @@ function StudentProfile() {
                           onChange={(e) =>
                             handleInputChange("dateOfBirth", e.target.value)
                           }
-                          className="text-slate-900 font-medium bg-transparent border-b border-slate-200 focus:border-[#7a9e7e] outline-none w-full mt-1"
+                          className="text-slate-900 font-medium bg-transparent border-b border-slate-200 focus:border-[#7a9e7e] outline-none w-full mt-1 text-sm"
                         />
                       ) : (
-                        <p className="text-slate-900 font-medium">
+                        <p className="text-slate-900 font-medium text-sm">
                           {formatDate(profile.dateOfBirth)}
                         </p>
                       )}
@@ -307,11 +319,11 @@ function StudentProfile() {
 
                 <div className="group">
                   <div className="flex items-center gap-2 p-2 rounded-xl hover:bg-slate-50 transition-colors">
-                    <div className="w-10 h-10 bg-gradient-to-br from-[#7a9e7e] to-[#7a9e7e] rounded-xl flex items-center justify-center">
-                      <User className="w-5 h-5 text-white" />
+                    <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-[#7a9e7e] to-[#7a9e7e] rounded-xl flex items-center justify-center">
+                      <User className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
                     </div>
                     <div className="flex-1">
-                      <p className="text-sm font-medium text-slate-600">
+                      <p className="text-xs sm:text-sm font-medium text-slate-600">
                         Gender
                       </p>
                       {isEditing ? (
@@ -320,14 +332,14 @@ function StudentProfile() {
                           onChange={(e) =>
                             handleInputChange("gender", e.target.value)
                           }
-                          className="text-slate-900 font-medium bg-transparent border-b border-slate-200 focus:border-[#7a9e7e] outline-none w-full mt-1"
+                          className="text-slate-900 font-medium bg-transparent border-b border-slate-200 focus:border-[#7a9e7e] outline-none w-full mt-1 text-sm"
                         >
                           <option value="MALE">Male</option>
                           <option value="FEMALE">Female</option>
                           <option value="OTHER">Other</option>
                         </select>
                       ) : (
-                        <p className="text-slate-900 font-medium capitalize">
+                        <p className="text-slate-900 font-medium capitalize text-sm">
                           {profile.gender.toLowerCase()}
                         </p>
                       )}
@@ -337,11 +349,11 @@ function StudentProfile() {
 
                 <div className="group">
                   <div className="flex items-center gap-2 p-2 rounded-xl hover:bg-slate-50 transition-colors">
-                    <div className="w-10 h-10 bg-gradient-to-br from-[#b7773a] to-[#b7773a] rounded-xl flex items-center justify-center">
-                      <Phone className="w-5 h-5 text-white" />
+                    <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-[#b7773a] to-[#b7773a] rounded-xl flex items-center justify-center">
+                      <Phone className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
                     </div>
                     <div className="flex-1">
-                      <p className="text-sm font-medium text-slate-600">
+                      <p className="text-xs sm:text-sm font-medium text-slate-600">
                         Phone
                       </p>
                       {isEditing ? (
@@ -351,11 +363,11 @@ function StudentProfile() {
                           onChange={(e) =>
                             handleInputChange("phoneNumber", e.target.value)
                           }
-                          className="text-slate-900 font-medium bg-transparent border-b border-slate-200 focus:border-[#7a9e7e] outline-none w-full mt-1"
+                          className="text-slate-900 font-medium bg-transparent border-b border-slate-200 focus:border-[#7a9e7e] outline-none w-full mt-1 text-sm"
                           placeholder="Phone Number"
                         />
                       ) : (
-                        <p className="text-slate-900 font-medium">
+                        <p className="text-slate-900 font-medium text-sm">
                           {profile.phoneNumber}
                         </p>
                       )}
@@ -365,11 +377,11 @@ function StudentProfile() {
 
                 <div className="group">
                   <div className="flex items-center gap-2 p-2 rounded-xl hover:bg-slate-50 transition-colors">
-                    <div className="w-10 h-10 bg-gradient-to-br from-[#2c3e50] to-[#2c3e50] rounded-xl flex items-center justify-center">
-                      <Globe className="w-5 h-5 text-white" />
+                    <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-[#2c3e50] to-[#2c3e50] rounded-xl flex items-center justify-center">
+                      <Globe className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
                     </div>
                     <div className="flex-1">
-                      <p className="text-sm font-medium text-slate-600">
+                      <p className="text-xs sm:text-sm font-medium text-slate-600">
                         Country
                       </p>
                       {isEditing ? (
@@ -379,11 +391,11 @@ function StudentProfile() {
                           onChange={(e) =>
                             handleInputChange("country", e.target.value)
                           }
-                          className="text-slate-900 font-medium bg-transparent border-b border-slate-200 focus:border-[#7a9e7e] outline-none w-full mt-1"
+                          className="text-slate-900 font-medium bg-transparent border-b border-slate-200 focus:border-[#7a9e7e] outline-none w-full mt-1 text-sm"
                           placeholder="Country"
                         />
                       ) : (
-                        <p className="text-slate-900 font-medium">
+                        <p className="text-slate-900 font-medium text-sm">
                           {profile.country}
                         </p>
                       )}
@@ -394,31 +406,31 @@ function StudentProfile() {
             </div>
 
             {/* Performance Score Card */}
-            <div className="bg-white rounded-2xl p-6 border border-white/50 shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-1">
+            <div className="bg-white rounded-2xl p-4 sm:p-6 border border-white/50 shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-1">
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 bg-[#2c3e50] rounded-xl flex items-center justify-center">
-                  <Star className="w-5 h-5 text-white" />
+                <div className="w-8 h-8 sm:w-10 sm:h-10 bg-[#2c3e50] rounded-xl flex items-center justify-center">
+                  <Star className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
                 </div>
-                <h3 className="text-lg font-bold text-[#2c3e50]">
+                <h3 className="text-base sm:text-lg font-bold text-[#2c3e50]">
                   Performance Score
                 </h3>
               </div>
 
               <div className="text-center mb-4">
-                <div className="text-5xl font-bold text-[#2c3e50] mb-2">
+                <div className="text-4xl sm:text-5xl font-bold text-[#2c3e50] mb-2">
                   {totalExams > 0
                     ? Math.round((passedExams / totalExams) * 100)
                     : 0}
                 </div>
-                <div className="text-slate-600">Overall Score</div>
+                <div className="text-slate-600 text-sm">Overall Score</div>
               </div>
 
               <div className="space-y-3">
                 <div className="flex justify-between items-center">
-                  <span className="text-slate-600 text-sm">
+                  <span className="text-slate-600 text-xs sm:text-sm">
                     Exam Success Rate
                   </span>
-                  <span className="text-[#2c3e50] font-medium">
+                  <span className="text-[#2c3e50] font-medium text-sm">
                     {totalExams > 0
                       ? Math.round((passedExams / totalExams) * 100)
                       : 0}
@@ -442,168 +454,170 @@ function StudentProfile() {
           </div>
 
           {/* Main Content Area */}
-          <div className="lg:col-span-3 space-y-6">
+          <div className="xl:col-span-3 space-y-6">
             {/* Enhanced Stats Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="group bg-gradient-to-br from-[#2c3e50]/5 to-[#2c3e50]/10 rounded-2xl p-6 border border-[#2c3e50]/10 shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-1 h-[140px] flex flex-col">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+              <div className="group bg-gradient-to-br from-[#2c3e50]/5 to-[#2c3e50]/10 rounded-2xl p-4 sm:p-6 border border-[#2c3e50]/10 shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-1 h-[120px] sm:h-[140px] flex flex-col">
                 <div className="flex items-center justify-between mb-4">
-                  <div className="w-12 h-12 bg-gradient-to-br from-[#2c3e50] to-[#2c3e50] rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
-                    <BookOpen className="w-6 h-6 text-white" />
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-[#2c3e50] to-[#2c3e50] rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <BookOpen className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
                   </div>
                   <div className="text-right">
-                    <div className="text-2xl font-bold text-[#2c3e50]">
+                    <div className="text-xl sm:text-2xl font-bold text-[#2c3e50]">
                       {totalCourses}
                     </div>
-                    <div className="text-sm text-[#2c3e50]/70">
+                    <div className="text-xs sm:text-sm text-[#2c3e50]/70">
                       Total Courses
                     </div>
                   </div>
                 </div>
-                <div className="flex items-center gap-2 text-sm mt-auto">
-                  <TrendingUp className="w-4 h-4 text-[#7a9e7e]" />
+                <div className="flex items-center gap-2 text-xs sm:text-sm mt-auto">
+                  <TrendingUp className="w-3 h-3 sm:w-4 sm:h-4 text-[#7a9e7e]" />
                   <span className="text-[#2c3e50]/70">
                     {activeCourses} active
                   </span>
                 </div>
               </div>
 
-              <div className="group bg-gradient-to-br from-[#7a9e7e]/5 to-[#7a9e7e]/10 rounded-2xl p-6 border border-[#7a9e7e]/10 shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-1 h-[140px] flex flex-col">
+              <div className="group bg-gradient-to-br from-[#7a9e7e]/5 to-[#7a9e7e]/10 rounded-2xl p-4 sm:p-6 border border-[#7a9e7e]/10 shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-1 h-[120px] sm:h-[140px] flex flex-col">
                 <div className="flex items-center justify-between mb-4">
-                  <div className="w-12 h-12 bg-gradient-to-br from-[#7a9e7e] to-[#7a9e7e] rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
-                    <Trophy className="w-6 h-6 text-white" />
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-[#7a9e7e] to-[#7a9e7e] rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <Trophy className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
                   </div>
                   <div className="text-right">
-                    <div className="text-2xl font-bold text-[#7a9e7e]">
+                    <div className="text-xl sm:text-2xl font-bold text-[#7a9e7e]">
                       {passedExams}
                     </div>
-                    <div className="text-sm text-[#7a9e7e]/70">
+                    <div className="text-xs sm:text-sm text-[#7a9e7e]/70">
                       Exams Passed
                     </div>
                   </div>
                 </div>
-                <div className="flex items-center gap-2 text-sm mt-auto">
-                  <Activity className="w-4 h-4 text-[#2c3e50]" />
+                <div className="flex items-center gap-2 text-xs sm:text-sm mt-auto">
+                  <Activity className="w-3 h-3 sm:w-4 sm:h-4 text-[#2c3e50]" />
                   <span className="text-[#7a9e7e]/70">
                     {totalExams} attempted
                   </span>
                 </div>
               </div>
 
-              <div className="group bg-gradient-to-br from-[#b7773a]/5 to-[#b7773a]/10 rounded-2xl p-6 border border-[#b7773a]/10 shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-1 h-[140px] flex flex-col">
+              <div className="group bg-gradient-to-br from-[#b7773a]/5 to-[#b7773a]/10 rounded-2xl p-4 sm:p-6 border border-[#b7773a]/10 shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-1 h-[120px] sm:h-[140px] flex flex-col">
                 <div className="flex items-center justify-between mb-4">
-                  <div className="w-12 h-12 bg-gradient-to-br from-[#b7773a] to-[#b7773a] rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
-                    <Award className="w-6 h-6 text-white" />
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-[#b7773a] to-[#b7773a] rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <Award className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
                   </div>
                   <div className="text-right">
-                    <div className="text-2xl font-bold text-[#b7773a]">
+                    <div className="text-xl sm:text-2xl font-bold text-[#b7773a]">
                       {totalCertificates}
                     </div>
-                    <div className="text-sm text-[#b7773a]/70">
+                    <div className="text-xs sm:text-sm text-[#b7773a]/70">
                       Certificates
                     </div>
                   </div>
                 </div>
-                <div className="flex items-center gap-2 text-sm mt-auto">
-                  <Star className="w-4 h-4 text-[#2c3e50]" />
+                <div className="flex items-center gap-2 text-xs sm:text-sm mt-auto">
+                  <Star className="w-3 h-3 sm:w-4 sm:h-4 text-[#2c3e50]" />
                   <span className="text-[#b7773a]/70">Earned</span>
                 </div>
               </div>
 
-              <div className="group bg-gradient-to-br from-[#2c3e50]/5 to-[#2c3e50]/10 rounded-2xl p-6 border border-[#2c3e50]/10 shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-1 h-[140px] flex flex-col">
+              <div className="group bg-gradient-to-br from-[#2c3e50]/5 to-[#2c3e50]/10 rounded-2xl p-4 sm:p-6 border border-[#2c3e50]/10 shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-1 h-[120px] sm:h-[140px] flex flex-col">
                 <div className="flex items-center justify-between mb-4">
-                  <div className="w-12 h-12 bg-gradient-to-br from-[#2c3e50] to-[#2c3e50] rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
-                    <Play className="w-6 h-6 text-white" />
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-[#2c3e50] to-[#2c3e50] rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <Play className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
                   </div>
                   <div className="text-right">
-                    <div className="text-2xl font-bold text-[#2c3e50]">
+                    <div className="text-xl sm:text-2xl font-bold text-[#2c3e50]">
                       {totalVideos}
                     </div>
-                    <div className="text-sm text-[#2c3e50]/70">
+                    <div className="text-xs sm:text-sm text-[#2c3e50]/70">
                       Videos Watched
                     </div>
                   </div>
                 </div>
-                <div className="flex items-center gap-2 text-sm mt-auto">
-                  <Zap className="w-4 h-4 text-[#7a9e7e]" />
+                <div className="flex items-center gap-2 text-xs sm:text-sm mt-auto">
+                  <Zap className="w-3 h-3 sm:w-4 sm:h-4 text-[#7a9e7e]" />
                   <span className="text-[#2c3e50]/70">Learning hours</span>
                 </div>
               </div>
             </div>
 
             {/* Course Progress */}
-            <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-8 border border-white/50 shadow-sm hover:shadow-md transition-all duration-300">
-              <div className="flex items-center justify-between mb-8">
+            <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-4 sm:p-6 lg:p-8 border border-white/50 shadow-sm hover:shadow-md transition-all duration-300">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 sm:mb-8 gap-4">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-gradient-to-br from-[#2c3e50] to-[#2c3e50] rounded-xl flex items-center justify-center">
-                    <BarChart3 className="w-5 h-5 text-white" />
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-[#2c3e50] to-[#2c3e50] rounded-xl flex items-center justify-center">
+                    <BarChart3 className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
                   </div>
-                  <h3 className="text-2xl font-bold text-[#2c3e50]">
+                  <h3 className="text-xl sm:text-2xl font-bold text-[#2c3e50]">
                     Learning Progress
                   </h3>
                 </div>
-                <div className="text-right">
-                  <div className="text-3xl font-bold text-[#7a9e7e]">
+                <div className="text-center sm:text-right">
+                  <div className="text-2xl sm:text-3xl font-bold text-[#7a9e7e]">
                     {overallProgress}%
                   </div>
-                  <div className="text-slate-600 text-sm">Overall Progress</div>
+                  <div className="text-slate-600 text-xs sm:text-sm">
+                    Overall Progress
+                  </div>
                 </div>
               </div>
 
               {profileData?.enrollments?.courses?.length > 0 ? (
-                <div className="space-y-6">
+                <div className="space-y-4 sm:space-y-6">
                   {profileData.enrollments.courses.map((course, index) => (
                     <div
                       key={course.id}
-                      className="group relative bg-gradient-to-r from-slate-50 to-white rounded-2xl p-6 border border-slate-100 hover:shadow-lg transition-all duration-300"
+                      className="group relative bg-gradient-to-r from-slate-50 to-white rounded-2xl p-4 sm:p-6 border border-slate-100 hover:shadow-lg transition-all duration-300"
                     >
-                      <div className="absolute top-4 right-4 w-12 h-12 bg-gradient-to-br from-[#2c3e50] to-[#7a9e7e] rounded-xl flex items-center justify-center text-white font-bold">
+                      <div className="absolute top-3 right-3 sm:top-4 sm:right-4 w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-[#2c3e50] to-[#7a9e7e] rounded-xl flex items-center justify-center text-white font-bold text-sm sm:text-base">
                         {index + 1}
                       </div>
 
-                      <div className="pr-16">
-                        <h4 className="text-xl font-bold text-[#2c3e50] mb-3 group-hover:text-[#7a9e7e] transition-colors">
+                      <div className="pr-12 sm:pr-16">
+                        <h4 className="text-lg sm:text-xl font-bold text-[#2c3e50] mb-3 group-hover:text-[#7a9e7e] transition-colors">
                           {course.title}
                         </h4>
 
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                          <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 bg-[#2c3e50]/10 rounded-lg flex items-center justify-center">
-                              <Clock className="w-4 h-4 text-[#2c3e50]" />
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mb-4 sm:mb-6">
+                          <div className="flex items-center gap-2 sm:gap-3">
+                            <div className="w-6 h-6 sm:w-8 sm:h-8 bg-[#2c3e50]/10 rounded-lg flex items-center justify-center">
+                              <Clock className="w-3 h-3 sm:w-4 sm:h-4 text-[#2c3e50]" />
                             </div>
                             <div>
-                              <div className="text-sm text-slate-600">
+                              <div className="text-xs sm:text-sm text-slate-600">
                                 Duration
                               </div>
-                              <div className="font-medium text-[#2c3e50]">
+                              <div className="font-medium text-[#2c3e50] text-sm">
                                 {course.durationYears} years
                               </div>
                             </div>
                           </div>
 
-                          <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 bg-[#7a9e7e]/10 rounded-lg flex items-center justify-center">
-                              <Target className="w-4 h-4 text-[#7a9e7e]" />
+                          <div className="flex items-center gap-2 sm:gap-3">
+                            <div className="w-6 h-6 sm:w-8 sm:h-8 bg-[#7a9e7e]/10 rounded-lg flex items-center justify-center">
+                              <Target className="w-3 h-3 sm:w-4 sm:h-4 text-[#7a9e7e]" />
                             </div>
                             <div>
-                              <div className="text-sm text-slate-600">
+                              <div className="text-xs sm:text-sm text-slate-600">
                                 Chapters
                               </div>
-                              <div className="font-medium text-[#2c3e50]">
+                              <div className="font-medium text-[#2c3e50] text-sm">
                                 {course.progress?.completedChapters || 0}/
                                 {course.progress?.totalChapters || 0}
                               </div>
                             </div>
                           </div>
 
-                          <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 bg-[#b7773a]/10 rounded-lg flex items-center justify-center">
-                              <TrendingUp className="w-4 h-4 text-[#b7773a]" />
+                          <div className="flex items-center gap-2 sm:gap-3 sm:col-span-2 lg:col-span-1">
+                            <div className="w-6 h-6 sm:w-8 sm:h-8 bg-[#b7773a]/10 rounded-lg flex items-center justify-center">
+                              <TrendingUp className="w-3 h-3 sm:w-4 sm:h-4 text-[#b7773a]" />
                             </div>
                             <div>
-                              <div className="text-sm text-slate-600">
+                              <div className="text-xs sm:text-sm text-slate-600">
                                 Progress
                               </div>
-                              <div className="font-bold text-[#7a9e7e]">
+                              <div className="font-bold text-[#7a9e7e] text-sm">
                                 {course.progress?.percentComplete || 0}%
                               </div>
                             </div>
@@ -612,16 +626,16 @@ function StudentProfile() {
 
                         <div className="relative">
                           <div className="flex items-center justify-between mb-2">
-                            <span className="text-sm font-medium text-slate-600">
+                            <span className="text-xs sm:text-sm font-medium text-slate-600">
                               Course Completion
                             </span>
-                            <span className="text-sm font-bold text-[#2c3e50]">
+                            <span className="text-xs sm:text-sm font-bold text-[#2c3e50]">
                               {course.progress?.percentComplete || 0}%
                             </span>
                           </div>
-                          <div className="w-full bg-slate-200 rounded-full h-3 overflow-hidden">
+                          <div className="w-full bg-slate-200 rounded-full h-2 sm:h-3 overflow-hidden">
                             <div
-                              className="h-3 bg-gradient-to-r from-[#2c3e50] to-[#7a9e7e] rounded-full transition-all duration-1000 ease-out"
+                              className="h-2 sm:h-3 bg-gradient-to-r from-[#2c3e50] to-[#7a9e7e] rounded-full transition-all duration-1000 ease-out"
                               style={{
                                 width: `${
                                   course.progress?.percentComplete || 0
@@ -635,14 +649,14 @@ function StudentProfile() {
                   ))}
                 </div>
               ) : (
-                <div className="text-center py-16">
-                  <div className="w-24 h-24 bg-gradient-to-br from-slate-100 to-slate-200 rounded-3xl flex items-center justify-center mx-auto mb-6">
-                    <BookOpen className="w-12 h-12 text-[#2c3e50]" />
+                <div className="text-center py-12 sm:py-16">
+                  <div className="w-20 h-20 sm:w-24 sm:h-24 bg-gradient-to-br from-slate-100 to-slate-200 rounded-3xl flex items-center justify-center mx-auto mb-4 sm:mb-6">
+                    <BookOpen className="w-10 h-10 sm:w-12 sm:h-12 text-[#2c3e50]" />
                   </div>
-                  <h3 className="text-2xl font-bold text-[#2c3e50] mb-4">
+                  <h3 className="text-xl sm:text-2xl font-bold text-[#2c3e50] mb-3 sm:mb-4">
                     No Courses Yet
                   </h3>
-                  <p className="text-slate-600 text-lg max-w-md mx-auto">
+                  <p className="text-slate-600 text-base sm:text-lg max-w-md mx-auto px-4">
                     Start your learning journey by enrolling in your first
                     course
                   </p>
