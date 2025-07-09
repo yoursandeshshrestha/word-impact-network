@@ -1,11 +1,5 @@
 import React from "react";
-import {
-  BookOpen,
-  Users,
-  Presentation,
-  GraduationCap,
-  Heart,
-} from "lucide-react";
+import { BookOpen, Users, Presentation, GraduationCap } from "lucide-react";
 
 const AcademicProgram: React.FC = () => {
   return (
@@ -25,80 +19,56 @@ const AcademicProgram: React.FC = () => {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
-          {/* 1-Year Pioneer Church Planters Training */}
-          <div className="bg-[#2c3e50] text-white p-8 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
-            <div className="flex flex-col h-full">
-              <div className="bg-white/10 p-4 rounded-full mb-6 w-fit">
-                <Heart size={48} className="text-white" />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-12">
+          {/* Certificate in Theology - First Year */}
+          <div className="bg-[#2c3e50] text-white p-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+            <div className="flex flex-col h-full text-center">
+              <div className="bg-white/10 p-4 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                <BookOpen className="w-8 h-8 text-white" />
               </div>
-              <h3 className="text-3xl font-bold mb-3 tracking-wide">
-                1-Year Pioneer Church Planters Training
-              </h3>
-              <p className="text-gray-200 mb-6 font-medium text-lg">
-                A foundational, hands-on training program designed for believers
-                with a passion for frontline Gospel work.
-              </p>
-              <ul className="space-y-3 text-base font-medium flex-grow">
-                <li className="flex items-center">
-                  <span className="w-2 h-2 bg-white rounded-full mr-3"></span>
-                  Life of Jesus & Evangelism
-                </li>
-                <li className="flex items-center">
-                  <span className="w-2 h-2 bg-white rounded-full mr-3"></span>
-                  Discipleship Principles
-                </li>
-                <li className="flex items-center">
-                  <span className="w-2 h-2 bg-white rounded-full mr-3"></span>
-                  Introduction to Church Planting
-                </li>
-                <li className="flex items-center">
-                  <span className="w-2 h-2 bg-white rounded-full mr-3"></span>
-                  Business as Mission (BAM)
-                </li>
-                <li className="flex items-center">
-                  <span className="w-2 h-2 bg-white rounded-full mr-3"></span>
-                  Field Exposure & Mentorship
-                </li>
-              </ul>
+              <div className="text-xl font-bold text-white mb-2">
+                Certificate in Theology
+              </div>
+              <div className="text-gray-200 font-medium">First Year</div>
             </div>
           </div>
 
-          {/* 4-Year Bachelor of Ministry Program */}
-          <div className="bg-[#7a9e7e] text-white p-8 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
-            <div className="flex flex-col h-full">
-              <div className="bg-white/10 p-4 rounded-full mb-6 w-fit">
-                <GraduationCap size={48} className="text-white" />
+          {/* Diploma in Theology - Second Year */}
+          <div className="bg-[#7a9e7e] text-white p-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+            <div className="flex flex-col h-full text-center">
+              <div className="bg-white/10 p-4 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                <Users className="w-8 h-8 text-white" />
               </div>
-              <h3 className="text-3xl font-bold mb-3 tracking-wide">
-                4-Year Bachelor of Ministry Program
-              </h3>
-              <p className="text-gray-200 mb-6 font-medium text-lg">
-                A comprehensive, contextual training program for those called to
-                full-time ministry leadership.
-              </p>
-              <ul className="space-y-3 text-base font-medium flex-grow">
-                <li className="flex items-center">
-                  <span className="w-2 h-2 bg-white rounded-full mr-3"></span>
-                  Certificate in Theology (Year 1)
-                </li>
-                <li className="flex items-center">
-                  <span className="w-2 h-2 bg-white rounded-full mr-3"></span>
-                  Diploma in Theology (Year 2)
-                </li>
-                <li className="flex items-center">
-                  <span className="w-2 h-2 bg-white rounded-full mr-3"></span>
-                  Bachelor in Theology (Year 3)
-                </li>
-                <li className="flex items-center">
-                  <span className="w-2 h-2 bg-white rounded-full mr-3"></span>
-                  Preparing for Multiplication (Year 4)
-                </li>
-                <li className="flex items-center">
-                  <span className="w-2 h-2 bg-white rounded-full mr-3"></span>
-                  Hands-on Ministry Experience
-                </li>
-              </ul>
+              <div className="text-xl font-bold text-white mb-2">
+                Diploma in Theology
+              </div>
+              <div className="text-gray-200 font-medium">Second Year</div>
+            </div>
+          </div>
+
+          {/* Bachelor in Theology - Third Year */}
+          <div className="bg-[#b7773a] text-white p-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+            <div className="flex flex-col h-full text-center">
+              <div className="bg-white/10 p-4 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                <Presentation className="w-8 h-8 text-white" />
+              </div>
+              <div className="text-xl font-bold text-white mb-2">
+                Bachelor in Theology
+              </div>
+              <div className="text-gray-200 font-medium">Third Year</div>
+            </div>
+          </div>
+
+          {/* Master in Theology - Fourth Year */}
+          <div className="bg-[#2c3e50] text-white p-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+            <div className="flex flex-col h-full text-center">
+              <div className="bg-white/10 p-4 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                <GraduationCap className="w-8 h-8 text-white" />
+              </div>
+              <div className="text-xl font-bold text-white mb-2">
+                Master in Theology
+              </div>
+              <div className="text-gray-200 font-medium">Fourth Year</div>
             </div>
           </div>
         </div>
