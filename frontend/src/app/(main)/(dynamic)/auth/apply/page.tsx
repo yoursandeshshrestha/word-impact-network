@@ -21,6 +21,7 @@ const ApplyPage = () => {
   const router = useRouter();
   const { setLoading } = useLoading();
   const [error, setError] = useState("");
+  const [countryCodeError, setCountryCodeError] = useState("");
 
   const {
     currentStep,
@@ -52,6 +53,36 @@ const ApplyPage = () => {
     } else {
       updateFormData({ [name]: value });
     }
+  };
+
+  const handleCountryCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let value = e.target.value;
+
+    // Ensure it starts with +
+    if (value && !value.startsWith("+")) {
+      value = "+" + value;
+    }
+
+    // Remove any non-digit characters except +
+    value = value.replace(/[^\d+]/g, "");
+
+    // Limit to 5 characters (including +)
+    if (value.length > 5) {
+      value = value.slice(0, 5);
+    }
+
+    // Validate country code
+    if (value && value.length < 2) {
+      setCountryCodeError(
+        "Country code must be at least 2 characters (e.g., +1)"
+      );
+    } else if (value && !/^\+\d{1,4}$/.test(value)) {
+      setCountryCodeError("Invalid country code format");
+    } else {
+      setCountryCodeError("");
+    }
+
+    updateFormData({ countryCode: value });
   };
 
   const handleFileChange = (
@@ -122,7 +153,11 @@ const ApplyPage = () => {
           }
           break;
         case 2:
-          if (!formData.phoneNumber.trim()) {
+          if (!formData.countryCode.trim()) {
+            toast.error("Country code is required");
+          } else if (countryCodeError) {
+            toast.error("Please fix the country code error");
+          } else if (!formData.phoneNumber.trim()) {
             toast.error("Phone number is required");
           } else if (!formData.country.trim()) {
             toast.error("Country is required");
@@ -169,8 +204,11 @@ const ApplyPage = () => {
       formDataToSend.append("fullName", formData.fullName);
       formDataToSend.append("gender", formData.gender);
       formDataToSend.append("dateOfBirth", formData.dateOfBirth);
-      formDataToSend.append("phoneNumber", formData.phoneNumber);
-      formDataToSend.append("country", formData.country);
+      formDataToSend.append(
+        "phoneNumber",
+        formData.countryCode + " " + formData.phoneNumber
+      );
+      formDataToSend.append("country", formData.country.toLowerCase());
       formDataToSend.append(
         "academicQualification",
         formData.academicQualification
@@ -315,15 +353,41 @@ const ApplyPage = () => {
                 <label className="block text-gray-700 text-sm font-medium mb-2">
                   Phone Number <span className="text-red-500">*</span>
                 </label>
-                <input
-                  type="tel"
-                  name="phoneNumber"
-                  value={formData.phoneNumber}
-                  onChange={handleChange}
-                  required
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-md focus:outline-none focus:border-gray-500 transition-colors"
-                  placeholder="Enter your phone number"
-                />
+                <div className="flex">
+                  <div className="flex-shrink-0">
+                    <input
+                      type="text"
+                      name="countryCode"
+                      value={formData.countryCode}
+                      onChange={handleCountryCodeChange}
+                      required
+                      className={`w-20 px-3 py-2.5 border border-gray-300 rounded-l-md focus:outline-none transition-colors text-center ${
+                        countryCodeError
+                          ? "border-red-500 focus:border-red-500"
+                          : "border-gray-300 focus:border-gray-500"
+                      }`}
+                      placeholder="+1"
+                      maxLength={5}
+                    />
+                  </div>
+                  <input
+                    type="tel"
+                    name="phoneNumber"
+                    value={formData.phoneNumber}
+                    onChange={handleChange}
+                    required
+                    className="flex-1 px-4 py-2.5 border border-l-0 border-gray-300 rounded-r-md focus:outline-none focus:border-gray-500 transition-colors"
+                    placeholder="Enter your phone number"
+                  />
+                </div>
+                {countryCodeError && (
+                  <p className="mt-1 text-red-500 text-xs">
+                    {countryCodeError}
+                  </p>
+                )}
+                <p className="mt-1 text-gray-500 text-xs">
+                  Enter country code (e.g., +1, +44, +91) and phone number
+                </p>
               </div>
 
               <div>
@@ -529,7 +593,7 @@ const ApplyPage = () => {
                   <div className="space-y-1 text-sm text-gray-600">
                     <p>
                       <span className="font-medium">Phone:</span>{" "}
-                      {formData.phoneNumber}
+                      {formData.countryCode} {formData.phoneNumber}
                     </p>
                     <p>
                       <span className="font-medium">Country:</span>{" "}
