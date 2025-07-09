@@ -212,6 +212,9 @@ export const updateStudentProfile = catchAsync(async (req: Request, res: Respons
 
   const { fullName, phoneNumber, country, dateOfBirth, gender } = req.body;
 
+  // Get profile picture file if it exists (using upload.single)
+  const profilePictureFile = req.file;
+
   // Parse dateOfBirth if provided
   let parsedDateOfBirth: Date | undefined = undefined;
   if (dateOfBirth) {
@@ -224,13 +227,17 @@ export const updateStudentProfile = catchAsync(async (req: Request, res: Respons
   }
 
   // Update the profile with only the allowed fields
-  const updatedProfile = await updateStudentProfileByUserId(userId, {
-    fullName,
-    phoneNumber,
-    country,
-    dateOfBirth: parsedDateOfBirth,
-    gender,
-  });
+  const updatedProfile = await updateStudentProfileByUserId(
+    userId,
+    {
+      fullName,
+      phoneNumber,
+      country,
+      dateOfBirth: parsedDateOfBirth,
+      gender,
+    },
+    profilePictureFile,
+  );
 
   sendSuccess(res, 200, 'Student profile updated successfully', updatedProfile);
 });
