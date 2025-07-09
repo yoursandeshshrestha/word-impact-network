@@ -63,6 +63,7 @@ model Student {
   desiredDegree         String
   certificateUrl        String?
   recommendationLetterUrl String?
+  profilePictureUrl     String?
   referredBy            String?
   referrerContact       String?
   agreesToTerms         Boolean           @default(false)
