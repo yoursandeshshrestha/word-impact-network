@@ -5,4 +5,5 @@ export interface StudentProfileUpdateData {
   dateOfBirth?: Date;
   gender?: 'MALE' | 'FEMALE' | 'OTHER';
   academicQualification?: string;
+  profilePictureUrl?: string;
 }
