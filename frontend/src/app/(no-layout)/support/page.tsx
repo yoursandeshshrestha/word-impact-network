@@ -169,7 +169,7 @@ const MessageInput: React.FC<MessageInputProps> = ({
           />
         ))}
       </div>
-      <form onSubmit={onSend} className="w-[80%]">
+      <form onSubmit={onSend} className="w-[50%]">
         <div className="flex items-center gap-2">
           <input
             type="text"
