@@ -1,5 +1,6 @@
 import React from "react";
 import { Student } from "@/redux/features/studentsSlice";
+import Image from "next/image";
 
 interface StudentsListProps {
   students: Student[];
@@ -10,6 +11,15 @@ const StudentsList: React.FC<StudentsListProps> = ({
   students,
   onViewDetails,
 }) => {
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map(word => word.charAt(0))
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
+  };
+
   const getPaymentStatusBadgeClass = (status: string | undefined | null) => {
     if (!status) {
       return "bg-gray-100 text-gray-800";
@@ -61,12 +71,29 @@ const StudentsList: React.FC<StudentsListProps> = ({
                 className="hover:bg-gray-50 cursor-pointer"
               >
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <div>
-                    <div className="text-sm font-medium text-gray-900">
-                      {student.fullName || "N/A"}
+                  <div className="flex items-center">
+                    <div className="flex-shrink-0 h-10 w-10">
+                      {student.profilePictureUrl ? (
+                        <Image
+                          src={student.profilePictureUrl}
+                          alt={student.fullName}
+                          width={40}
+                          height={40}
+                          className="h-10 w-10 rounded-full object-cover"
+                        />
+                      ) : (
+                        <div className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-semibold text-sm">
+                          {getInitials(student.fullName || "N/A")}
+                        </div>
+                      )}
                     </div>
-                    <div className="text-sm text-gray-500">
-                      {student.phoneNumber || "N/A"}
+                    <div className="ml-4">
+                      <div className="text-sm font-medium text-gray-900">
+                        {student.fullName || "N/A"}
+                      </div>
+                      <div className="text-sm text-gray-500">
+                        {student.phoneNumber || "N/A"}
+                      </div>
                     </div>
                   </div>
                 </td>
