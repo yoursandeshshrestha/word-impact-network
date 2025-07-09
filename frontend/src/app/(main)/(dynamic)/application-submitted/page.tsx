@@ -3,7 +3,6 @@ import React, { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Header from "@/components/Homepage/Header";
-import Footer from "@/components/Homepage/Footer";
 import { CheckCircle2, Mail, ArrowLeft } from "lucide-react";
 
 const ApplicationSubmitted = () => {
@@ -82,17 +81,10 @@ const ApplicationSubmitted = () => {
                 <ArrowLeft className="mr-2 w-5 h-5" />
                 Return to Homepage
               </Link>
-              <Link
-                href="/contact"
-                className="border border-gray-300 text-gray-800 hover:bg-gray-50 px-8 py-3 rounded-lg font-medium flex items-center justify-center transition-all duration-300"
-              >
-                Contact Admissions
-              </Link>
             </div>
           </div>
         </div>
       </main>
-      <Footer />
     </div>
   );
 };
