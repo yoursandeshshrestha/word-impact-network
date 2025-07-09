@@ -7,6 +7,7 @@ export interface User {
   fullName: string;
   role: string;
   applicationStatus: string;
+  profilePictureUrl?: string;
 }
 
 export interface LoginResponse {
