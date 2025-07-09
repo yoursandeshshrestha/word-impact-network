@@ -19,6 +19,7 @@ import { useAutoCourses } from "@/hooks/useCourses";
 import { useSelector } from "react-redux";
 import { RootState } from "@/redux/store";
 import Link from "next/link";
+import Image from "next/image";
 
 const Header: React.FC<{
   studentName?: string;
@@ -247,9 +248,16 @@ const Header: React.FC<{
                 >
                   <div className="flex items-center gap-1 sm:gap-2 md:gap-3">
                     <div className="relative">
-                      <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-gradient-to-br from-[#7a9e7e] to-[#b7773a] flex items-center justify-center text-white font-semibold text-xs sm:text-sm shadow-sm">
+                      <div className="relative w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-gradient-to-br from-[#7a9e7e] to-[#b7773a] flex items-center justify-center text-white font-semibold text-xs sm:text-sm shadow-sm overflow-hidden">
                         {isLoading ? (
                           <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                        ) : user?.profilePictureUrl ? (
+                          <Image
+                            src={user.profilePictureUrl}
+                            alt={displayName}
+                            fill
+                            className="object-cover"
+                          />
                         ) : (
                           getInitials(displayName)
                         )}
