@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
+import Image from "next/image";
 import {
   useAutoStudentProfile,
   useStudentProfile,
@@ -26,12 +27,17 @@ import {
   CheckCircle,
   BarChart3,
   Zap,
+  Camera,
 } from "lucide-react";
 
 function StudentProfile() {
   const { profileData, isLoading, isError, error } = useAutoStudentProfile();
   const { updateProfile } = useStudentProfile();
   const [isEditing, setIsEditing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [editForm, setEditForm] = useState<{
     fullName: string;
     phoneNumber: string;
@@ -74,15 +80,45 @@ function StudentProfile() {
 
   const handleSave = async () => {
     try {
-      await updateProfile(editForm);
+      setIsSaving(true);
+
+      // If there's a selected image, upload it with the profile update
+      if (selectedImage) {
+        const formData = new FormData();
+        formData.append("profilePicture", selectedImage);
+
+        // Add other profile data
+        Object.entries(editForm).forEach(([key, value]) => {
+          formData.append(key, value);
+        });
+
+        // Use the uploadProfileImage function which handles FormData
+        await updateProfile(formData as any);
+      } else {
+        // Regular profile update without image
+        await updateProfile(editForm);
+      }
+
       setIsEditing(false);
+      setSelectedImage(null);
+      setImagePreview(null);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
     } catch (error) {
       console.error("Failed to update profile:", error);
+    } finally {
+      setIsSaving(false);
     }
   };
 
   const handleCancel = () => {
     setIsEditing(false);
+    setSelectedImage(null);
+    setImagePreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
   };
 
   const handleInputChange = (field: string, value: string) => {
@@ -90,6 +126,51 @@ function StudentProfile() {
       ...prev,
       [field]: value,
     }));
+  };
+
+  const handleImageSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      // Validate file type
+      const allowedTypes = [
+        "image/jpeg",
+        "image/jpg",
+        "image/png",
+        "image/webp",
+      ];
+      if (!allowedTypes.includes(file.type)) {
+        alert("Please select a valid image file (JPEG, PNG, or WebP)");
+        return;
+      }
+
+      // Validate file size (5MB limit)
+      if (file.size > 5 * 1024 * 1024) {
+        alert("Image size should be less than 5MB");
+        return;
+      }
+
+      setSelectedImage(file);
+
+      // Create preview
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setImagePreview(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const triggerFileInput = () => {
+    fileInputRef.current?.click();
+  };
+
+  const getInitials = (name: string) => {
+    return name
+      .split(" ")
+      .map((word) => word.charAt(0))
+      .join("")
+      .toUpperCase()
+      .slice(0, 2);
   };
 
   if (isLoading) {
@@ -179,12 +260,75 @@ function StudentProfile() {
             <div className="relative flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
               <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6">
                 <div className="relative">
-                  <div className="w-20 h-20 sm:w-24 sm:h-24 bg-gradient-to-br from-white/20 to-white/10 rounded-2xl flex items-center justify-center backdrop-blur-sm border border-white/20">
-                    <User className="w-10 h-10 sm:w-12 sm:h-12 text-white" />
+                  <div className="relative w-20 h-20 sm:w-24 sm:h-24 bg-gradient-to-br from-white/20 to-white/10 rounded-2xl flex items-center justify-center backdrop-blur-sm border border-white/20 overflow-hidden">
+                    {imagePreview ? (
+                      <Image
+                        src={imagePreview}
+                        alt="Profile preview"
+                        fill
+                        className="object-cover"
+                      />
+                    ) : profile.profilePictureUrl ? (
+                      <Image
+                        src={profile.profilePictureUrl}
+                        alt={profile.fullName}
+                        fill
+                        className="object-cover"
+                      />
+                    ) : (
+                      <div className="flex items-center justify-center w-full h-full">
+                        <span className="text-white font-semibold text-lg sm:text-xl">
+                          {getInitials(profile.fullName)}
+                        </span>
+                      </div>
+                    )}
                   </div>
-                  <div className="absolute -bottom-2 -right-2 w-6 h-6 sm:w-8 sm:h-8 bg-gradient-to-br from-[#7a9e7e] to-[#7a9e7e] rounded-full flex items-center justify-center border-4 border-[#2c3e50]">
-                    <CheckCircle className="w-3 h-3 sm:w-4 sm:h-4 text-white" />
-                  </div>
+
+                  {/* Upload button overlay - only show when editing */}
+                  {isEditing && (
+                    <button
+                      onClick={triggerFileInput}
+                      disabled={isSaving}
+                      className="absolute -bottom-2 -right-2 w-6 h-6 sm:w-8 sm:h-8 bg-gradient-to-br from-[#7a9e7e] to-[#7a9e7e] rounded-full flex items-center justify-center border-4 border-[#2c3e50] hover:scale-110 transition-transform cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed group"
+                      title={
+                        isSaving
+                          ? "Saving..."
+                          : "Click to upload profile picture"
+                      }
+                    >
+                      {isSaving ? (
+                        <div className="w-3 h-3 sm:w-4 sm:h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                      ) : (
+                        <Camera className="w-3 h-3 sm:w-4 sm:h-4 text-white group-hover:scale-110 transition-transform" />
+                      )}
+                    </button>
+                  )}
+
+                  {/* Upload hint tooltip - only show when editing */}
+                  {isEditing && !isSaving && !selectedImage && (
+                    <div className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 bg-black/80 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
+                      Upload photo
+                    </div>
+                  )}
+
+                  {/* Selected image indicator - only show when editing */}
+                  {isEditing && selectedImage && !isSaving && (
+                    <div className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 bg-[#7a9e7e] text-white text-xs px-2 py-1 rounded whitespace-nowrap">
+                      Image selected
+                    </div>
+                  )}
+
+                  {/* Hidden file input - only available when editing */}
+                  {isEditing && (
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageSelect}
+                      disabled={isSaving}
+                      className="hidden"
+                    />
+                  )}
                 </div>
 
                 <div className="flex-1">
@@ -246,7 +390,8 @@ function StudentProfile() {
                 {!isEditing ? (
                   <button
                     onClick={handleEdit}
-                    className="group flex items-center gap-2 bg-white/10 hover:bg-white/20 backdrop-blur-sm border border-white/20 px-4 sm:px-6 py-2 sm:py-3 rounded-xl transition-all duration-300 cursor-pointer w-full sm:w-auto justify-center"
+                    disabled={isSaving}
+                    className="group flex items-center gap-2 bg-white/10 hover:bg-white/20 backdrop-blur-sm border border-white/20 px-4 sm:px-6 py-2 sm:py-3 rounded-xl transition-all duration-300 cursor-pointer w-full sm:w-auto justify-center disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <Edit3 className="w-4 h-4 sm:w-5 sm:h-5 text-white group-hover:scale-110 transition-transform" />
                     <span className="text-white font-medium text-sm sm:text-base">
@@ -257,16 +402,22 @@ function StudentProfile() {
                   <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
                     <button
                       onClick={handleSave}
-                      className="flex items-center gap-2 bg-gradient-to-r from-[#7a9e7e] to-[#7a9e7e] hover:from-[#7a9e7e]/90 hover:to-[#7a9e7e]/90 px-4 sm:px-6 py-2 sm:py-3 rounded-xl transition-all duration-300 cursor-pointer shadow-lg w-full sm:w-auto justify-center"
+                      disabled={isSaving}
+                      className="flex items-center gap-2 bg-gradient-to-r from-[#7a9e7e] to-[#7a9e7e] hover:from-[#7a9e7e]/90 hover:to-[#7a9e7e]/90 px-4 sm:px-6 py-2 sm:py-3 rounded-xl transition-all duration-300 cursor-pointer shadow-lg w-full sm:w-auto justify-center disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      <Save className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+                      {isSaving ? (
+                        <div className="w-4 h-4 sm:w-5 sm:h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                      ) : (
+                        <Save className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+                      )}
                       <span className="text-white font-medium text-sm sm:text-base">
-                        Save Changes
+                        {isSaving ? "Saving..." : "Save Changes"}
                       </span>
                     </button>
                     <button
                       onClick={handleCancel}
-                      className="flex items-center gap-2 bg-white/10 hover:bg-white/20 backdrop-blur-sm border border-white/20 px-4 sm:px-6 py-2 sm:py-3 rounded-xl transition-all duration-300 cursor-pointer w-full sm:w-auto justify-center"
+                      disabled={isSaving}
+                      className="flex items-center gap-2 bg-white/10 hover:bg-white/20 backdrop-blur-sm border border-white/20 px-4 sm:px-6 py-2 sm:py-3 rounded-xl transition-all duration-300 cursor-pointer w-full sm:w-auto justify-center disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <X className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
                       <span className="text-white font-medium text-sm sm:text-base">
