@@ -1,5 +1,6 @@
 import React from "react";
 import { X } from "lucide-react";
+import Image from "next/image";
 
 interface CourseProgress {
   courseId: string;
@@ -82,6 +83,7 @@ interface Student {
   desiredDegree: string;
   applicationStatus: string;
   paymentStatus: string;
+  profilePictureUrl?: string;
   createdAt: string;
   updatedAt: string;
   statistics: StudentStatistics;
@@ -102,6 +104,15 @@ const StudentDetailsDrawer: React.FC<StudentDetailsDrawerProps> = ({
   isOpen,
   onClose,
 }) => {
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map(word => word.charAt(0))
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -125,18 +136,30 @@ const StudentDetailsDrawer: React.FC<StudentDetailsDrawerProps> = ({
           <div className="flex-1 overflow-y-auto p-6">
             {/* Basic Information */}
             <div className="mb-8">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">
-                Basic Information
-              </h3>
+              <div className="flex items-center mb-4">
+                <div className="flex-shrink-0 h-16 w-16">
+                  {student.profilePictureUrl ? (
+                    <Image
+                      src={student.profilePictureUrl}
+                      alt={student.fullName}
+                      width={64}
+                      height={64}
+                      className="h-16 w-16 rounded-full object-cover"
+                    />
+                  ) : (
+                    <div className="h-16 w-16 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-semibold text-xl">
+                      {getInitials(student.fullName || "N/A")}
+                    </div>
+                  )}
+                </div>
+                <div className="ml-4">
+                  <h3 className="text-lg font-medium text-gray-900">
+                    {student.fullName || "N/A"}
+                  </h3>
+                  <p className="text-sm text-gray-500">{student.email || "N/A"}</p>
+                </div>
+              </div>
               <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-sm text-gray-500">Full Name</p>
-                  <p className="font-medium">{student.fullName || "N/A"}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-500">Email</p>
-                  <p className="font-medium">{student.email || "N/A"}</p>
-                </div>
                 <div>
                   <p className="text-sm text-gray-500">Phone Number</p>
                   <p className="font-medium">{student.phoneNumber || "N/A"}</p>
