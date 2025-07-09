@@ -6,41 +6,47 @@ const Footer = () => {
   return (
     <footer className="bg-white">
       {/* Main Footer */}
-      <div className="container mx-auto px-4 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10 lg:py-12">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4 gap-6 sm:gap-8 lg:gap-10">
           {/* Contact Column */}
-          <div>
-            <h3 className="text-gray-800 font-bold text-lg mb-4">CONTACT</h3>
-            <div className="text-gray-700 space-y-3">
-              <p className="font-semibold">Word Impact Network (WIN)</p>
-              <div className="flex items-center">
-                <Phone className="h-4 w-4 mr-2 text-gray-600" />
-                <span>+91 94343 21542</span>
+          <div className="text-center sm:text-left">
+            <h3 className="text-gray-800 font-bold text-base sm:text-lg mb-3 sm:mb-4">
+              CONTACT
+            </h3>
+            <div className="text-gray-700 space-y-2 sm:space-y-3">
+              <p className="font-semibold text-sm sm:text-base">
+                Word Impact Network (WIN)
+              </p>
+              <div className="flex items-center justify-center sm:justify-start">
+                <Phone className="h-4 w-4 mr-2 text-gray-600 flex-shrink-0" />
+                <span className="text-sm sm:text-base">+91 94343 21542</span>
               </div>
-              <div className="flex items-start">
-                <MapPin className="h-4 w-4 mr-2 text-gray-600 mt-0.5" />
-                <span>West Bengal, India</span>
+              <div className="flex items-start justify-center sm:justify-start">
+                <MapPin className="h-4 w-4 mr-2 text-gray-600 mt-0.5 flex-shrink-0" />
+                <span className="text-sm sm:text-base">West Bengal, India</span>
               </div>
               <Link
                 href="mailto:wordimpactnetwork2025@gmail.com"
-                className="flex items-center text-gray-600 hover:text-gray-800"
+                className="flex items-center justify-center sm:justify-start text-gray-600 hover:text-gray-800 text-wrap break-words"
               >
-                <Mail className="h-4 w-4 mr-2" />
-                wordimpactnetwork2025@gmail.com
+                <Mail className="h-4 w-4 mr-2 flex-shrink-0" />
+                <span className="text-xs sm:text-sm lg:text-base">
+                  wordimpactnetwork2025@gmail.com
+                </span>
               </Link>
             </div>
           </div>
 
           {/* Quick Links Column */}
-          <div>
-            <h3 className="text-gray-800 font-bold text-lg mb-4">
+          <div className="text-center sm:text-left">
+            <h3 className="text-gray-800 font-bold text-base sm:text-lg mb-3 sm:mb-4">
               QUICK LINKS
             </h3>
-            <ul className="space-y-2">
+            <ul className="space-y-1 sm:space-y-2">
               <li>
                 <Link
                   href="/about-win-impact-network"
-                  className="text-gray-700 hover:text-gray-800"
+                  className="text-gray-700 hover:text-gray-800 text-sm sm:text-base block py-1"
                 >
                   About WIN
                 </Link>
@@ -48,7 +54,7 @@ const Footer = () => {
               <li>
                 <Link
                   href="/our-story"
-                  className="text-gray-700 hover:text-gray-800"
+                  className="text-gray-700 hover:text-gray-800 text-sm sm:text-base block py-1"
                 >
                   Our Story
                 </Link>
@@ -56,20 +62,23 @@ const Footer = () => {
               <li>
                 <Link
                   href="/educational-programs"
-                  className="text-gray-700 hover:text-gray-800"
+                  className="text-gray-700 hover:text-gray-800 text-sm sm:text-base block py-1"
                 >
                   Educational Programs
                 </Link>
               </li>
               <li>
-                <Link href="/faq" className="text-gray-700 hover:text-gray-800">
+                <Link
+                  href="/faq"
+                  className="text-gray-700 hover:text-gray-800 text-sm sm:text-base block py-1"
+                >
                   FAQs
                 </Link>
               </li>
               <li>
                 <Link
                   href="/auth/apply"
-                  className="text-gray-700 hover:text-gray-800"
+                  className="text-gray-700 hover:text-gray-800 text-sm sm:text-base block py-1"
                 >
                   Apply Now
                 </Link>
@@ -78,13 +87,15 @@ const Footer = () => {
           </div>
 
           {/* Leadership Column */}
-          <div>
-            <h3 className="text-gray-800 font-bold text-lg mb-4">LEADERSHIP</h3>
-            <ul className="space-y-2">
+          <div className="text-center sm:text-left">
+            <h3 className="text-gray-800 font-bold text-base sm:text-lg mb-3 sm:mb-4">
+              LEADERSHIP
+            </h3>
+            <ul className="space-y-1 sm:space-y-2">
               <li>
                 <Link
                   href="/office-of-the-president"
-                  className="text-gray-700 hover:text-gray-800"
+                  className="text-gray-700 hover:text-gray-800 text-sm sm:text-base block py-1"
                 >
                   Office of the President
                 </Link>
@@ -92,7 +103,7 @@ const Footer = () => {
               <li>
                 <Link
                   href="/board-of-directors"
-                  className="text-gray-700 hover:text-gray-800"
+                  className="text-gray-700 hover:text-gray-800 text-sm sm:text-base block py-1"
                 >
                   Board of Directors
                 </Link>
@@ -100,7 +111,7 @@ const Footer = () => {
               <li>
                 <Link
                   href="/presidents-council"
-                  className="text-gray-700 hover:text-gray-800"
+                  className="text-gray-700 hover:text-gray-800 text-sm sm:text-base block py-1"
                 >
                   President&apos;s Council
                 </Link>
@@ -108,7 +119,7 @@ const Footer = () => {
               <li>
                 <Link
                   href="/academic-leadership"
-                  className="text-gray-700 hover:text-gray-800"
+                  className="text-gray-700 hover:text-gray-800 text-sm sm:text-base block py-1"
                 >
                   Academic Leadership
                 </Link>
@@ -116,7 +127,7 @@ const Footer = () => {
               <li>
                 <Link
                   href="/ambassadors"
-                  className="text-gray-700 hover:text-gray-800"
+                  className="text-gray-700 hover:text-gray-800 text-sm sm:text-base block py-1"
                 >
                   Ambassadors
                 </Link>
@@ -125,15 +136,15 @@ const Footer = () => {
           </div>
 
           {/* Programs & Resources Column */}
-          <div>
-            <h3 className="text-gray-800 font-bold text-lg mb-4">
+          <div className="text-center sm:text-left">
+            <h3 className="text-gray-800 font-bold text-base sm:text-lg mb-3 sm:mb-4">
               PROGRAMS & RESOURCES
             </h3>
-            <ul className="space-y-2">
+            <ul className="space-y-1 sm:space-y-2">
               <li>
                 <Link
                   href="/courses"
-                  className="text-gray-700 hover:text-gray-800"
+                  className="text-gray-700 hover:text-gray-800 text-sm sm:text-base block py-1"
                 >
                   Courses
                 </Link>
@@ -141,7 +152,7 @@ const Footer = () => {
               <li>
                 <Link
                   href="/educational-programs"
-                  className="text-gray-700 hover:text-gray-800"
+                  className="text-gray-700 hover:text-gray-800 text-sm sm:text-base block py-1"
                 >
                   Church Planters Training
                 </Link>
@@ -149,7 +160,7 @@ const Footer = () => {
               <li>
                 <Link
                   href="/educational-programs"
-                  className="text-gray-700 hover:text-gray-800"
+                  className="text-gray-700 hover:text-gray-800 text-sm sm:text-base block py-1"
                 >
                   4-Year Ministry Program
                 </Link>
@@ -157,7 +168,7 @@ const Footer = () => {
               <li>
                 <Link
                   href="/my-learning"
-                  className="text-gray-700 hover:text-gray-800"
+                  className="text-gray-700 hover:text-gray-800 text-sm sm:text-base block py-1"
                 >
                   Student Portal
                 </Link>
@@ -168,10 +179,12 @@ const Footer = () => {
       </div>
 
       {/* Copyright Bar */}
-      <div className="bg-gray-100 py-4">
-        <div className="container mx-auto text-center text-gray-700 text-sm px-4">
-          © 2025 All rights Reserved | Word Impact Network (WIN) | Spreading the
-          fragrance of Christ with the scent of the local soil
+      <div className="bg-gray-100 py-3 sm:py-4">
+        <div className="container mx-auto text-center text-gray-700 text-xs sm:text-sm px-4 sm:px-6 lg:px-8">
+          <p className="leading-relaxed">
+            © 2025 All rights Reserved | Word Impact Network (WIN) | Spreading
+            the fragrance of Christ with the scent of the local soil
+          </p>
         </div>
       </div>
     </footer>
