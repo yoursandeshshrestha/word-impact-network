@@ -224,6 +224,7 @@ export async function getAllStudentsWithSearch(
           desiredDegree: true,
           applicationStatus: true,
           paymentStatus: true,
+          profilePictureUrl: true,
           createdAt: true,
           updatedAt: true,
           user: {
@@ -508,6 +509,7 @@ export async function getAllStudentsWithSearch(
           desiredDegree: student.desiredDegree,
           applicationStatus: student.applicationStatus,
           paymentStatus: student.paymentStatus,
+          profilePictureUrl: student.profilePictureUrl,
           createdAt: student.createdAt,
           updatedAt: student.updatedAt,
           statistics: {
