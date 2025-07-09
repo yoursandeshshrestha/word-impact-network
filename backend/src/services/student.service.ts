@@ -351,6 +351,7 @@ export async function getStudentProfileByUserId(userId: string) {
         country: student.country,
         academicQualification: student.academicQualification,
         desiredDegree: student.desiredDegree,
+        profilePictureUrl: student.profilePictureUrl,
         createdAt: student.createdAt,
         updatedAt: student.updatedAt,
       },
@@ -392,6 +393,7 @@ export async function getStudentProfileByUserId(userId: string) {
 export async function updateStudentProfileByUserId(
   userId: string,
   updateData: StudentProfileUpdateData,
+  profilePictureFile?: Express.Multer.File,
 ) {
   try {
     logger.info('Updating student profile', { userId });
@@ -436,6 +438,16 @@ export async function updateStudentProfileByUserId(
       updateFields.gender = updateData.gender;
     }
 
+    // Handle profile picture upload
+    if (profilePictureFile) {
+      const profilePictureUrl = await uploadToCloudinary(
+        profilePictureFile.buffer,
+        'win/student-profiles',
+        `profile-${student.fullName.toLowerCase().replace(/\s+/g, '-')}`,
+      );
+      updateFields.profilePictureUrl = profilePictureUrl;
+    }
+
     // If no updates were provided
     if (Object.keys(updateFields).length === 0) {
       logger.info('No changes detected for student profile update', { studentId: student.id });
@@ -449,6 +461,7 @@ export async function updateStudentProfileByUserId(
           country: student.country,
           gender: student.gender,
           dateOfBirth: student.dateOfBirth.toISOString().split('T')[0],
+          profilePictureUrl: student.profilePictureUrl,
         },
       };
     }
@@ -474,6 +487,7 @@ export async function updateStudentProfileByUserId(
         country: updatedStudent.country,
         gender: updatedStudent.gender,
         dateOfBirth: updatedStudent.dateOfBirth.toISOString().split('T')[0],
+        profilePictureUrl: updatedStudent.profilePictureUrl,
       },
     };
   } catch (error) {
