@@ -31,15 +31,7 @@ const loginSchema = Joi.object({
 
 const studentProfileUpdateSchema = Joi.object({
   fullName: Joi.string().trim().optional().min(3).max(25),
-  phoneNumber: Joi.string()
-    .pattern(/^[0-9]{10}$/)
-    .optional()
-    .min(10)
-    .max(10)
-    .messages({
-      'string.pattern.base': 'Phone number must contain exactly 10 digits (numbers only)',
-      'string.length': 'Phone number must contain exactly 10 digits (numbers only)',
-    }),
+  phoneNumber: Joi.string().trim().optional(),
   country: Joi.string().trim().optional(),
   dateOfBirth: Joi.date().optional(),
   gender: Joi.string().valid('MALE', 'FEMALE', 'OTHER').optional(),
