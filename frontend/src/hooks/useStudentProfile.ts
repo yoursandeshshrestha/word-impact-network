@@ -14,6 +14,7 @@ interface StudentProfileData {
   dateOfBirth?: string;
   gender?: "MALE" | "FEMALE" | "OTHER";
   profileImage?: string;
+  profilePictureUrl?: string;
 }
 
 export const useStudentProfile = () => {
@@ -26,7 +27,7 @@ export const useStudentProfile = () => {
     dispatch(fetchStudentProfile());
   };
 
-  const updateProfile = (profileData: StudentProfileData) => {
+  const updateProfile = (profileData: StudentProfileData | FormData) => {
     dispatch(updateStudentProfile(profileData));
   };
 
