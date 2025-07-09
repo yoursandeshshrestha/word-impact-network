@@ -111,7 +111,7 @@ const Header: React.FC = () => {
             : "bg-white/95 backdrop-blur-sm py-4"
         }`}
       >
-        <div className="container mx-auto px-6">
+        <div className="container mx-auto px-6 border border-red-500">
           <div className="flex justify-between items-center">
             {/* Logo Section */}
             <div className="logo flex-shrink-0">
@@ -234,17 +234,88 @@ const Header: React.FC = () => {
               )}
             </div>
 
-            {/* Mobile menu button */}
-            <button
-              onClick={toggleMobileMenu}
-              className="xl:hidden ml-4 p-2 rounded-lg text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition-colors"
-            >
-              {isMobileMenuOpen ? (
-                <X className="h-6 w-6" />
+            {/* Mobile Authentication and Menu */}
+            <div className="xl:hidden flex items-center space-x-2">
+              {isLoggedIn ? (
+                <Link
+                  href="/my-learning"
+                  className="inline-flex items-center px-3 py-2 bg-white text-gray-900 border border-gray-200 rounded-lg text-xs font-medium shadow-sm hover:bg-gray-50 transition-all duration-200"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-4 w-4 mr-1 text-gray-600"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
+                    />
+                  </svg>
+                  Dashboard
+                </Link>
               ) : (
-                <Menu className="h-6 w-6" />
+                <>
+                  <Link
+                    href="/auth/login"
+                    className="inline-flex items-center px-3 py-2 text-gray-600 hover:text-gray-900 transition-colors rounded-lg hover:bg-gray-50 font-medium text-xs"
+                  >
+                    <div className="flex items-center justify-center w-6 h-6 rounded-full bg-gray-50 border border-gray-200">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="12"
+                        height="12"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        className="w-3 h-3"
+                      >
+                        <circle cx="12" cy="12" r="10" />
+                        <circle cx="12" cy="10" r="3" />
+                        <path d="M7 20.662V19c0-1.657 2.239-3 5-3s5 1.343 5 3v1.662" />
+                      </svg>
+                    </div>
+                    <span className="ml-1">Login</span>
+                  </Link>
+                  <Link
+                    href="/auth/apply"
+                    className="inline-flex items-center px-3 py-2 bg-white text-gray-900 border border-gray-200 rounded-lg text-xs font-medium shadow-sm hover:bg-gray-50 transition-all duration-200"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-4 w-4 mr-1 text-gray-600"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                      />
+                    </svg>
+                    Apply
+                  </Link>
+                </>
               )}
-            </button>
+              <button
+                onClick={toggleMobileMenu}
+                className="p-2 rounded-lg text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition-colors"
+              >
+                {isMobileMenuOpen ? (
+                  <X className="h-6 w-6" />
+                ) : (
+                  <Menu className="h-6 w-6" />
+                )}
+              </button>
+            </div>
           </div>
         </div>
       </header>
