@@ -11,6 +11,7 @@ interface StudentProfile {
   country: string;
   academicQualification: string;
   desiredDegree: string;
+  profilePictureUrl?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -126,16 +127,31 @@ export const fetchStudentProfile = createAsyncThunk(
 
 export const updateStudentProfile = createAsyncThunk(
   "studentProfile/updateStudentProfile",
-  async (profileData: Partial<StudentProfile>, { rejectWithValue }) => {
+  async (
+    profileData: Partial<StudentProfile> | FormData,
+    { rejectWithValue }
+  ) => {
     try {
-      const response = await fetch(`${BASE_URL}/student/profile`, {
-        method: "PUT",
-        credentials: "include", // This will automatically send cookies
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(profileData),
-      });
+      let response: Response;
+
+      if (profileData instanceof FormData) {
+        // Handle FormData (for image uploads)
+        response = await fetch(`${BASE_URL}/student/profile`, {
+          method: "PUT",
+          credentials: "include",
+          body: profileData,
+        });
+      } else {
+        // Handle regular JSON data
+        response = await fetch(`${BASE_URL}/student/profile`, {
+          method: "PUT",
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(profileData),
+        });
+      }
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
@@ -155,6 +171,8 @@ export const updateStudentProfile = createAsyncThunk(
     }
   }
 );
+
+
 
 const studentProfileSlice = createSlice({
   name: "studentProfile",
@@ -197,7 +215,9 @@ const studentProfileSlice = createSlice({
       .addCase(updateStudentProfile.rejected, (state, action) => {
         state.status = "failed";
         state.error = action.payload as string;
-      });
+      })
+
+
   },
 });
 
