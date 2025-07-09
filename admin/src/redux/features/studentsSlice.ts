@@ -84,6 +84,7 @@ export interface Student {
   desiredDegree: string;
   applicationStatus: string;
   paymentStatus: string;
+  profilePictureUrl?: string;
   createdAt: string;
   updatedAt: string;
   statistics: StudentStatistics;
