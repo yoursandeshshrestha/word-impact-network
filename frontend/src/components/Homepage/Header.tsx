@@ -127,7 +127,7 @@ const Header: React.FC = () => {
             </div>
 
             {/* Desktop Navigation */}
-            <nav className="hidden xl:block flex-grow">
+            <nav className="hidden 2xl:block flex-grow">
               <ul className="flex justify-center space-x-10 text-base font-medium tracking-wide">
                 {navigationItems.map((item) => (
                   <li key={item.name} className="relative group">
@@ -162,7 +162,7 @@ const Header: React.FC = () => {
             </nav>
 
             {/* Authentication Links - Desktop */}
-            <div className="hidden xl:flex items-center space-x-4 flex-shrink-0">
+            <div className="flex items-center space-x-4 flex-shrink-0">
               {isLoggedIn ? (
                 <Link
                   href="/my-learning"
@@ -237,7 +237,7 @@ const Header: React.FC = () => {
             {/* Mobile menu button */}
             <button
               onClick={toggleMobileMenu}
-              className="xl:hidden ml-4 p-2 rounded-lg text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition-colors"
+              className="2xl:hidden ml-4 p-2 rounded-lg text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition-colors"
             >
               {isMobileMenuOpen ? (
                 <X className="h-6 w-6" />
@@ -252,14 +252,14 @@ const Header: React.FC = () => {
       {/* Mobile Menu Overlay */}
       {isMobileMenuOpen && (
         <div
-          className="xl:hidden fixed inset-0 bg-black/50 z-40"
+          className="2xl:hidden fixed inset-0 bg-black/50 z-40"
           onClick={toggleMobileMenu}
         />
       )}
 
       {/* Mobile Menu */}
       <div
-        className={`xl:hidden fixed top-0 right-0 h-full w-80 bg-white shadow-xl z-50 transform transition-transform duration-300 ease-in-out overflow-y-auto  ${
+        className={`2xl:hidden fixed top-0 right-0 h-full w-80 bg-white shadow-xl z-50 transform transition-transform duration-300 ease-in-out overflow-y-auto  ${
           isMobileMenuOpen ? "translate-x-0" : "translate-x-full"
         }`}
       >
