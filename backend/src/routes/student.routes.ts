@@ -73,6 +73,7 @@ router.put(
   '/profile',
   authenticateStudent,
   validateStudent,
+  upload.single('profilePicture'),
   validateStudentProfileUpdate,
   updateStudentProfile,
 );
