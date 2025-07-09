@@ -8,6 +8,7 @@ interface ApplicationData {
   fullName: string;
   gender: Gender | "";
   dateOfBirth: string;
+  countryCode: string;
   phoneNumber: string;
   country: string;
   academicQualification: string;
@@ -49,6 +50,7 @@ export const useApplicationForm = () => {
     fullName: "",
     gender: "" as Gender | "",
     dateOfBirth: "",
+    countryCode: "",
     phoneNumber: "",
     country: "",
     academicQualification: "",
@@ -148,6 +150,7 @@ export const useApplicationForm = () => {
         if (!formData.dateOfBirth) return false;
         return true;
       case 2:
+        if (!formData.countryCode.trim()) return false;
         if (!formData.phoneNumber.trim()) return false;
         if (!formData.country.trim()) return false;
         return true;
