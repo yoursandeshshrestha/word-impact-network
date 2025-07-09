@@ -1,5 +1,6 @@
 import React from "react";
 import { Student } from "@/redux/features/studentsSlice";
+import Image from "next/image";
 
 interface StudentDetailsProps {
   student: Student;
@@ -10,6 +11,15 @@ const StudentDetails: React.FC<StudentDetailsProps> = ({
   student,
   onClose,
 }) => {
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map(word => word.charAt(0))
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
+  };
+
   // Safe string access function to prevent rendering objects directly
   const safeString = (value: string | object | null | undefined): string => {
     if (value === null || value === undefined) return "N/A";
@@ -53,8 +63,20 @@ const StudentDetails: React.FC<StudentDetailsProps> = ({
 
       <div className="space-y-4">
         <div className="flex items-center mb-4">
-          <div className="h-12 w-12 rounded-full bg-gray-200 flex items-center justify-center text-gray-600 font-semibold text-lg">
-            {student.fullName.charAt(0).toUpperCase()}
+          <div className="h-12 w-12 rounded-full overflow-hidden">
+            {student.profilePictureUrl ? (
+              <Image
+                src={student.profilePictureUrl}
+                alt={student.fullName}
+                width={48}
+                height={48}
+                className="h-12 w-12 object-cover"
+              />
+            ) : (
+              <div className="h-12 w-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-semibold text-lg">
+                {getInitials(student.fullName || "N/A")}
+              </div>
+            )}
           </div>
           <div className="ml-4">
             <h3 className="text-lg font-medium">
