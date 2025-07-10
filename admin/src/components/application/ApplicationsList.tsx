@@ -1,10 +1,8 @@
 import React from "react";
-import { useAppDispatch } from "@/hooks/hooks";
-import {
-  Application,
-  setSelectedApplication,
-} from "@/redux/features/applicationsSlice";
+import { Application } from "@/redux/features/applicationsSlice";
 import { formatDate } from "@/utils/formatters";
+import ResponsiveTable from "@/components/common/ResponsiveTable";
+import ResponsiveTableRow from "@/components/common/ResponsiveTableRow";
 
 interface ApplicationsListProps {
   applications: Application[];
@@ -17,8 +15,6 @@ const ApplicationsList: React.FC<ApplicationsListProps> = ({
   onViewDetails,
   isDisabled = false,
 }) => {
-  const dispatch = useAppDispatch();
-
   const getStatusBadgeClass = (status: string) => {
     switch (status) {
       case "APPROVED":
@@ -32,57 +28,35 @@ const ApplicationsList: React.FC<ApplicationsListProps> = ({
   };
 
   const handleRowClick = (application: Application) => {
-    dispatch(setSelectedApplication(application));
-    onViewDetails(application);
+    if (!isDisabled) {
+      onViewDetails(application);
+    }
   };
 
+  const headers = ["Name", "Email", "Country", "Applied Date", "Status"];
+
   return (
-    <div
-      className={`overflow-x-auto ${
-        isDisabled ? "opacity-50 pointer-events-none" : ""
-      }`}
-    >
-      <table className="w-full">
-        <thead>
-          <tr className="bg-gray-50 border-b border-gray-200">
-            <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Name
-            </th>
-            <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Email
-            </th>
-            <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Country
-            </th>
-            <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Applied At
-            </th>
-            <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Status
-            </th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-gray-200">
-          {applications.length > 0 ? (
-            applications.map((application) => (
-              <tr
-                key={application.applicationId}
-                onClick={() => handleRowClick(application)}
-                className="hover:bg-gray-50 cursor-pointer transition-colors duration-150"
-              >
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                  {application.fullName}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                  {application.email}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                  {application.country}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                  {formatDate(application.appliedAt)}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
+    <ResponsiveTable headers={headers}>
+      {applications.length > 0 ? (
+        applications.map((application) => (
+          <ResponsiveTableRow
+            key={application.applicationId}
+            onClick={() => handleRowClick(application)}
+            mobileCardContent={
+              <div className="space-y-3">
+                {/* Application Info */}
+                <div className="flex items-start justify-between">
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-medium text-gray-900">
+                      {application.fullName}
+                    </div>
+                    <div className="text-sm text-gray-500">
+                      {application.email}
+                    </div>
+                    <div className="text-sm text-gray-500">
+                      {application.country}
+                    </div>
+                  </div>
                   <span
                     className={`px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusBadgeClass(
                       application.status
@@ -90,22 +64,49 @@ const ApplicationsList: React.FC<ApplicationsListProps> = ({
                   >
                     {application.status}
                   </span>
-                </td>
-              </tr>
-            ))
-          ) : (
-            <tr>
-              <td
-                colSpan={5}
-                className="px-6 py-8 text-center text-sm text-gray-500"
+                </div>
+
+                {/* Applied Date */}
+                <div className="text-sm text-gray-500">
+                  Applied: {formatDate(application.appliedAt)}
+                </div>
+              </div>
+            }
+          >
+            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+              {application.fullName}
+            </td>
+            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+              {application.email}
+            </td>
+            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+              {application.country}
+            </td>
+            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+              {formatDate(application.appliedAt)}
+            </td>
+            <td className="px-6 py-4 whitespace-nowrap">
+              <span
+                className={`px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusBadgeClass(
+                  application.status
+                )}`}
               >
-                No applications found
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </table>
-    </div>
+                {application.status}
+              </span>
+            </td>
+          </ResponsiveTableRow>
+        ))
+      ) : (
+        <tr>
+          <td
+            colSpan={5}
+            className="px-6 py-8 text-center text-sm text-gray-500"
+          >
+            No applications found
+          </td>
+        </tr>
+      )}
+    </ResponsiveTable>
   );
 };
 
