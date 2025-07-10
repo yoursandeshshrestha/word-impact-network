@@ -2,16 +2,17 @@
 
 import React, { useEffect, useState, useRef } from "react";
 import Link from "next/link";
-import { Settings, User, LogOut, Key } from "lucide-react";
+import { Settings, User, LogOut, Key, Menu } from "lucide-react";
 import NotificationDropdown from "@/components/ui/NotificationDropdown";
 import { logout } from "@/utils/auth";
 
 interface TopbarProps {
   userName: string;
   userRole: string;
+  onMenuClick?: () => void;
 }
 
-const Topbar: React.FC<TopbarProps> = ({ userName, userRole }) => {
+const Topbar: React.FC<TopbarProps> = ({ userName, userRole, onMenuClick }) => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   // Handle click outside to close dropdown
@@ -41,26 +42,39 @@ const Topbar: React.FC<TopbarProps> = ({ userName, userRole }) => {
   };
 
   return (
-    <header className="sticky top-0 z-30 w-full bg-white border-b border-gray-100 flex items-center justify-end h-16 px-8 shadow-sm font-sans">
-      <div className="flex items-center gap-8">
+    <header className="sticky top-0 z-30 w-full bg-white border-b border-gray-100 flex items-center justify-between h-16 px-4 sm:px-6 lg:px-8 shadow-sm font-sans">
+      {/* Mobile menu button */}
+      <button
+        onClick={onMenuClick}
+        className="xl:hidden p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors"
+      >
+        <Menu className="h-6 w-6" />
+      </button>
+
+      {/* Desktop spacer */}
+      <div className="hidden xl:block flex-1" />
+
+      {/* Right side content */}
+      <div className="flex items-center gap-4 sm:gap-6 lg:gap-8">
         {/* Notification Dropdown Component */}
         <NotificationDropdown />
 
         {/* User Info with Dropdown */}
         <div className="relative" ref={dropdownRef}>
           <div
-            className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity"
+            className="flex items-center gap-2 sm:gap-3 cursor-pointer hover:opacity-80 transition-opacity"
             onClick={handleProfileClick}
           >
-            <div className="text-right leading-tight">
-              <div className="font-semibold text-gray-900 text-base tracking-tight">
+            {/* Hide user info on very small screens */}
+            <div className="hidden sm:block text-right leading-tight">
+              <div className="font-semibold text-gray-900 text-sm sm:text-base tracking-tight">
                 {userName}
               </div>
               <div className="text-xs text-gray-400 font-medium tracking-wide">
                 {userRole}
               </div>
             </div>
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-blue-400 flex items-center justify-center text-white font-bold text-lg shadow-md border-2 border-white">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br from-blue-500 to-blue-400 flex items-center justify-center text-white font-bold text-sm sm:text-lg shadow-md border-2 border-white">
               {userName.charAt(0)}
             </div>
           </div>
