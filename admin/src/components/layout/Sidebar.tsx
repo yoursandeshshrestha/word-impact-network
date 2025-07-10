@@ -13,7 +13,6 @@ import {
   BarChart2,
   Settings,
   LogOut,
-  Menu,
   X,
   Megaphone,
 } from "lucide-react";
@@ -21,14 +20,15 @@ import {
 type SidebarProps = {
   userEmail?: string;
   userName?: string;
+  onClose?: () => void;
 };
 
 const Sidebar: React.FC<SidebarProps> = ({
   userEmail = "admin@example.com",
   userName = "Admin User",
+  onClose,
 }) => {
   const pathname = usePathname();
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -42,6 +42,13 @@ const Sidebar: React.FC<SidebarProps> = ({
   const handleLogout = () => {
     logout();
     window.location.href = "/auth/login";
+  };
+
+  const handleNavClick = () => {
+    // Close sidebar on mobile when navigation item is clicked
+    if (onClose) {
+      onClose();
+    }
   };
 
   // Create menu items with notification badge
@@ -84,81 +91,62 @@ const Sidebar: React.FC<SidebarProps> = ({
   ];
 
   return (
-    <>
-      {/* Mobile Menu Button */}
-      <div className="md:hidden fixed right-4 top-4 z-50">
+    <aside className="h-full bg-gray-800 flex flex-col">
+      {/* Header with close button for mobile */}
+      <div className="h-16 flex items-center justify-between px-6 border-b border-gray-700">
+        <Link href="/" className="flex-1" onClick={handleNavClick}>
+          <h1 className="text-xl font-bold text-white">Word Impact Network</h1>
+        </Link>
+        {/* Close button for mobile */}
         <button
-          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          className="p-2 rounded-md bg-gray-800 text-white hover:bg-gray-700 transition-colors"
+          onClick={onClose}
+          className="xl:hidden p-2 rounded-md text-gray-300 hover:text-white hover:bg-gray-700 transition-colors"
         >
-          {isMobileMenuOpen ? (
-            <X className="h-6 w-6" />
-          ) : (
-            <Menu className="h-6 w-6" />
-          )}
+          <X className="h-5 w-5" />
         </button>
       </div>
 
-      {/* Sidebar Container */}
-      <aside
-        className={`fixed top-0 left-0 z-40 h-screen bg-gray-800 transition-transform ${
-          isMobileMenuOpen
-            ? "translate-x-0"
-            : "-translate-x-full md:translate-x-0"
-        } w-64 md:w-64`}
-      >
-        {/* Logo */}
-        <div className="h-16 flex items-center px-6 border-b border-gray-700">
-          <Link href="/" className="flex-1">
-            <h1 className="text-xl font-bold text-white">
-              Word Impact Network
-            </h1>
-          </Link>
-        </div>
+      {/* Menu Items */}
+      <div className="flex-1 py-4 overflow-y-auto">
+        <ul className="space-y-1 px-3">
+          {menuItems.map((item) => {
+            return (
+              <li key={item.path}>
+                <Link
+                  href={item.path}
+                  onClick={handleNavClick}
+                  className={`flex items-center p-3 text-gray-300 rounded-lg transition-colors ${
+                    pathname === item.path
+                      ? "bg-gray-700 text-white"
+                      : "hover:bg-gray-700 hover:text-white"
+                  }`}
+                >
+                  <span className="text-gray-400 group-hover:text-white">
+                    {item.icon}
+                  </span>
+                  <span className="ml-3 text-sm font-medium">{item.name}</span>
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+      </div>
 
-        {/* Menu Items */}
-        <div className="py-4 overflow-y-auto">
-          <ul className="space-y-1 px-3">
-            {menuItems.map((item) => {
-              return (
-                <li key={item.path}>
-                  <Link
-                    href={item.path}
-                    className={`flex items-center p-3 text-gray-300 rounded-lg transition-colors ${
-                      pathname === item.path
-                        ? "bg-gray-700 text-white"
-                        : "hover:bg-gray-700 hover:text-white"
-                    }`}
-                  >
-                    <span className="text-gray-400 group-hover:text-white">
-                      {item.icon}
-                    </span>
-                    <span className="ml-3 text-sm font-medium">
-                      {item.name}
-                    </span>
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
+      {/* User Info & Logout */}
+      <div className="p-4 border-t border-gray-700">
+        <div className="mb-4">
+          <h3 className="text-sm font-medium text-white">{displayName}</h3>
+          <p className="text-gray-400 text-xs">{displayEmail}</p>
         </div>
-
-        {/* User Info & Logout */}
-        <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-700">
-          <div className="mb-4">
-            <h3 className="text-sm font-medium text-white">{displayName}</h3>
-            <p className="text-gray-400 text-xs">{displayEmail}</p>
-          </div>
-          <button
-            onClick={handleLogout}
-            className="flex items-center cursor-pointer text-gray-300 hover:text-white transition-colors"
-          >
-            <LogOut className="w-4 h-4" />
-            <span className="ml-2 text-sm">Logout</span>
-          </button>
-        </div>
-      </aside>
-    </>
+        <button
+          onClick={handleLogout}
+          className="flex items-center cursor-pointer text-gray-300 hover:text-white transition-colors"
+        >
+          <LogOut className="w-4 h-4" />
+          <span className="ml-2 text-sm">Logout</span>
+        </button>
+      </div>
+    </aside>
   );
 };
 
