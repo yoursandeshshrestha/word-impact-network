@@ -162,7 +162,7 @@ const Header: React.FC = () => {
             </nav>
 
             {/* Authentication Links - Desktop */}
-            <div className="flex items-center space-x-4 flex-shrink-0">
+            <div className="hidden sm:flex items-center space-x-4 flex-shrink-0">
               {isLoggedIn ? (
                 <Link
                   href="/my-learning"
