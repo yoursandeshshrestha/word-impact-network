@@ -78,14 +78,12 @@ const Page: React.FC = () => {
     );
   };
 
-  const handleUpdateStatus = (status: "APPROVED" | "REJECTED" | "PENDING") => {
-    if (!selectedApplication) return;
-
+  const handleUpdateStatus = (applicationId: string, status: string) => {
     if (status === "REJECTED") {
       setShowRejectionModal(true);
     } else {
       // Immediately update UI and close modal
-      updateLocalApplicationStatus(selectedApplication.applicationId, status);
+      updateLocalApplicationStatus(applicationId, status);
       setShowDetails(false);
 
       // Show loading toast that will be replaced with success/error
@@ -93,8 +91,8 @@ const Page: React.FC = () => {
 
       // Make API call in background
       updateStatus({
-        id: selectedApplication.applicationId,
-        status,
+        id: applicationId,
+        status: status as "APPROVED" | "REJECTED" | "PENDING",
       })
         .then(() => {
           // Update toast on success
@@ -148,18 +146,10 @@ const Page: React.FC = () => {
       });
   };
 
-  const handleDeleteClick = () => {
-    setShowDeleteModal(true);
-  };
-
-  const handleConfirmDelete = () => {
-    if (!selectedApplication) return;
-
+  const handleDelete = (applicationId: string) => {
     // Immediately update UI and close modals
     setLocalApplications((prevApps) =>
-      prevApps.filter(
-        (app) => app.applicationId !== selectedApplication.applicationId
-      )
+      prevApps.filter((app) => app.applicationId !== applicationId)
     );
     setShowDeleteModal(false);
     setShowDetails(false);
@@ -168,7 +158,7 @@ const Page: React.FC = () => {
     const toastId = toast.loading("Deleting application...");
 
     // Make API call in background
-    removeApplication(selectedApplication.applicationId)
+    removeApplication(applicationId)
       .then(() => {
         // Update toast on success
         toast.success("Application deleted successfully", { id: toastId });
@@ -181,6 +171,11 @@ const Page: React.FC = () => {
         // Revert the local state change on error
         loadApplications(pagination.current, pagination.limit);
       });
+  };
+
+  const handleConfirmDelete = () => {
+    if (!selectedApplication) return;
+    handleDelete(selectedApplication.applicationId);
   };
 
   return (
@@ -237,7 +232,7 @@ const Page: React.FC = () => {
         <ApplicationDetails
           application={selectedApplication}
           onUpdateStatus={handleUpdateStatus}
-          onDelete={handleDeleteClick}
+          onDelete={handleDelete}
           onClose={handleCloseDetails}
         />
       )}
