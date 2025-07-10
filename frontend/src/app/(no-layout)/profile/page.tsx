@@ -24,7 +24,6 @@ import {
   TrendingUp,
   Activity,
   Star,
-  CheckCircle,
   BarChart3,
   Zap,
   Camera,
@@ -92,8 +91,8 @@ function StudentProfile() {
           formData.append(key, value);
         });
 
-        // Use the uploadProfileImage function which handles FormData
-        await updateProfile(formData as any);
+        // Use the updateProfile function which handles FormData
+        await updateProfile(formData);
       } else {
         // Regular profile update without image
         await updateProfile(editForm);
