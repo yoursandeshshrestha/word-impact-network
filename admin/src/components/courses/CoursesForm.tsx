@@ -254,7 +254,7 @@ const CourseForm: React.FC<CourseFormProps> = ({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
       <div>
         <label
           htmlFor="title"
@@ -379,7 +379,7 @@ const CourseForm: React.FC<CourseFormProps> = ({
           <BookOpen size={16} className="mr-1" /> Cover Image
         </label>
 
-        <div className="mt-1 flex items-center">
+        <div className="mt-1 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-0">
           <input
             type="file"
             id="coverImage"
@@ -400,7 +400,7 @@ const CourseForm: React.FC<CourseFormProps> = ({
 
           <span
             id="file-description"
-            className="ml-2 text-xs text-gray-500 flex items-center"
+            className="sm:ml-2 text-xs text-gray-500 flex items-center"
           >
             <Info size={12} className="mr-1" />
             JPEG, PNG, WebP (max 2MB)
@@ -414,7 +414,7 @@ const CourseForm: React.FC<CourseFormProps> = ({
         )}
 
         {coverImagePreview && (
-          <div className="mt-2 relative h-48 w-full sm:w-96 rounded-md overflow-hidden">
+          <div className="mt-2 relative h-48 w-full max-w-sm rounded-md overflow-hidden">
             <Image
               src={coverImagePreview}
               alt="Cover image preview"
@@ -483,7 +483,7 @@ const CourseForm: React.FC<CourseFormProps> = ({
         </p>
       </div>
 
-      <div className="flex justify-end space-x-3">
+      <div className="flex flex-col sm:flex-row justify-end gap-3 sm:space-x-3">
         <button
           type="button"
           onClick={onCancel}
