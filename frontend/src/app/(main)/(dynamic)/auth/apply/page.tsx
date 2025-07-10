@@ -234,7 +234,7 @@ const ApplyPage = () => {
       }
 
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_API}/student/register`,
+        `${process.env.NEXT_PUBLIC_API_URL}/student/register`,
         {
           method: "POST",
           body: formDataToSend,
