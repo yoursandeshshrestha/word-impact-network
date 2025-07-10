@@ -208,8 +208,8 @@ const Dashboard = () => {
     };
 
     return (
-      <div className="bg-white overflow-hidden shadow rounded-lg border border-gray-100 hover:shadow-md transition-shadow duration-200 flex flex-col">
-        <div className="p-5 flex-grow">
+      <div className="bg-white overflow-hidden shadow rounded-lg border border-gray-100 hover:shadow-md transition-shadow duration-200 flex flex-col ">
+        <div className="p-4 sm:p-5 flex-grow">
           <div className="flex items-center mb-3">
             <div
               className={`flex-shrink-0 ${colorClasses[color]} rounded-md p-2.5`}
@@ -228,7 +228,7 @@ const Dashboard = () => {
           </div>
         </div>
         {link && (
-          <div className="bg-gray-50 px-5 py-2.5 border-t border-gray-100 mt-auto">
+          <div className="bg-gray-50 px-4 sm:px-5 py-2.5 border-t border-gray-100 mt-auto">
             <Link
               href={link}
               className="text-sm text-blue-700 font-medium hover:text-blue-900 flex items-center"
@@ -487,7 +487,7 @@ const Dashboard = () => {
   );
 
   return (
-    <div className="p-6 bg-gray-50 min-h-screen">
+    <div className="p-6 bg-gray-50 min-h-screen ">
       {/* Header */}
       <div className="flex justify-between items-center mb-6 bg-white p-4 rounded-lg shadow">
         <h1 className="text-2xl font-bold flex items-center">
@@ -509,7 +509,7 @@ const Dashboard = () => {
       </div>
 
       {/* Main Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
         <StatCard
           icon={Users}
           title="Total Students"
@@ -548,7 +548,7 @@ const Dashboard = () => {
       </div>
 
       {/* Application Status */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8">
         {/* Application Status Chart */}
         <div className="bg-white overflow-hidden shadow rounded-lg">
           <div className="px-6 py-4 border-b border-gray-200">
@@ -557,8 +557,8 @@ const Dashboard = () => {
               Application Status
             </h2>
           </div>
-          <div className="p-5">
-            <div className="flex flex-col md:flex-row gap-6 items-center">
+          <div className="p-4 sm:p-5">
+            <div className="flex flex-col lg:flex-row gap-4 sm:gap-6 items-center">
               {/* Donut Chart */}
               <div className="flex-shrink-0">
                 <DonutChart
@@ -572,7 +572,7 @@ const Dashboard = () => {
               </div>
 
               {/* Status Breakdown */}
-              <div className="flex-1 grid grid-cols-1 sm:grid-cols-3 gap-4 w-full">
+              <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 w-full">
                 {/* Pending Applications */}
                 <div className="bg-yellow-50 border border-yellow-100 rounded-lg p-4">
                   <div className="flex items-center mb-2">
@@ -662,8 +662,8 @@ const Dashboard = () => {
               Payment Information
             </h2>
           </div>
-          <div className="p-5 flex-grow">
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="p-4 sm:p-5 flex-grow">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
               {/* Total Revenue */}
               <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-lg p-4 border border-green-200 flex items-center">
                 <div className="flex-shrink-0 h-10 w-10 rounded-full bg-green-600 flex items-center justify-center">
@@ -722,7 +722,7 @@ const Dashboard = () => {
       </div>
 
       {/* Activity and Stats Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
         {/* Recent Students */}
         <div className="bg-white overflow-hidden shadow rounded-lg flex flex-col justify-between">
           <div className="px-5 py-4 border-b border-gray-200 flex justify-between items-center">
