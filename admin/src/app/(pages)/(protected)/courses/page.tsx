@@ -1,10 +1,9 @@
 "use client";
 
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState } from "react";
 import { useCourse } from "@/hooks/useCourses";
 import { Course } from "@/redux/features/coursesSlice";
 import CourseGrid from "@/components/courses/CourseGrid";
-import SearchBar from "@/components/courses/SearchBar";
 import Loading from "@/components/common/Loading";
 import CourseModal from "@/components/courses/CoursesModel";
 import DeleteCourseModal from "@/components/courses/DeleteCoursesModel";
@@ -31,7 +30,6 @@ const CoursesPage = () => {
     id: string;
     title: string;
   } | null>(null);
-  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     fetchCourses();
@@ -55,21 +53,6 @@ const CoursesPage = () => {
       reset();
     }
   }, [success, message, error, reset]);
-
-  // Filter courses based on search query
-  const filteredCourses = useMemo(() => {
-    if (!searchQuery) return courses;
-
-    return courses.filter(
-      (course) =>
-        course.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        course.description.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-  }, [courses, searchQuery]);
-
-  const handleSearch = (query: string) => {
-    setSearchQuery(query);
-  };
 
   const openCreateModal = () => {
     setIsCreateModalOpen(true);
@@ -135,15 +118,11 @@ const CoursesPage = () => {
         </button>
       </div>
 
-      <div className="mb-6">
-        <SearchBar onSearch={handleSearch} />
-      </div>
-
       {loading && <Loading />}
 
       {!loading && (
         <CourseGrid
-          courses={filteredCourses}
+          courses={courses}
           onEdit={openEditModal}
           onDelete={openDeleteModal}
         />
