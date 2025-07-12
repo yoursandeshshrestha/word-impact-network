@@ -30,6 +30,7 @@ const CourseForm: React.FC<CourseFormProps> = ({
   isLoading,
 }) => {
   const editorRef = useRef<Editor | null>(null);
+  const [isMobile, setIsMobile] = useState(false);
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -63,6 +64,18 @@ const CourseForm: React.FC<CourseFormProps> = ({
       }
     }
   }, [initialData]);
+
+  // Check if device is mobile
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 640);
+    };
+
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
 
   const handleChange = (
     e: React.ChangeEvent<
@@ -254,14 +267,15 @@ const CourseForm: React.FC<CourseFormProps> = ({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-6">
+      {/* Title Field */}
       <div>
         <label
           htmlFor="title"
-          className="text-sm font-medium text-gray-700 flex items-center"
+          className="block text-sm font-medium text-gray-700 mb-2 flex items-center"
         >
-          <Type size={16} className="mr-1" /> Title{" "}
-          <span className="text-red-500 ml-1">*</span>
+          <Type size={16} className="mr-2 flex-shrink-0" />
+          Title <span className="text-red-500 ml-1">*</span>
         </label>
         <input
           type="text"
@@ -269,32 +283,36 @@ const CourseForm: React.FC<CourseFormProps> = ({
           name="title"
           value={formData.title}
           onChange={handleChange}
-          className={`mt-1 block w-full rounded-md border ${
-            errors.title ? "border-red-500" : "border-gray-300"
-          } shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 cursor-text`}
+          className={`block w-full rounded-lg border px-3 py-2.5 text-sm transition-colors duration-200 ${
+            errors.title
+              ? "border-red-500 focus:border-red-500 focus:ring-red-500"
+              : "border-gray-300 focus:border-indigo-500 focus:ring-indigo-500"
+          } shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-0`}
           placeholder="Enter course title"
         />
         {errors.title && (
-          <p className="mt-1 text-sm text-red-500 flex items-center">
-            <Info size={14} className="mr-1" /> {errors.title}
+          <p className="mt-2 text-sm text-red-500 flex items-start">
+            <Info size={14} className="mr-1 mt-0.5 flex-shrink-0" />
+            {errors.title}
           </p>
         )}
       </div>
 
+      {/* Description Field */}
       <div>
         <label
           htmlFor="description"
-          className="text-sm font-medium text-gray-700 flex items-center"
+          className="block text-sm font-medium text-gray-700 mb-2 flex items-center"
         >
-          <FileText size={16} className="mr-1" /> Description{" "}
-          <span className="text-red-500 ml-1">*</span>
+          <FileText size={16} className="mr-2 flex-shrink-0" />
+          Description <span className="text-red-500 ml-1">*</span>
         </label>
 
         {/* Rich Text Editor */}
         <div
-          className={`mt-1 border ${
+          className={`border rounded-lg overflow-hidden transition-colors duration-200 ${
             errors.description ? "border-red-500" : "border-gray-300"
-          } rounded-md overflow-hidden`}
+          }`}
         >
           <Editor
             apiKey={process.env.NEXT_PUBLIC_TINYMCE_API_KEY}
@@ -302,7 +320,7 @@ const CourseForm: React.FC<CourseFormProps> = ({
             value={formData.description}
             onEditorChange={handleEditorChange}
             init={{
-              height: 300,
+              height: isMobile ? 200 : 300,
               menubar: false,
               plugins: [
                 "advlist",
@@ -324,33 +342,40 @@ const CourseForm: React.FC<CourseFormProps> = ({
                 "help",
                 "wordcount",
               ],
-              toolbar:
-                "undo redo | blocks | " +
-                "bold italic forecolor | alignleft aligncenter " +
-                "alignright alignjustify | bullist numlist outdent indent | " +
-                "removeformat | help",
+              toolbar: isMobile
+                ? "undo redo | bold italic | bullist numlist | removeformat"
+                : "undo redo | blocks | " +
+                  "bold italic forecolor | alignleft aligncenter " +
+                  "alignright alignjustify | bullist numlist outdent indent | " +
+                  "removeformat | help",
               content_style:
                 "body { font-family:Helvetica,Arial,sans-serif; font-size:14px; direction: ltr !important; }",
               placeholder: "Enter course description",
               directionality: "ltr",
+              resize: false,
+              branding: false,
+              elementpath: false,
+              statusbar: false,
             }}
           />
         </div>
 
         {errors.description && (
-          <p className="mt-1 text-sm text-red-500 flex items-center">
-            <Info size={14} className="mr-1" /> {errors.description}
+          <p className="mt-2 text-sm text-red-500 flex items-start">
+            <Info size={14} className="mr-1 mt-0.5 flex-shrink-0" />
+            {errors.description}
           </p>
         )}
       </div>
 
+      {/* Duration Field */}
       <div>
         <label
           htmlFor="durationYears"
-          className="text-sm font-medium text-gray-700 flex items-center"
+          className="block text-sm font-medium text-gray-700 mb-2 flex items-center"
         >
-          <Calendar size={16} className="mr-1" /> Duration (Years){" "}
-          <span className="text-red-500 ml-1">*</span>
+          <Calendar size={16} className="mr-2 flex-shrink-0" />
+          Duration (Years) <span className="text-red-500 ml-1">*</span>
         </label>
         <input
           type="number"
@@ -360,95 +385,109 @@ const CourseForm: React.FC<CourseFormProps> = ({
           max="10"
           value={formData.durationYears}
           onChange={handleChange}
-          className={`mt-1 block w-full rounded-md border ${
-            errors.durationYears ? "border-red-500" : "border-gray-300"
-          } shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 cursor-text`}
+          className={`block w-full rounded-lg border px-3 py-2.5 text-sm transition-colors duration-200 ${
+            errors.durationYears
+              ? "border-red-500 focus:border-red-500 focus:ring-red-500"
+              : "border-gray-300 focus:border-indigo-500 focus:ring-indigo-500"
+          } shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-0`}
         />
         {errors.durationYears && (
-          <p className="mt-1 text-sm text-red-500 flex items-center">
-            <Info size={14} className="mr-1" /> {errors.durationYears}
+          <p className="mt-2 text-sm text-red-500 flex items-start">
+            <Info size={14} className="mr-1 mt-0.5 flex-shrink-0" />
+            {errors.durationYears}
           </p>
         )}
       </div>
 
+      {/* Cover Image Field */}
       <div>
         <label
           htmlFor="coverImage"
-          className="text-sm font-medium text-gray-700 flex items-center"
+          className="block text-sm font-medium text-gray-700 mb-2 flex items-center"
         >
-          <BookOpen size={16} className="mr-1" /> Cover Image
+          <BookOpen size={16} className="mr-2 flex-shrink-0" />
+          Cover Image
         </label>
 
-        <div className="mt-1 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-0">
-          <input
-            type="file"
-            id="coverImage"
-            name="coverImage"
-            accept="image/jpeg,image/png,image/jpg,image/webp"
-            onChange={handleImageChange}
-            className="sr-only"
-            aria-describedby="file-description"
-          />
-
-          <label
-            htmlFor="coverImage"
-            className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 cursor-pointer transition-colors duration-200"
-          >
-            <Upload size={16} className="mr-2" />
-            {coverImagePreview ? "Change Image" : "Upload Image"}
-          </label>
-
-          <span
-            id="file-description"
-            className="sm:ml-2 text-xs text-gray-500 flex items-center"
-          >
-            <Info size={12} className="mr-1" />
-            JPEG, PNG, WebP (max 2MB)
-          </span>
-        </div>
-
-        {errors.coverImage && (
-          <p className="mt-1 text-sm text-red-500 flex items-center">
-            <Info size={14} className="mr-1" /> {errors.coverImage}
-          </p>
-        )}
-
-        {coverImagePreview && (
-          <div className="mt-2 relative h-48 w-full max-w-sm rounded-md overflow-hidden">
-            <Image
-              src={coverImagePreview}
-              alt="Cover image preview"
-              fill
-              className="object-cover"
+        <div className="space-y-3">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+            <input
+              type="file"
+              id="coverImage"
+              name="coverImage"
+              accept="image/jpeg,image/png,image/jpg,image/webp"
+              onChange={handleImageChange}
+              className="sr-only"
+              aria-describedby="file-description"
             />
-            <button
-              type="button"
-              onClick={() => {
-                setCoverImage(null);
-                setCoverImagePreview(null);
-              }}
-              className="absolute top-2 right-2 bg-gray-800 bg-opacity-75 rounded-full p-1 text-white hover:bg-opacity-100 transition-all duration-200 cursor-pointer"
-              aria-label="Remove image"
+
+            <label
+              htmlFor="coverImage"
+              className="inline-flex items-center justify-center px-4 py-2.5 border border-gray-300 shadow-sm text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 cursor-pointer transition-all duration-200 flex-shrink-0"
             >
-              <X size={16} />
-            </button>
+              <Upload size={16} className="mr-2" />
+              {coverImagePreview ? "Change Image" : "Upload Image"}
+            </label>
+
+            <span
+              id="file-description"
+              className="text-xs text-gray-500 flex items-center"
+            >
+              <Info size={12} className="mr-1 flex-shrink-0" />
+              JPEG, PNG, WebP (max 2MB)
+            </span>
           </div>
-        )}
+
+          {errors.coverImage && (
+            <p className="text-sm text-red-500 flex items-start">
+              <Info size={14} className="mr-1 mt-0.5 flex-shrink-0" />
+              {errors.coverImage}
+            </p>
+          )}
+
+          {coverImagePreview && (
+            <div className="relative h-40 sm:h-48 md:h-56 w-full max-w-sm rounded-lg overflow-hidden border border-gray-200">
+              <Image
+                src={coverImagePreview}
+                alt="Cover image preview"
+                fill
+                className="object-cover"
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  setCoverImage(null);
+                  setCoverImagePreview(null);
+                }}
+                className="absolute top-2 right-2 bg-gray-800 bg-opacity-75 rounded-full p-1.5 text-white hover:bg-opacity-100 transition-all duration-200 cursor-pointer focus:outline-none focus:ring-2 focus:ring-white"
+                aria-label="Remove image"
+              >
+                <X size={16} />
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
+      {/* Course Status Field */}
       <div>
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between mb-3">
           <label className="text-sm font-medium text-gray-700 flex items-center">
             {formData.isActive ? (
-              <CheckCircle2 size={16} className="mr-1 text-green-500" />
+              <CheckCircle2
+                size={16}
+                className="mr-2 text-green-500 flex-shrink-0"
+              />
             ) : (
-              <XCircle size={16} className="mr-1 text-red-500" />
+              <XCircle size={16} className="mr-2 text-red-500 flex-shrink-0" />
             )}
             Course Status
           </label>
           <span
-            className={`text-sm font-medium ${
-              formData.isActive ? "text-green-600" : "text-red-600"
+            className={`text-sm font-medium px-2 py-1 rounded-full ${
+              formData.isActive
+                ? "text-green-700 bg-green-100"
+                : "text-red-700 bg-red-100"
             }`}
           >
             {formData.isActive ? "Active" : "Inactive"}
@@ -460,7 +499,7 @@ const CourseForm: React.FC<CourseFormProps> = ({
           role="switch"
           aria-checked={formData.isActive}
           onClick={handleToggleActive}
-          className={`relative inline-flex flex-shrink-0 h-6 w-11 border-2 border-transparent rounded-full cursor-pointer transition-colors ease-in-out duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 mt-2 ${
+          className={`relative inline-flex flex-shrink-0 h-6 w-11 border-2 border-transparent rounded-full cursor-pointer transition-colors ease-in-out duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 ${
             formData.isActive ? "bg-indigo-600" : "bg-gray-200"
           }`}
         >
@@ -475,19 +514,20 @@ const CourseForm: React.FC<CourseFormProps> = ({
           />
         </button>
 
-        <p className="mt-1 text-xs text-gray-500 flex items-center">
-          <Info size={12} className="mr-1" />
+        <p className="mt-2 text-xs text-gray-500 flex items-start">
+          <Info size={12} className="mr-1 mt-0.5 flex-shrink-0" />
           {formData.isActive
             ? "Students can enroll in this course"
             : "Course is hidden from students"}
         </p>
       </div>
 
-      <div className="flex flex-col sm:flex-row justify-end gap-3 sm:space-x-3">
+      {/* Action Buttons */}
+      <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 pt-4 border-t border-gray-200">
         <button
           type="button"
           onClick={onCancel}
-          className="inline-flex items-center justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 cursor-pointer transition-colors duration-200"
+          className="inline-flex items-center justify-center rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 cursor-pointer transition-colors duration-200 w-full sm:w-auto"
         >
           <X size={16} className="mr-2" />
           Cancel
@@ -495,7 +535,7 @@ const CourseForm: React.FC<CourseFormProps> = ({
         <button
           type="submit"
           disabled={isLoading}
-          className="inline-flex items-center justify-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-colors duration-200"
+          className="inline-flex items-center justify-center rounded-lg border border-transparent bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-colors duration-200 w-full sm:w-auto"
         >
           <Save size={16} className="mr-2" />
           {isLoading
