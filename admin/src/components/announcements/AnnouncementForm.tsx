@@ -1,8 +1,20 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { X, Image as ImageIcon } from "lucide-react";
-import { Announcement } from "@/types/announcement";
+import {
+  X,
+  Image as ImageIcon,
+  FileText,
+  Video,
+  Upload,
+  Trash2,
+} from "lucide-react";
+import {
+  Announcement,
+  AnnouncementImage,
+  AnnouncementFile,
+  AnnouncementVideo,
+} from "@/types/announcement";
 import imageCompression from "browser-image-compression";
 import Image from "next/image";
 
@@ -11,6 +23,12 @@ interface AnnouncementFormProps {
   onSubmit: (formData: FormData) => Promise<void>;
   onCancel: () => void;
   loading?: boolean;
+}
+
+interface FileWithPreview {
+  file: File;
+  preview?: string;
+  id: string;
 }
 
 const AnnouncementForm: React.FC<AnnouncementFormProps> = ({
@@ -23,8 +41,17 @@ const AnnouncementForm: React.FC<AnnouncementFormProps> = ({
     title: "",
     content: "",
   });
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
+
+  // Multiple file states
+  const [imageFiles, setImageFiles] = useState<FileWithPreview[]>([]);
+  const [fileAttachments, setFileAttachments] = useState<FileWithPreview[]>([]);
+  const [videoFiles, setVideoFiles] = useState<FileWithPreview[]>([]);
+
+  // Existing attachments (for editing)
+  const [existingImages, setExistingImages] = useState<AnnouncementImage[]>([]);
+  const [existingFiles, setExistingFiles] = useState<AnnouncementFile[]>([]);
+  const [existingVideos, setExistingVideos] = useState<AnnouncementVideo[]>([]);
+
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
   const isEditing = !!announcement;
@@ -35,10 +62,20 @@ const AnnouncementForm: React.FC<AnnouncementFormProps> = ({
         title: announcement.title,
         content: announcement.content,
       });
-      // Set existing image preview if available
-      if (announcement.imageUrl) {
-        setImagePreview(announcement.imageUrl);
-      }
+
+      // Load existing attachments
+      setExistingImages(announcement.images || []);
+      setExistingFiles(announcement.files || []);
+      setExistingVideos(announcement.videos || []);
+    } else {
+      // Reset form when creating new announcement
+      setFormData({
+        title: "",
+        content: "",
+      });
+      setExistingImages([]);
+      setExistingFiles([]);
+      setExistingVideos([]);
     }
   }, [announcement]);
 
@@ -57,53 +94,183 @@ const AnnouncementForm: React.FC<AnnouncementFormProps> = ({
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const generateFileId = () => Math.random().toString(36).substr(2, 9);
 
-    // Validate file type
+  const validateImageFile = (file: File): string | null => {
     const validTypes = ["image/jpeg", "image/png", "image/jpg", "image/webp"];
+    const maxSize = 5 * 1024 * 1024; // 5MB
+
     if (!validTypes.includes(file.type)) {
-      setErrors((prev) => ({
-        ...prev,
-        image: "Please upload a valid image file (JPEG, PNG, or WebP)",
-      }));
-      return;
+      return "Please upload a valid image file (JPEG, PNG, or WebP)";
     }
 
-    try {
-      // Compression options
-      const options = {
-        maxSizeMB: 1, // Max file size 1MB
-        maxWidthOrHeight: 1920, // Max width/height 1920px
-        useWebWorker: true, // Use web worker for better performance
-      };
+    if (file.size > maxSize) {
+      return "Image size exceeds 5MB. Please upload a smaller image.";
+    }
 
-      // Compress the image
-      const compressedFile = await imageCompression(file, options);
+    return null;
+  };
 
-      // Create a preview
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagePreview(reader.result as string);
-      };
-      reader.readAsDataURL(compressedFile);
+  const validateDocumentFile = (file: File): string | null => {
+    const allowedTypes = [
+      "application/pdf",
+      "application/msword",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "application/vnd.ms-excel",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "text/plain",
+      "text/csv",
+    ];
+    const maxSize = 10 * 1024 * 1024; // 10MB
 
-      setImageFile(compressedFile);
-      setErrors((prev) => ({ ...prev, image: "" }));
-    } catch (error) {
-      console.error("Error compressing image:", error);
-      setErrors((prev) => ({
-        ...prev,
-        image: "Error compressing image. Please try again.",
-      }));
+    if (!allowedTypes.includes(file.type)) {
+      return "Please upload a valid document file (PDF, DOC, DOCX, XLS, XLSX, TXT, CSV)";
+    }
+
+    if (file.size > maxSize) {
+      return "File size exceeds 10MB. Please upload a smaller file.";
+    }
+
+    return null;
+  };
+
+  const validateVideoFile = (file: File): string | null => {
+    const validTypes = [
+      "video/mp4",
+      "video/webm",
+      "video/ogg",
+      "video/quicktime",
+    ];
+    const maxSize = 100 * 1024 * 1024; // 100MB
+
+    if (!validTypes.includes(file.type)) {
+      return "Please upload a valid video file (MP4, WebM, OGG, QuickTime)";
+    }
+
+    if (file.size > maxSize) {
+      return "Video size exceeds 100MB. Please upload a smaller video.";
+    }
+
+    return null;
+  };
+
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+
+    for (const file of files) {
+      const error = validateImageFile(file);
+      if (error) {
+        setErrors((prev) => ({ ...prev, images: error }));
+        return;
+      }
+
+      try {
+        // Compress image
+        const options = {
+          maxSizeMB: 1,
+          maxWidthOrHeight: 1920,
+          useWebWorker: true,
+        };
+        const compressedFile = await imageCompression(file, options);
+
+        // Create preview
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setImageFiles((prev) => [
+            ...prev,
+            {
+              file: compressedFile,
+              preview: reader.result as string,
+              id: generateFileId(),
+            },
+          ]);
+        };
+        reader.readAsDataURL(compressedFile);
+
+        setErrors((prev) => ({ ...prev, images: "" }));
+      } catch (error) {
+        console.error("Error compressing image:", error);
+        setErrors((prev) => ({
+          ...prev,
+          images: "Error compressing image. Please try again.",
+        }));
+      }
     }
   };
 
-  const handleRemoveImage = () => {
-    setImageFile(null);
-    setImagePreview(null);
-    setErrors((prev) => ({ ...prev, image: "" }));
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+
+    for (const file of files) {
+      const error = validateDocumentFile(file);
+      if (error) {
+        setErrors((prev) => ({ ...prev, files: error }));
+        return;
+      }
+
+      setFileAttachments((prev) => [
+        ...prev,
+        {
+          file,
+          id: generateFileId(),
+        },
+      ]);
+      setErrors((prev) => ({ ...prev, files: "" }));
+    }
+  };
+
+  const handleVideoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+
+    for (const file of files) {
+      const error = validateVideoFile(file);
+      if (error) {
+        setErrors((prev) => ({ ...prev, videos: error }));
+        return;
+      }
+
+      setVideoFiles((prev) => [
+        ...prev,
+        {
+          file,
+          id: generateFileId(),
+        },
+      ]);
+      setErrors((prev) => ({ ...prev, videos: "" }));
+    }
+  };
+
+  const removeImage = (id: string) => {
+    setImageFiles((prev) => prev.filter((item) => item.id !== id));
+  };
+
+  const removeFile = (id: string) => {
+    setFileAttachments((prev) => prev.filter((item) => item.id !== id));
+  };
+
+  const removeVideo = (id: string) => {
+    setVideoFiles((prev) => prev.filter((item) => item.id !== id));
+  };
+
+  // Remove existing attachments
+  const removeExistingImage = (id: string) => {
+    setExistingImages((prev) => prev.filter((item) => item.id !== id));
+  };
+
+  const removeExistingFile = (id: string) => {
+    setExistingFiles((prev) => prev.filter((item) => item.id !== id));
+  };
+
+  const removeExistingVideo = (id: string) => {
+    setExistingVideos((prev) => prev.filter((item) => item.id !== id));
+  };
+
+  const formatFileSize = (bytes: number): string => {
+    if (bytes === 0) return "0 Bytes";
+    const k = 1024;
+    const sizes = ["Bytes", "KB", "MB", "GB"];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -114,49 +281,43 @@ const AnnouncementForm: React.FC<AnnouncementFormProps> = ({
     }
 
     try {
-      // Create a new FormData object
       const formDataToSubmit = new FormData();
 
       // Add text fields
       formDataToSubmit.append("title", formData.title.trim());
       formDataToSubmit.append("content", formData.content.trim());
 
-      // Add image if provided
-      if (imageFile) {
-        // Validate file type again before submission
-        const validTypes = [
-          "image/jpeg",
-          "image/png",
-          "image/jpg",
-          "image/webp",
-        ];
-        if (!validTypes.includes(imageFile.type)) {
-          setErrors((prev) => ({
-            ...prev,
-            image: "Please upload a valid image file (JPEG, PNG, or WebP)",
-          }));
-          return;
-        }
+      // Add images
+      imageFiles.forEach((item) => {
+        formDataToSubmit.append("images", item.file);
+      });
 
-        // Validate file size again before submission
-        const maxSize = 2 * 1024 * 1024; // 2MB
-        if (imageFile.size > maxSize) {
-          setErrors((prev) => ({
-            ...prev,
-            image: "Image size exceeds 2MB. Please upload a smaller image.",
-          }));
-          return;
-        }
+      // Add files
+      fileAttachments.forEach((item) => {
+        formDataToSubmit.append("files", item.file);
+      });
 
-        // Ensure the file has a proper name
-        const fileExtension = imageFile.name.split(".").pop()?.toLowerCase();
-        const timestamp = new Date().getTime();
-        const newFileName = `announcement-${timestamp}.${fileExtension}`;
-        const renamedFile = new File([imageFile], newFileName, {
-          type: imageFile.type,
+      // Add videos
+      videoFiles.forEach((item) => {
+        formDataToSubmit.append("videos", item.file);
+      });
+
+      // Add existing attachments info for editing
+      if (isEditing) {
+        // Add existing images to keep
+        existingImages.forEach((image) => {
+          formDataToSubmit.append("existingImages", image.id);
         });
 
-        formDataToSubmit.append("image", renamedFile);
+        // Add existing files to keep
+        existingFiles.forEach((file) => {
+          formDataToSubmit.append("existingFiles", file.id);
+        });
+
+        // Add existing videos to keep
+        existingVideos.forEach((video) => {
+          formDataToSubmit.append("existingVideos", video.id);
+        });
       }
 
       await onSubmit(formDataToSubmit);
@@ -179,7 +340,7 @@ const AnnouncementForm: React.FC<AnnouncementFormProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+      <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
         <div className="p-6">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-2xl font-bold text-gray-900">
@@ -244,59 +405,355 @@ const AnnouncementForm: React.FC<AnnouncementFormProps> = ({
               )}
             </div>
 
-            {/* Image Upload */}
+            {/* Images Upload */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Image (Optional)
+              <label className=" text-sm font-medium text-gray-700 mb-2 flex items-center">
+                <ImageIcon size={16} className="mr-2" />
+                Images (Optional) - {imageFiles.length + existingImages.length}/5 images
               </label>
 
-              {imagePreview ? (
-                <div className="relative">
-                  <Image
-                    src={imagePreview}
-                    alt="Preview"
-                    width={400}
-                    height={192}
-                    className="w-full h-48 object-cover rounded-md border border-gray-300"
-                    unoptimized={imagePreview.startsWith("data:")}
-                  />
-                  <button
-                    type="button"
-                    onClick={handleRemoveImage}
-                    className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors"
-                    disabled={loading}
-                  >
-                    <X size={16} />
-                  </button>
-                </div>
-              ) : (
-                <div className="border-2 border-dashed border-gray-300 rounded-md p-6 text-center hover:border-gray-400 transition-colors">
-                  <input
-                    type="file"
-                    id="image"
-                    name="image"
-                    accept="image/*"
-                    onChange={handleImageChange}
-                    className="hidden"
-                    disabled={loading}
-                  />
-                  <label
-                    htmlFor="image"
-                    className="cursor-pointer flex flex-col items-center"
-                  >
-                    <ImageIcon className="w-8 h-8 text-gray-400 mb-2" />
-                    <span className="text-sm text-gray-600">
-                      Click to upload an image
-                    </span>
-                    <span className="text-xs text-gray-500 mt-1">
-                      JPEG, PNG, WebP up to 2MB
-                    </span>
-                  </label>
-                </div>
-              )}
+              <div className="space-y-4">
+                {/* Upload Area */}
+                {imageFiles.length + existingImages.length < 5 && (
+                  <div className="border-2 border-dashed border-gray-300 rounded-md p-4 text-center hover:border-gray-400 transition-colors">
+                    <input
+                      type="file"
+                      id="images"
+                      name="images"
+                      accept="image/*"
+                      multiple
+                      onChange={handleImageChange}
+                      className="hidden"
+                      disabled={loading}
+                    />
+                    <label
+                      htmlFor="images"
+                      className="cursor-pointer flex flex-col items-center"
+                    >
+                      <Upload className="w-6 h-6 text-gray-400 mb-2" />
+                      <span className="text-sm text-gray-600">
+                        Click to upload images
+                      </span>
+                      <span className="text-xs text-gray-500 mt-1">
+                        JPEG, PNG, WebP up to 5MB each
+                      </span>
+                    </label>
+                  </div>
+                )}
 
-              {errors.image && (
-                <p className="mt-1 text-sm text-red-600">{errors.image}</p>
+                {/* Existing Images */}
+                {existingImages.length > 0 && (
+                  <div className="mb-4">
+                    <h4 className="text-sm font-medium text-gray-700 mb-2">
+                      Existing Images
+                    </h4>
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                      {existingImages.map((image) => (
+                        <div key={image.id} className="relative group">
+                          <Image
+                            src={image.url}
+                            alt={image.fileName}
+                            width={200}
+                            height={150}
+                            className="w-full h-32 object-cover rounded-md border border-gray-300"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => removeExistingImage(image.id)}
+                            className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors opacity-0 group-hover:opacity-100"
+                            disabled={loading}
+                          >
+                            <X size={12} />
+                          </button>
+                          <p className="text-xs text-gray-500 mt-1 truncate">
+                            {image.fileName}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* New Image Previews */}
+                {imageFiles.length > 0 && (
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                    {imageFiles.map((item) => (
+                      <div key={item.id} className="relative group">
+                        <Image
+                          src={item.preview!}
+                          alt="Preview"
+                          width={200}
+                          height={150}
+                          className="w-full h-32 object-cover rounded-md border border-gray-300"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => removeImage(item.id)}
+                          className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors opacity-0 group-hover:opacity-100"
+                          disabled={loading}
+                        >
+                          <X size={12} />
+                        </button>
+                        <p className="text-xs text-gray-500 mt-1 truncate">
+                          {item.file.name}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {errors.images && (
+                <p className="mt-1 text-sm text-red-600">{errors.images}</p>
+              )}
+            </div>
+
+            {/* Files Upload */}
+            <div>
+              <label className=" text-sm font-medium text-gray-700 mb-2 flex items-center">
+                <FileText size={16} className="mr-2" />
+                Documents (Optional) - {fileAttachments.length + existingFiles.length}/5 files
+              </label>
+
+              <div className="space-y-4">
+                {/* Upload Area */}
+                {fileAttachments.length + existingFiles.length < 5 && (
+                  <div className="border-2 border-dashed border-gray-300 rounded-md p-4 text-center hover:border-gray-400 transition-colors">
+                    <input
+                      type="file"
+                      id="files"
+                      name="files"
+                      accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,.csv"
+                      multiple
+                      onChange={handleFileChange}
+                      className="hidden"
+                      disabled={loading}
+                    />
+                    <label
+                      htmlFor="files"
+                      className="cursor-pointer flex flex-col items-center"
+                    >
+                      <Upload className="w-6 h-6 text-gray-400 mb-2" />
+                      <span className="text-sm text-gray-600">
+                        Click to upload documents
+                      </span>
+                      <span className="text-xs text-gray-500 mt-1">
+                        PDF, DOC, DOCX, XLS, XLSX, TXT, CSV up to 10MB each
+                      </span>
+                    </label>
+                  </div>
+                )}
+
+                {/* Existing Files */}
+                {existingFiles.length > 0 && (
+                  <div className="mb-4">
+                    <h4 className="text-sm font-medium text-gray-700 mb-2">
+                      Existing Files
+                    </h4>
+                    <div className="space-y-2">
+                      {existingFiles.map((file) => (
+                        <div
+                          key={file.id}
+                          className="flex items-center justify-between p-3 bg-gray-50 rounded-md"
+                        >
+                          <div className="flex items-center space-x-3">
+                            <FileText className="w-5 h-5 text-gray-500" />
+                            <div>
+                              <p className="text-sm font-medium text-gray-900 truncate">
+                                {file.fileName}
+                              </p>
+                              <p className="text-xs text-gray-500">
+                                {formatFileSize(file.fileSize)} •{" "}
+                                {file.fileType}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <a
+                              href={file.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-blue-500 hover:text-blue-700 transition-colors"
+                            >
+                              <FileText size={16} />
+                            </a>
+                            <button
+                              type="button"
+                              onClick={() => removeExistingFile(file.id)}
+                              className="text-red-500 hover:text-red-700 transition-colors"
+                              disabled={loading}
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* New File List */}
+                {fileAttachments.length > 0 && (
+                  <div className="space-y-2">
+                    {fileAttachments.map((item) => (
+                      <div
+                        key={item.id}
+                        className="flex items-center justify-between p-3 bg-gray-50 rounded-md"
+                      >
+                        <div className="flex items-center space-x-3">
+                          <FileText className="w-5 h-5 text-gray-500" />
+                          <div>
+                            <p className="text-sm font-medium text-gray-900 truncate">
+                              {item.file.name}
+                            </p>
+                            <p className="text-xs text-gray-500">
+                              {formatFileSize(item.file.size)}
+                            </p>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => removeFile(item.id)}
+                          className="text-red-500 hover:text-red-700 transition-colors"
+                          disabled={loading}
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {errors.files && (
+                <p className="mt-1 text-sm text-red-600">{errors.files}</p>
+              )}
+            </div>
+
+            {/* Videos Upload */}
+            <div>
+              <label className=" text-sm font-medium text-gray-700 mb-2 flex items-center">
+                <Video size={16} className="mr-2" />
+                Videos (Optional) - {videoFiles.length + existingVideos.length}/3 videos
+              </label>
+
+              <div className="space-y-4">
+                {/* Upload Area */}
+                {videoFiles.length + existingVideos.length < 3 && (
+                  <div className="border-2 border-dashed border-gray-300 rounded-md p-4 text-center hover:border-gray-400 transition-colors">
+                    <input
+                      type="file"
+                      id="videos"
+                      name="videos"
+                      accept="video/*"
+                      multiple
+                      onChange={handleVideoChange}
+                      className="hidden"
+                      disabled={loading}
+                    />
+                    <label
+                      htmlFor="videos"
+                      className="cursor-pointer flex flex-col items-center"
+                    >
+                      <Upload className="w-6 h-6 text-gray-400 mb-2" />
+                      <span className="text-sm text-gray-600">
+                        Click to upload videos
+                      </span>
+                      <span className="text-xs text-gray-500 mt-1">
+                        MP4, WebM, OGG, QuickTime up to 100MB each
+                      </span>
+                    </label>
+                  </div>
+                )}
+
+                {/* Existing Videos */}
+                {existingVideos.length > 0 && (
+                  <div className="mb-4">
+                    <h4 className="text-sm font-medium text-gray-700 mb-2">
+                      Existing Videos
+                    </h4>
+                    <div className="space-y-2">
+                      {existingVideos.map((video) => (
+                        <div
+                          key={video.id}
+                          className="flex items-center justify-between p-3 bg-gray-50 rounded-md"
+                        >
+                          <div className="flex items-center space-x-3">
+                            <Video className="w-5 h-5 text-gray-500" />
+                            <div>
+                              <p className="text-sm font-medium text-gray-900 truncate">
+                                {video.fileName}
+                              </p>
+                              <p className="text-xs text-gray-500">
+                                {formatFileSize(video.fileSize)}
+                                {video.duration &&
+                                  ` • ${Math.floor(video.duration / 60)}:${(
+                                    video.duration % 60
+                                  )
+                                    .toString()
+                                    .padStart(2, "0")}`}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <a
+                              href={video.vimeoUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-blue-500 hover:text-blue-700 transition-colors"
+                            >
+                              <Video size={16} />
+                            </a>
+                            <button
+                              type="button"
+                              onClick={() => removeExistingVideo(video.id)}
+                              className="text-red-500 hover:text-red-700 transition-colors"
+                              disabled={loading}
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* New Video List */}
+                {videoFiles.length > 0 && (
+                  <div className="space-y-2">
+                    {videoFiles.map((item) => (
+                      <div
+                        key={item.id}
+                        className="flex items-center justify-between p-3 bg-gray-50 rounded-md"
+                      >
+                        <div className="flex items-center space-x-3">
+                          <Video className="w-5 h-5 text-gray-500" />
+                          <div>
+                            <p className="text-sm font-medium text-gray-900 truncate">
+                              {item.file.name}
+                            </p>
+                            <p className="text-xs text-gray-500">
+                              {formatFileSize(item.file.size)}
+                            </p>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => removeVideo(item.id)}
+                          className="text-red-500 hover:text-red-700 transition-colors"
+                          disabled={loading}
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {errors.videos && (
+                <p className="mt-1 text-sm text-red-600">{errors.videos}</p>
               )}
             </div>
 
