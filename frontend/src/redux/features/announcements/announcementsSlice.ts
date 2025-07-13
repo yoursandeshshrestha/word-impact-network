@@ -1,16 +1,47 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import { RootState } from "../../store";
 
+export interface AnnouncementImage {
+  id: string;
+  url: string;
+  fileName: string;
+  fileSize: number;
+  createdAt: string;
+}
+
+export interface AnnouncementFile {
+  id: string;
+  url: string;
+  fileName: string;
+  fileSize: number;
+  fileType: string;
+  createdAt: string;
+}
+
+export interface AnnouncementVideo {
+  id: string;
+  vimeoId: string;
+  vimeoUrl: string;
+  embedUrl: string;
+  fileName: string;
+  fileSize: number;
+  duration?: number;
+  createdAt: string;
+}
+
 export interface Announcement {
   id: string;
   title: string;
   content: string;
-  imageUrl?: string;
+  imageUrl?: string; // Legacy field for backward compatibility
   isActive: boolean;
   createdBy: {
     id: string;
     fullName: string;
   };
+  images: AnnouncementImage[];
+  files: AnnouncementFile[];
+  videos: AnnouncementVideo[];
   createdAt: string;
   updatedAt: string;
 }
