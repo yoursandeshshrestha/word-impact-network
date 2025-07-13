@@ -100,7 +100,7 @@ function sanitizeFolderPath(folder: string): string {
  * @param buffer The buffer to write
  * @returns Path to the temporary file
  */
-async function writeBufferToTempFile(buffer: Buffer): Promise<string> {
+export async function writeBufferToTempFile(buffer: Buffer): Promise<string> {
   const tempDir = os.tmpdir();
   const tempFilePath = path.join(tempDir, `upload_${Date.now()}_${randomUUID()}`);
 
@@ -119,7 +119,7 @@ async function writeBufferToTempFile(buffer: Buffer): Promise<string> {
  * Remove temporary file
  * @param filePath Path to the temporary file
  */
-async function removeTempFile(filePath: string): Promise<void> {
+export async function removeTempFile(filePath: string): Promise<void> {
   return new Promise<void>((resolve, reject) => {
     fs.unlink(filePath, (err) => {
       if (err) {
