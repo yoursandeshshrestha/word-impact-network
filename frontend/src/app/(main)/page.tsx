@@ -8,6 +8,7 @@ import CTA from "@/components/Homepage/CTA";
 import ScrollTop from "@/components/Homepage/ScrollTop";
 import About from "@/components/Homepage/About";
 import AcademicProgram from "@/components/Homepage/AcademicProgram";
+import News from "@/components/Homepage/News";
 const Index = () => {
   const [showScrollTop, setShowScrollTop] = useState(false);
 
@@ -30,6 +31,7 @@ const Index = () => {
         <About />
         <AcademicProgram />
         <Stats />
+        <News />
         <Testimonials />
         <CTA />
       </main>
