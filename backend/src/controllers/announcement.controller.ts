@@ -70,8 +70,12 @@ export const createAnnouncementController = catchAsync(async (req: Request, res:
   }
 
   const { title, content } = req.body;
-  // Get the image from the file upload if available
-  const imageFile = req.file;
+
+  // Get files from the request
+  const files = req.files as { [fieldname: string]: Express.Multer.File[] };
+  const imageFiles = files?.images || [];
+  const fileAttachments = files?.files || [];
+  const videoFiles = files?.videos || [];
 
   // Validate required fields
   if (!title || title.trim() === '') {
@@ -86,7 +90,9 @@ export const createAnnouncementController = catchAsync(async (req: Request, res:
     req.user.userId,
     title.trim(),
     content.trim(),
-    imageFile,
+    imageFiles,
+    fileAttachments,
+    videoFiles,
   );
 
   sendSuccess(res, 201, 'Announcement created successfully', announcement);
@@ -109,8 +115,20 @@ export const updateAnnouncementController = catchAsync(async (req: Request, res:
 
   const { id } = req.params;
   const { title, content, isActive } = req.body;
-  // Get the image from the file upload if available
-  const imageFile = req.file;
+
+  // Get files from the request
+  const files = req.files as { [fieldname: string]: Express.Multer.File[] };
+  const imageFiles = files?.images || [];
+  const fileAttachments = files?.files || [];
+  const videoFiles = files?.videos || [];
+
+  // Get existing attachment IDs to keep
+  const existingImages = req.body.existingImages ? 
+    (Array.isArray(req.body.existingImages) ? req.body.existingImages : [req.body.existingImages]) : [];
+  const existingFiles = req.body.existingFiles ? 
+    (Array.isArray(req.body.existingFiles) ? req.body.existingFiles : [req.body.existingFiles]) : [];
+  const existingVideos = req.body.existingVideos ? 
+    (Array.isArray(req.body.existingVideos) ? req.body.existingVideos : [req.body.existingVideos]) : [];
 
   if (!id) {
     throw new AppError('Announcement ID is required', 400, ErrorTypes.VALIDATION);
@@ -130,7 +148,12 @@ export const updateAnnouncementController = catchAsync(async (req: Request, res:
     req.user.userId,
     title.trim(),
     content.trim(),
-    imageFile,
+    imageFiles,
+    fileAttachments,
+    videoFiles,
+    existingImages,
+    existingFiles,
+    existingVideos,
     isActive,
   );
 
