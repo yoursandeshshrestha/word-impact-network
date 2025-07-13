@@ -14,6 +14,7 @@ import messagesReducer from "./features/messagesSlice";
 import notificationsReducer from "./features/notificationsSlice";
 import analyticsReducer from "./features/analyticsSlice";
 import announcementsReducer from "./features/announcementsSlice";
+import newsReducer from "./features/newsSlice";
 
 const persistConfig = {
   key: "root",
@@ -42,6 +43,7 @@ export const store = configureStore({
     notifications: notificationsReducer,
     analytics: analyticsReducer,
     announcements: announcementsReducer,
+    news: newsReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
