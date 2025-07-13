@@ -19,6 +19,7 @@
     "docker:stop": "docker-compose down",
     "docker:logs": "docker-compose logs -f",
     "docker:clean": "docker-compose down -v",
+    "prisma:generate": "npx prisma generate",
     "docker:restart": "docker-compose down && docker-compose up",
     "docker:kill-port": "lsof -ti:8080 | xargs kill -9",
     "db:migrate:dev": "prisma migrate dev",
