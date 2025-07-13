@@ -272,7 +272,7 @@ const CourseForm: React.FC<CourseFormProps> = ({
       <div>
         <label
           htmlFor="title"
-          className="block text-sm font-medium text-gray-700 mb-2 flex items-center"
+          className=" text-sm font-medium text-gray-700 mb-2 flex items-center"
         >
           <Type size={16} className="mr-2 flex-shrink-0" />
           Title <span className="text-red-500 ml-1">*</span>
@@ -302,7 +302,7 @@ const CourseForm: React.FC<CourseFormProps> = ({
       <div>
         <label
           htmlFor="description"
-          className="block text-sm font-medium text-gray-700 mb-2 flex items-center"
+          className=" text-sm font-medium text-gray-700 mb-2 flex items-center"
         >
           <FileText size={16} className="mr-2 flex-shrink-0" />
           Description <span className="text-red-500 ml-1">*</span>
@@ -372,7 +372,7 @@ const CourseForm: React.FC<CourseFormProps> = ({
       <div>
         <label
           htmlFor="durationYears"
-          className="block text-sm font-medium text-gray-700 mb-2 flex items-center"
+          className=" text-sm font-medium text-gray-700 mb-2 flex items-center"
         >
           <Calendar size={16} className="mr-2 flex-shrink-0" />
           Duration (Years) <span className="text-red-500 ml-1">*</span>
@@ -403,7 +403,7 @@ const CourseForm: React.FC<CourseFormProps> = ({
       <div>
         <label
           htmlFor="coverImage"
-          className="block text-sm font-medium text-gray-700 mb-2 flex items-center"
+          className=" text-sm font-medium text-gray-700 mb-2 flex items-center"
         >
           <BookOpen size={16} className="mr-2 flex-shrink-0" />
           Cover Image
