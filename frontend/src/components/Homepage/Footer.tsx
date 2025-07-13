@@ -83,6 +83,14 @@ const Footer = () => {
                   Apply Now
                 </Link>
               </li>
+              <li>
+                <Link
+                  href="/news"
+                  className="text-gray-700 hover:text-gray-800 text-sm sm:text-base block py-1"
+                >
+                  News
+                </Link>
+              </li>
             </ul>
           </div>
 
