@@ -1,7 +1,8 @@
 import { PrismaClient } from '@prisma/client';
 import { AppError, ErrorTypes } from '../utils/appError';
 import { logger } from '../utils/logger';
-import { uploadToCloudinary } from '../utils/cloudinary';
+import { uploadToCloudinary, writeBufferToTempFile, removeTempFile } from '../utils/cloudinary';
+import { uploadToVimeo } from '../utils/vimeo';
 
 const prisma = new PrismaClient();
 
@@ -21,6 +22,9 @@ export async function getActiveAnnouncements() {
             fullName: true,
           },
         },
+        images: true,
+        files: true,
+        videos: true,
       },
       orderBy: {
         createdAt: 'desc',
@@ -56,6 +60,9 @@ export async function getAllAnnouncements(page: number = 1, limit: number = 10) 
               fullName: true,
             },
           },
+          images: true,
+          files: true,
+          videos: true,
         },
         orderBy: {
           createdAt: 'desc',
@@ -105,6 +112,9 @@ export async function getAnnouncementById(id: string) {
             fullName: true,
           },
         },
+        images: true,
+        files: true,
+        videos: true,
       },
     });
 
@@ -130,7 +140,9 @@ export async function createAnnouncement(
   userId: string,
   title: string,
   content: string,
-  imageFile?: Express.Multer.File,
+  imageFiles?: Express.Multer.File[],
+  fileAttachments?: Express.Multer.File[],
+  videoFiles?: Express.Multer.File[],
 ) {
   try {
     logger.info('Creating announcement', { userId, title });
@@ -145,25 +157,90 @@ export async function createAnnouncement(
       throw new AppError('Admin not found', 404, ErrorTypes.NOT_FOUND);
     }
 
-    let imageUrl: string | undefined;
-
-    // Upload image to Cloudinary if provided
-    if (imageFile) {
-      imageUrl = await uploadToCloudinary(
-        imageFile.buffer,
-        'win/announcements',
-        `announcement-${title.toLowerCase().replace(/\s+/g, '-')}`,
-      );
+    // Upload images to Cloudinary
+    const imageUploads = [];
+    if (imageFiles && imageFiles.length > 0) {
+      for (const imageFile of imageFiles) {
+        const imageUrl = await uploadToCloudinary(
+          imageFile.buffer,
+          'win/announcements/images',
+          `announcement-${title.toLowerCase().replace(/\s+/g, '-')}-${Date.now()}`,
+        );
+        logger.info('Image uploaded to Cloudinary', {
+          fileName: imageFile.originalname,
+          url: imageUrl,
+          size: imageFile.size,
+        });
+        imageUploads.push({
+          url: imageUrl,
+          fileName: imageFile.originalname,
+          fileSize: imageFile.size,
+        });
+      }
     }
 
-    // Create announcement
+    // Upload files to Cloudinary
+    const fileUploads = [];
+    if (fileAttachments && fileAttachments.length > 0) {
+      for (const file of fileAttachments) {
+        const fileUrl = await uploadToCloudinary(
+          file.buffer,
+          'win/announcements/files',
+          `announcement-${title.toLowerCase().replace(/\s+/g, '-')}-${Date.now()}`,
+        );
+        fileUploads.push({
+          url: fileUrl,
+          fileName: file.originalname,
+          fileSize: file.size,
+          fileType: file.mimetype,
+        });
+      }
+    }
+
+    // Upload videos to Vimeo
+    const videoUploads = [];
+    if (videoFiles && videoFiles.length > 0) {
+      for (const videoFile of videoFiles) {
+        // Write video to temp file for Vimeo upload
+        const tempFilePath = await writeBufferToTempFile(videoFile.buffer);
+
+        try {
+          const vimeoResult = await uploadToVimeo(
+            tempFilePath,
+            `${title} - ${videoFile.originalname}`,
+            content,
+          );
+
+          videoUploads.push({
+            vimeoId: vimeoResult.videoId,
+            vimeoUrl: vimeoResult.videoUrl,
+            embedUrl: vimeoResult.embedUrl,
+            fileName: videoFile.originalname,
+            fileSize: videoFile.size,
+          });
+        } finally {
+          // Clean up temp file
+          await removeTempFile(tempFilePath);
+        }
+      }
+    }
+
+    // Create announcement with attachments
     const announcement = await prisma.announcement.create({
       data: {
         title,
         content,
-        imageUrl,
         createdBy: {
           connect: { id: admin.id },
+        },
+        images: {
+          create: imageUploads,
+        },
+        files: {
+          create: fileUploads,
+        },
+        videos: {
+          create: videoUploads,
         },
       },
       include: {
@@ -173,12 +250,18 @@ export async function createAnnouncement(
             fullName: true,
           },
         },
+        images: true,
+        files: true,
+        videos: true,
       },
     });
 
     logger.info('Announcement created successfully', {
       announcementId: announcement.id,
       adminId: admin.id,
+      imageCount: imageUploads.length,
+      fileCount: fileUploads.length,
+      videoCount: videoUploads.length,
     });
 
     return announcement;
@@ -197,7 +280,12 @@ export async function updateAnnouncement(
   userId: string,
   title: string,
   content: string,
-  imageFile?: Express.Multer.File,
+  imageFiles?: Express.Multer.File[],
+  fileAttachments?: Express.Multer.File[],
+  videoFiles?: Express.Multer.File[],
+  existingImages?: string[],
+  existingFiles?: string[],
+  existingVideos?: string[],
   isActive?: boolean,
 ) {
   try {
@@ -206,6 +294,11 @@ export async function updateAnnouncement(
     // Check if announcement exists
     const existingAnnouncement = await prisma.announcement.findUnique({
       where: { id },
+      include: {
+        images: true,
+        files: true,
+        videos: true,
+      },
     });
 
     if (!existingAnnouncement) {
@@ -213,15 +306,67 @@ export async function updateAnnouncement(
       throw new AppError('Announcement not found', 404, ErrorTypes.NOT_FOUND);
     }
 
-    let imageUrl: string | undefined;
+    // Upload new images to Cloudinary
+    const imageUploads = [];
+    if (imageFiles && imageFiles.length > 0) {
+      for (const imageFile of imageFiles) {
+        const imageUrl = await uploadToCloudinary(
+          imageFile.buffer,
+          'win/announcements/images',
+          `announcement-${title.toLowerCase().replace(/\s+/g, '-')}-${Date.now()}`,
+        );
+        imageUploads.push({
+          url: imageUrl,
+          fileName: imageFile.originalname,
+          fileSize: imageFile.size,
+        });
+      }
+    }
 
-    // Upload new image to Cloudinary if provided
-    if (imageFile) {
-      imageUrl = await uploadToCloudinary(
-        imageFile.buffer,
-        'win/announcements',
-        `announcement-${title.toLowerCase().replace(/\s+/g, '-')}`,
-      );
+    // Upload new files to Cloudinary
+    const fileUploads = [];
+    if (fileAttachments && fileAttachments.length > 0) {
+      for (const file of fileAttachments) {
+        const fileUrl = await uploadToCloudinary(
+          file.buffer,
+          'win/announcements/files',
+          `announcement-${title.toLowerCase().replace(/\s+/g, '-')}-${Date.now()}`,
+        );
+        fileUploads.push({
+          url: fileUrl,
+          fileName: file.originalname,
+          fileSize: file.size,
+          fileType: file.mimetype,
+        });
+      }
+    }
+
+    // Upload new videos to Vimeo
+    const videoUploads = [];
+    if (videoFiles && videoFiles.length > 0) {
+      for (const videoFile of videoFiles) {
+        // Write video to temp file for Vimeo upload
+        const tempFilePath = await writeBufferToTempFile(videoFile.buffer);
+        
+        try {
+          const vimeoResult = await uploadToVimeo(
+            tempFilePath,
+            `${title} - ${videoFile.originalname}`,
+            content,
+          );
+          
+          videoUploads.push({
+            vimeoId: vimeoResult.videoId,
+            vimeoUrl: vimeoResult.videoUrl,
+            embedUrl: vimeoResult.embedUrl,
+            fileName: videoFile.originalname,
+            fileSize: videoFile.size,
+          });
+        } finally {
+          // Clean up temp file
+          await removeTempFile(tempFilePath);
+        }
+      }
     }
 
     // Prepare update data
@@ -231,20 +376,75 @@ export async function updateAnnouncement(
       updatedAt: new Date(),
     };
 
-    // Only add imageUrl if a new image was uploaded
-    if (imageUrl) {
-      updateData.imageUrl = imageUrl;
-    }
-
     // Only add isActive if it was provided
     if (isActive !== undefined) {
       updateData.isActive = isActive;
     }
 
-    // Update announcement
+    // Prepare attachment operations
+    const attachmentOperations: Record<string, any> = {};
+
+    // Handle images
+    if (existingImages || imageUploads.length > 0) {
+      attachmentOperations.images = {
+        // Delete images not in existingImages list
+        ...(existingImages && {
+          deleteMany: {
+            id: {
+              notIn: existingImages,
+            },
+          },
+        }),
+        // Add new images
+        ...(imageUploads.length > 0 && {
+          create: imageUploads,
+        }),
+      };
+    }
+
+    // Handle files
+    if (existingFiles || fileUploads.length > 0) {
+      attachmentOperations.files = {
+        // Delete files not in existingFiles list
+        ...(existingFiles && {
+          deleteMany: {
+            id: {
+              notIn: existingFiles,
+            },
+          },
+        }),
+        // Add new files
+        ...(fileUploads.length > 0 && {
+          create: fileUploads,
+        }),
+      };
+    }
+
+    // Handle videos
+    if (existingVideos || videoUploads.length > 0) {
+      attachmentOperations.videos = {
+        // Delete videos not in existingVideos list
+        ...(existingVideos && {
+          deleteMany: {
+            id: {
+              notIn: existingVideos,
+            },
+          },
+        }),
+        // Add new videos
+        ...(videoUploads.length > 0 && {
+          create: videoUploads,
+        }),
+      };
+    }
+
+    // Update announcement with attachment operations
     const announcement = await prisma.announcement.update({
       where: { id },
-      data: updateData,
+      data: {
+        ...updateData,
+        ...attachmentOperations,
+      },
       include: {
         createdBy: {
           select: {
@@ -252,12 +452,18 @@ export async function updateAnnouncement(
             fullName: true,
           },
         },
+        images: true,
+        files: true,
+        videos: true,
       },
     });
 
     logger.info('Announcement updated successfully', {
       announcementId: announcement.id,
       userId,
+      newImageCount: imageUploads.length,
+      newFileCount: fileUploads.length,
+      newVideoCount: videoUploads.length,
     });
 
     return announcement;
@@ -332,6 +538,9 @@ export async function toggleAnnouncementStatus(id: string) {
             fullName: true,
           },
         },
+        images: true,
+        files: true,
+        videos: true,
       },
     });
 
