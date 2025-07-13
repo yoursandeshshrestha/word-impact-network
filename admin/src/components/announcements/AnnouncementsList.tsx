@@ -1,7 +1,18 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { Plus, Edit, Trash2, Eye, EyeOff, Calendar, User, Image as ImageIcon, FileText, Video } from "lucide-react";
+import {
+  Plus,
+  Edit,
+  Trash2,
+  Eye,
+  EyeOff,
+  Calendar,
+  User,
+  Image as ImageIcon,
+  FileText,
+  Video,
+} from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { useAnnouncements } from "@/hooks/useAnnouncements";
 import { Announcement } from "@/types/announcement";
@@ -10,6 +21,8 @@ import DeleteConfirmationModal from "../application/DeleteConfirmationModal";
 import Pagination from "../common/Pagination";
 import Loading from "../common/Loading";
 import NoDataFound from "../common/NoDataFound";
+import ResponsiveTable from "../common/ResponsiveTable";
+import ResponsiveTableRow from "../common/ResponsiveTableRow";
 import Image from "next/image";
 
 const AnnouncementsList: React.FC = () => {
@@ -127,8 +140,12 @@ const AnnouncementsList: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Announcements</h1>
-          <p className="text-sm sm:text-base text-gray-600">Manage system announcements</p>
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
+            Announcements
+          </h1>
+          <p className="text-sm sm:text-base text-gray-600">
+            Manage system announcements
+          </p>
         </div>
         <button
           onClick={() => setShowForm(true)}
@@ -154,142 +171,260 @@ const AnnouncementsList: React.FC = () => {
           message="Create your first announcement to get started."
         />
       ) : (
-        <div className="bg-white rounded-lg shadow overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Announcement
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Created By
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Created
-                  </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {announcements?.map((announcement) => (
-                  <tr key={announcement.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4">
-                      <div className="flex items-start space-x-3">
-                        {(announcement.images.length > 0 ? announcement.images[0].url : announcement.imageUrl) && (
-                          <div className="relative w-12 h-12">
-                            <Image
-                              src={announcement.images.length > 0 ? announcement.images[0].url : announcement.imageUrl!}
-                              alt="Announcement"
-                              fill
-                              className="object-cover rounded-md"
-                              onError={(e) => {
-                                const target = e.target as HTMLImageElement;
-                                target.onerror = null;
-                                target.style.display = "none";
-                              }}
-                            />
+        <ResponsiveTable
+          headers={[
+            "Announcement",
+            "Status",
+            "Created By",
+            "Created",
+            "Actions",
+          ]}
+        >
+          {announcements?.map((announcement) => (
+            <ResponsiveTableRow
+              key={announcement.id}
+              mobileCardContent={
+                <div className="space-y-4">
+                  {/* Announcement Info */}
+                  <div className="flex items-start space-x-3">
+                    {(announcement.images.length > 0
+                      ? announcement.images[0].url
+                      : announcement.imageUrl) && (
+                      <div className="relative w-16 h-16 flex-shrink-0">
+                        <Image
+                          src={
+                            announcement.images.length > 0
+                              ? announcement.images[0].url
+                              : announcement.imageUrl!
+                          }
+                          alt="Announcement"
+                          fill
+                          className="object-cover rounded-md"
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.onerror = null;
+                            target.style.display = "none";
+                          }}
+                        />
+                      </div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-sm font-medium text-gray-900">
+                        {announcement.title}
+                      </h3>
+                      <p className="text-sm text-gray-500 mt-1">
+                        {truncateText(announcement.content)}
+                      </p>
+
+                      {/* Attachment indicators */}
+                      <div className="flex items-center space-x-4 mt-2">
+                        {announcement.images.length > 0 && (
+                          <div className="flex items-center text-xs text-gray-500">
+                            <ImageIcon size={12} className="mr-1" />
+                            {announcement.images.length} image
+                            {announcement.images.length !== 1 ? "s" : ""}
                           </div>
                         )}
-                        <div className="flex-1 min-w-0">
-                          <h3 className="text-sm font-medium text-gray-900 truncate">
-                            {announcement.title}
-                          </h3>
-                          <p className="text-sm text-gray-500 mt-1">
-                            {truncateText(announcement.content)}
-                          </p>
-                          
-                          {/* Attachment indicators */}
-                          <div className="flex items-center space-x-4 mt-2">
-                            {announcement.images.length > 0 && (
-                              <div className="flex items-center text-xs text-gray-500">
-                                <ImageIcon size={12} className="mr-1" />
-                                {announcement.images.length} image{announcement.images.length !== 1 ? 's' : ''}
-                              </div>
-                            )}
-                            {announcement.files.length > 0 && (
-                              <div className="flex items-center text-xs text-gray-500">
-                                <FileText size={12} className="mr-1" />
-                                {announcement.files.length} file{announcement.files.length !== 1 ? 's' : ''}
-                              </div>
-                            )}
-                            {announcement.videos.length > 0 && (
-                              <div className="flex items-center text-xs text-gray-500">
-                                <Video size={12} className="mr-1" />
-                                {announcement.videos.length} video{announcement.videos.length !== 1 ? 's' : ''}
-                              </div>
-                            )}
+                        {announcement.files.length > 0 && (
+                          <div className="flex items-center text-xs text-gray-500">
+                            <FileText size={12} className="mr-1" />
+                            {announcement.files.length} file
+                            {announcement.files.length !== 1 ? "s" : ""}
                           </div>
+                        )}
+                        {announcement.videos.length > 0 && (
+                          <div className="flex items-center text-xs text-gray-500">
+                            <Video size={12} className="mr-1" />
+                            {announcement.videos.length} video
+                            {announcement.videos.length !== 1 ? "s" : ""}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Status and Created Info */}
+                  <div className="flex items-center justify-between">
+                    <span
+                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                        announcement.isActive
+                          ? "bg-green-100 text-green-800"
+                          : "bg-gray-100 text-gray-800"
+                      }`}
+                    >
+                      {announcement.isActive ? "Active" : "Inactive"}
+                    </span>
+                    <div className="flex items-center text-xs text-gray-500">
+                      <User className="h-3 w-3 mr-1" />
+                      <span>{announcement.createdBy.fullName}</span>
+                    </div>
+                  </div>
+
+                  {/* Created Date */}
+                  <div className="flex items-center text-xs text-gray-500">
+                    <Calendar className="h-3 w-3 mr-1" />
+                    <span>
+                      {formatDistanceToNow(new Date(announcement.createdAt), {
+                        addSuffix: true,
+                      })}
+                    </span>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex items-center justify-end space-x-2 pt-2 border-t border-gray-100">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleToggleStatus(announcement);
+                      }}
+                      className="text-gray-400 hover:text-gray-600 transition-colors p-1"
+                      title={announcement.isActive ? "Deactivate" : "Activate"}
+                    >
+                      {announcement.isActive ? (
+                        <EyeOff size={16} />
+                      ) : (
+                        <Eye size={16} />
+                      )}
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setEditingAnnouncement(announcement);
+                      }}
+                      className="text-blue-600 hover:text-blue-900 transition-colors p-1"
+                      title="Edit"
+                    >
+                      <Edit size={16} />
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setDeletingAnnouncement(announcement);
+                      }}
+                      className="text-red-600 hover:text-red-900 transition-colors p-1"
+                      title="Delete"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                </div>
+              }
+            >
+              <td className="px-6 py-4">
+                <div className="flex items-start space-x-3">
+                  {(announcement.images.length > 0
+                    ? announcement.images[0].url
+                    : announcement.imageUrl) && (
+                    <div className="relative w-12 h-12">
+                      <Image
+                        src={
+                          announcement.images.length > 0
+                            ? announcement.images[0].url
+                            : announcement.imageUrl!
+                        }
+                        alt="Announcement"
+                        fill
+                        className="object-cover rounded-md"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.onerror = null;
+                          target.style.display = "none";
+                        }}
+                      />
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-sm font-medium text-gray-900 truncate">
+                      {announcement.title}
+                    </h3>
+                    <p className="text-sm text-gray-500 mt-1">
+                      {truncateText(announcement.content)}
+                    </p>
+
+                    {/* Attachment indicators */}
+                    <div className="flex items-center space-x-4 mt-2">
+                      {announcement.images.length > 0 && (
+                        <div className="flex items-center text-xs text-gray-500">
+                          <ImageIcon size={12} className="mr-1" />
+                          {announcement.images.length} image
+                          {announcement.images.length !== 1 ? "s" : ""}
                         </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span
-                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                          announcement.isActive
-                            ? "bg-green-100 text-green-800"
-                            : "bg-gray-100 text-gray-800"
-                        }`}
-                      >
-                        {announcement.isActive ? "Active" : "Inactive"}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center text-sm text-gray-900">
-                        <User className="flex-shrink-0 h-4 w-4 text-gray-400 mr-2" />
-                        {announcement.createdBy.fullName}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center text-sm text-gray-500">
-                        <Calendar className="flex-shrink-0 h-4 w-4 text-gray-400 mr-2" />
-                        {formatDistanceToNow(new Date(announcement.createdAt), {
-                          addSuffix: true,
-                        })}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <div className="flex items-center justify-end space-x-2">
-                        <button
-                          onClick={() => handleToggleStatus(announcement)}
-                          className="text-gray-400 hover:text-gray-600 transition-colors"
-                          title={
-                            announcement.isActive ? "Deactivate" : "Activate"
-                          }
-                        >
-                          {announcement.isActive ? (
-                            <EyeOff size={16} />
-                          ) : (
-                            <Eye size={16} />
-                          )}
-                        </button>
-                        <button
-                          onClick={() => setEditingAnnouncement(announcement)}
-                          className="text-blue-600 hover:text-blue-900 transition-colors"
-                          title="Edit"
-                        >
-                          <Edit size={16} />
-                        </button>
-                        <button
-                          onClick={() => setDeletingAnnouncement(announcement)}
-                          className="text-red-600 hover:text-red-900 transition-colors"
-                          title="Delete"
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
+                      )}
+                      {announcement.files.length > 0 && (
+                        <div className="flex items-center text-xs text-gray-500">
+                          <FileText size={12} className="mr-1" />
+                          {announcement.files.length} file
+                          {announcement.files.length !== 1 ? "s" : ""}
+                        </div>
+                      )}
+                      {announcement.videos.length > 0 && (
+                        <div className="flex items-center text-xs text-gray-500">
+                          <Video size={12} className="mr-1" />
+                          {announcement.videos.length} video
+                          {announcement.videos.length !== 1 ? "s" : ""}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </td>
+              <td className="px-6 py-4 whitespace-nowrap">
+                <span
+                  className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                    announcement.isActive
+                      ? "bg-green-100 text-green-800"
+                      : "bg-gray-100 text-gray-800"
+                  }`}
+                >
+                  {announcement.isActive ? "Active" : "Inactive"}
+                </span>
+              </td>
+              <td className="px-6 py-4 whitespace-nowrap">
+                <div className="flex items-center text-sm text-gray-900">
+                  <User className="flex-shrink-0 h-4 w-4 text-gray-400 mr-2" />
+                  {announcement.createdBy.fullName}
+                </div>
+              </td>
+              <td className="px-6 py-4 whitespace-nowrap">
+                <div className="flex items-center text-sm text-gray-500">
+                  <Calendar className="flex-shrink-0 h-4 w-4 text-gray-400 mr-2" />
+                  {formatDistanceToNow(new Date(announcement.createdAt), {
+                    addSuffix: true,
+                  })}
+                </div>
+              </td>
+              <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                <div className="flex items-center justify-end space-x-2">
+                  <button
+                    onClick={() => handleToggleStatus(announcement)}
+                    className="text-gray-400 hover:text-gray-600 transition-colors"
+                    title={announcement.isActive ? "Deactivate" : "Activate"}
+                  >
+                    {announcement.isActive ? (
+                      <EyeOff size={16} />
+                    ) : (
+                      <Eye size={16} />
+                    )}
+                  </button>
+                  <button
+                    onClick={() => setEditingAnnouncement(announcement)}
+                    className="text-blue-600 hover:text-blue-900 transition-colors"
+                    title="Edit"
+                  >
+                    <Edit size={16} />
+                  </button>
+                  <button
+                    onClick={() => setDeletingAnnouncement(announcement)}
+                    className="text-red-600 hover:text-red-900 transition-colors"
+                    title="Delete"
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                </div>
+              </td>
+            </ResponsiveTableRow>
+          ))}
+        </ResponsiveTable>
       )}
 
       {/* Pagination */}
