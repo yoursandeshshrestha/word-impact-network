@@ -3,7 +3,18 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useAnnouncements } from "@/hooks/useAnnouncements";
 import { formatDistanceToNow } from "date-fns";
-import { Megaphone, Calendar, User, X, ChevronRight } from "lucide-react";
+import {
+  Megaphone,
+  Calendar,
+  User,
+  X,
+  ChevronRight,
+  Image as ImageIcon,
+  FileText,
+  Video,
+  Download,
+  ExternalLink,
+} from "lucide-react";
 import Image from "next/image";
 import { Announcement } from "@/redux/features/announcements/announcementsSlice";
 import { useSelector } from "react-redux";
@@ -88,10 +99,16 @@ const Announcements: React.FC = () => {
               onClick={() => handleAnnouncementClick(announcement)}
             >
               <div className="flex items-start gap-3">
-                {announcement.imageUrl && (
+                {(announcement.images.length > 0
+                  ? announcement.images[0].url
+                  : announcement.imageUrl) && (
                   <div className="relative w-16 h-16 flex-shrink-0">
                     <Image
-                      src={announcement.imageUrl}
+                      src={
+                        announcement.images.length > 0
+                          ? announcement.images[0].url
+                          : announcement.imageUrl!
+                      }
                       alt="Announcement"
                       fill
                       className="object-cover rounded-md"
@@ -126,6 +143,32 @@ const Announcements: React.FC = () => {
                       </span>
                     </div>
                   </div>
+
+                  {/* Attachment indicators */}
+                  {(announcement.images.length > 0 ||
+                    announcement.files.length > 0 ||
+                    announcement.videos.length > 0) && (
+                    <div className="flex items-center gap-3 mt-2">
+                      {announcement.images.length > 0 && (
+                        <div className="flex items-center gap-1 text-blue-600">
+                          <ImageIcon className="w-3 h-3" />
+                          <span>{announcement.images.length}</span>
+                        </div>
+                      )}
+                      {announcement.files.length > 0 && (
+                        <div className="flex items-center gap-1 text-green-600">
+                          <FileText className="w-3 h-3" />
+                          <span>{announcement.files.length}</span>
+                        </div>
+                      )}
+                      {announcement.videos.length > 0 && (
+                        <div className="flex items-center gap-1 text-purple-600">
+                          <Video className="w-3 h-3" />
+                          <span>{announcement.videos.length}</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-blue-600 transition-colors flex-shrink-0" />
@@ -184,21 +227,62 @@ const Announcements: React.FC = () => {
                 </button>
               </div>
 
-              {selectedAnnouncement.imageUrl && (
-                <div className="relative w-full h-64 mb-6">
-                  <Image
-                    src={selectedAnnouncement.imageUrl}
-                    alt="Announcement"
-                    fill
-                    className="object-cover rounded-lg"
-                    onError={(e) => {
-                      const target = e.target as HTMLImageElement;
-                      target.onerror = null;
-                      target.style.display = "none";
-                    }}
-                  />
+              {/* Images Gallery */}
+              {selectedAnnouncement.images.length > 0 && (
+                <div className="mb-6">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center">
+                    <ImageIcon className="w-5 h-5 mr-2" />
+                    Images ({selectedAnnouncement.images.length})
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {selectedAnnouncement.images.map((image) => (
+                      <div key={image.id} className="relative group">
+                        <Image
+                          src={image.url}
+                          alt={image.fileName}
+                          width={300}
+                          height={200}
+                          className="w-full h-48 object-cover rounded-lg border border-gray-200"
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.onerror = null;
+                            target.style.display = "none";
+                          }}
+                        />
+                        <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-200 rounded-lg flex items-center justify-center">
+                          <a
+                            href={image.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 bg-white text-gray-900 px-3 py-1 rounded-md text-sm font-medium hover:bg-gray-100"
+                          >
+                            <ExternalLink className="w-4 h-4 mr-1 inline" />
+                            View
+                          </a>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
+
+              {/* Legacy single image */}
+              {selectedAnnouncement.imageUrl &&
+                selectedAnnouncement.images.length === 0 && (
+                  <div className="relative w-full h-64 mb-6">
+                    <Image
+                      src={selectedAnnouncement.imageUrl}
+                      alt="Announcement"
+                      fill
+                      className="object-cover rounded-lg"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.onerror = null;
+                        target.style.display = "none";
+                      }}
+                    />
+                  </div>
+                )}
 
               <div className="prose prose-gray max-w-none">
                 <div
@@ -208,6 +292,95 @@ const Announcements: React.FC = () => {
                   }}
                 />
               </div>
+
+              {/* Files Section */}
+              {selectedAnnouncement.files.length > 0 && (
+                <div className="mt-6 pt-6 border-t border-gray-200">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center">
+                    <FileText className="w-5 h-5 mr-2" />
+                    Documents ({selectedAnnouncement.files.length})
+                  </h3>
+                  <div className="space-y-2">
+                    {selectedAnnouncement.files.map((file) => (
+                      <div
+                        key={file.id}
+                        className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                      >
+                        <div className="flex items-center space-x-3">
+                          <FileText className="w-5 h-5 text-gray-500" />
+                          <div>
+                            <p className="text-sm font-medium text-gray-900">
+                              {file.fileName}
+                            </p>
+                            <p className="text-xs text-gray-500">
+                              {(file.fileSize / 1024 / 1024).toFixed(2)} MB
+                            </p>
+                          </div>
+                        </div>
+                        <a
+                          href={file.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-1 text-blue-600 hover:text-blue-800 text-sm font-medium"
+                        >
+                          <Download className="w-4 h-4" />
+                          Download
+                        </a>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Videos Section */}
+              {selectedAnnouncement.videos.length > 0 && (
+                <div className="mt-6 pt-6 border-t border-gray-200">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center">
+                    <Video className="w-5 h-5 mr-2" />
+                    Videos ({selectedAnnouncement.videos.length})
+                  </h3>
+                  <div className="space-y-4">
+                    {selectedAnnouncement.videos.map((video) => (
+                      <div key={video.id} className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-sm font-medium text-gray-900">
+                              {video.fileName}
+                            </p>
+                            <p className="text-xs text-gray-500">
+                              {(video.fileSize / 1024 / 1024).toFixed(2)} MB
+                              {video.duration &&
+                                ` • ${Math.floor(video.duration / 60)}:${(
+                                  video.duration % 60
+                                )
+                                  .toString()
+                                  .padStart(2, "0")}`}
+                            </p>
+                          </div>
+                          <a
+                            href={video.vimeoUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-1 text-purple-600 hover:text-purple-800 text-sm font-medium"
+                          >
+                            <ExternalLink className="w-4 h-4" />
+                            Watch
+                          </a>
+                        </div>
+                        <div className="aspect-video w-full">
+                          <iframe
+                            src={video.embedUrl}
+                            className="w-full h-full rounded-lg"
+                            frameBorder="0"
+                            allow="autoplay; fullscreen; picture-in-picture"
+                            allowFullScreen
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
