@@ -226,6 +226,7 @@ export const uploadToVimeo = async (
         privacy: {
           view: 'nobody',
           embed: 'whitelist',
+          domains: ['wordimpactnetwork.org', 'admin.wordimpactnetwork.org'],
         },
       },
       {
