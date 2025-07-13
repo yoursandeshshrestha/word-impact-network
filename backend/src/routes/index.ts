@@ -11,6 +11,7 @@ import notificationRoutes from './notification.routes';
 import analyticsRoutes from './analytics.routes';
 import myLearningRoutes from './mylearning.routes';
 import announcementRoutes from './announcement.routes';
+import newsRoutes from './news.routes';
 import vimeoRoutes from './vimeo.routes';
 
 const router: Router = express.Router();
@@ -50,6 +51,9 @@ router.use('/mylearning', myLearningRoutes);
 
 // announcement routes
 router.use('/announcements', announcementRoutes);
+
+// news routes
+router.use('/news', newsRoutes);
 
 // vimeo routes
 router.use('/vimeo', vimeoRoutes);
