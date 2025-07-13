@@ -96,6 +96,7 @@ model Admin {
   createdExams      Exam[]
   reviewedApplications Application[]
   announcements     Announcement[]
+  news              News[]
 
   @@map("admins")
 }
@@ -431,6 +432,51 @@ model AnnouncementVideo {
   createdAt      DateTime     @default(now())
 
   @@map("announcement_videos")
+}
+
+model News {
+  id          String   @id @default(uuid())
+  title       String
+  slug        String   @unique
+  description String?  @db.Text
+  isActive    Boolean  @default(true)
+  createdBy   Admin    @relation(fields: [adminId], references: [id])
+  adminId     String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Media attachments
+  images      NewsImage[]
+  videos      NewsVideo[]
+
+  @@map("news")
+}
+
+model NewsImage {
+  id        String   @id @default(uuid())
+  url       String   // Cloudinary URL
+  fileName  String   // Original filename
+  fileSize  Int      // File size in bytes
+  news      News     @relation(fields: [newsId], references: [id], onDelete: Cascade)
+  newsId    String
+  createdAt DateTime @default(now())
+
+  @@map("news_images")
+}
+
+model NewsVideo {
+  id        String   @id @default(uuid())
+  vimeoId   String   // Vimeo video ID
+  vimeoUrl  String   // Vimeo video URL
+  embedUrl  String   // Vimeo embed URL
+  fileName  String   // Original filename
+  fileSize  Int      // File size in bytes
+  duration  Int?     // Duration in seconds
+  news      News     @relation(fields: [newsId], references: [id], onDelete: Cascade)
+  newsId    String
+  createdAt DateTime @default(now())
+
+  @@map("news_videos")
 }
 
 model RefreshToken {
