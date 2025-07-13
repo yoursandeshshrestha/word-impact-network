@@ -358,6 +358,49 @@ class ApiClient {
   async getExamResult(attemptId: string) {
     return this.request(`/student/exam-attempts/${attemptId}/result`);
   }
+
+  // News API methods
+  async getActiveNews() {
+    return this.request<News[]>("/news/active");
+  }
+
+  async getNewsBySlug(slug: string) {
+    return this.request<News>(`/news/slug/${slug}`);
+  }
+}
+
+// News types
+export interface NewsImage {
+  id: string;
+  url: string;
+  fileName: string;
+  fileSize: number;
+}
+
+export interface NewsVideo {
+  id: string;
+  vimeoId: string;
+  vimeoUrl: string;
+  embedUrl: string;
+  fileName: string;
+  fileSize: number;
+  duration?: number;
+}
+
+export interface News {
+  id: string;
+  title: string;
+  slug: string;
+  description?: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+  createdBy: {
+    id: string;
+    fullName: string;
+  };
+  images: NewsImage[];
+  videos: NewsVideo[];
 }
 
 // Export singleton instance
