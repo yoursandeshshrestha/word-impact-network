@@ -199,7 +199,7 @@ export async function middleware(request: NextRequest) {
   // Set new tokens in cookies if we got them from refresh
   const isProduction = process.env.NODE_ENV === "production";
   const cookieDomain = isProduction ? ".wordimpactnetwork.org" : undefined;
-  
+
   if (newAccessToken) {
     response.cookies.set("client-access-token-win", newAccessToken, {
       httpOnly: false, // Allow JavaScript access for frontend
@@ -297,6 +297,5 @@ export const config = {
     "/auth/:path*",
     // Public routes that need middleware (for redirects)
     "/",
-    "/courses/:path*",
   ],
 };
