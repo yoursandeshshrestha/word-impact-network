@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { Plus, Edit, Trash2, Eye, EyeOff, Calendar, User } from "lucide-react";
+import { Plus, Edit, Trash2, Eye, EyeOff, Calendar, User, Image as ImageIcon, FileText, Video } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { useAnnouncements } from "@/hooks/useAnnouncements";
 import { Announcement } from "@/types/announcement";
@@ -181,10 +181,10 @@ const AnnouncementsList: React.FC = () => {
                   <tr key={announcement.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4">
                       <div className="flex items-start space-x-3">
-                        {announcement.imageUrl && (
+                        {(announcement.images.length > 0 ? announcement.images[0].url : announcement.imageUrl) && (
                           <div className="relative w-12 h-12">
                             <Image
-                              src={announcement.imageUrl}
+                              src={announcement.images.length > 0 ? announcement.images[0].url : announcement.imageUrl!}
                               alt="Announcement"
                               fill
                               className="object-cover rounded-md"
@@ -203,6 +203,28 @@ const AnnouncementsList: React.FC = () => {
                           <p className="text-sm text-gray-500 mt-1">
                             {truncateText(announcement.content)}
                           </p>
+                          
+                          {/* Attachment indicators */}
+                          <div className="flex items-center space-x-4 mt-2">
+                            {announcement.images.length > 0 && (
+                              <div className="flex items-center text-xs text-gray-500">
+                                <ImageIcon size={12} className="mr-1" />
+                                {announcement.images.length} image{announcement.images.length !== 1 ? 's' : ''}
+                              </div>
+                            )}
+                            {announcement.files.length > 0 && (
+                              <div className="flex items-center text-xs text-gray-500">
+                                <FileText size={12} className="mr-1" />
+                                {announcement.files.length} file{announcement.files.length !== 1 ? 's' : ''}
+                              </div>
+                            )}
+                            {announcement.videos.length > 0 && (
+                              <div className="flex items-center text-xs text-gray-500">
+                                <Video size={12} className="mr-1" />
+                                {announcement.videos.length} video{announcement.videos.length !== 1 ? 's' : ''}
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </td>
