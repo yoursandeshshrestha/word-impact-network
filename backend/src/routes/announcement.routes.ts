@@ -15,10 +15,55 @@ const router: Router = express.Router();
 
 // Configure multer for memory storage
 const storage = multer.memoryStorage();
-const upload = multer({
+
+// File filter for different types
+const imageFilter = (req: any, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
+  if (file.mimetype.startsWith('image/')) {
+    cb(null, true);
+  } else {
+    cb(new Error('Only image files are allowed'));
+  }
+};
+
+const fileFilter = (req: any, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
+  // Allow common document types
+  const allowedTypes = [
+    'application/pdf',
+    'application/msword',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'application/vnd.ms-excel',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    'text/plain',
+    'text/csv',
+  ];
+  
+  if (allowedTypes.includes(file.mimetype)) {
+    cb(null, true);
+  } else {
+    cb(new Error('Only document files are allowed'));
+  }
+};
+
+const videoFilter = (req: any, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
+  if (file.mimetype.startsWith('video/')) {
+    cb(null, true);
+  } else {
+    cb(new Error('Only video files are allowed'));
+  }
+};
+
+// Configure multer for multiple file uploads
+const uploadMultiple = multer({
   storage,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
-});
+  limits: { 
+    fileSize: 100 * 1024 * 1024, // 100MB limit for videos
+    files: 10 // Maximum 10 files total
+  },
+}).fields([
+  { name: 'images', maxCount: 5 }, // Max 5 images
+  { name: 'files', maxCount: 5 },  // Max 5 files
+  { name: 'videos', maxCount: 3 }, // Max 3 videos
+]);
 
 // Public routes (no authentication required)
 router.get('/active', getActiveAnnouncementsController);
@@ -31,10 +76,10 @@ router.use(authenticate);
 router.get('/', getAllAnnouncementsController);
 
 // Create new announcement (admin only)
-router.post('/', upload.single('image'), createAnnouncementController);
+router.post('/', uploadMultiple, createAnnouncementController);
 
 // Update announcement (admin only)
-router.put('/:id', upload.single('image'), updateAnnouncementController);
+router.put('/:id', uploadMultiple, updateAnnouncementController);
 
 // Delete announcement (admin only)
 router.delete('/:id', deleteAnnouncementController);
