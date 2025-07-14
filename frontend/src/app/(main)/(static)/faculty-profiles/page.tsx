@@ -7,7 +7,7 @@ const FacultyProfiles = () => {
     {
       name: "Rev. Dr. Vivekananda Mukhopadhyay",
       title: "Senior Faculty – New Testament & Life of Jesus",
-      image: "/placeholder-image.svg",
+      image: "/vivekananda-mukhopadhay.jpeg",
       description:
         "A respected Bible scholar and passionate teacher, Dr. Mukhopadhyay brings theological depth and pastoral care to every classroom. With decades of teaching experience, he specializes in the Life and Ministry of Jesus and the Gospels. He is deeply committed to mentoring young leaders to follow Christ in both knowledge and character.",
     },
@@ -21,14 +21,14 @@ const FacultyProfiles = () => {
     {
       name: "Pastor Surajit Bagal",
       title: "Director of Training & Evangelism Faculty",
-      image: "/Pastor-Jagannath-Banerjee.jpeg",
+      image: "/pastor-surajit-bagal.jpeg",
       description:
         "Pastor Surajit serves as the Director of Training and is one of WIN's most dynamic mentors. He specializes in evangelism, contextual mission, and field-based training. Known for his powerful testimony and practical teaching style, he equips students to share Christ boldly and biblically in unreached places, cities and even cross culture locally and globally.",
     },
     {
       name: "Pastor Lakshman Mandal",
       title: "Faculty – Old & New Testament Survey",
-      image: "/placeholder-image.svg",
+      image: "/lakhsman-mondal.jpeg",
       description:
         "A dedicated teacher of Scripture, Pastor Mandal brings clarity and structure to biblical study. He specializes in giving students a solid overview of the entire Bible, helping them understand the big picture of God's redemptive story and their role in it.",
     },
