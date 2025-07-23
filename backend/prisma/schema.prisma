@@ -22,7 +22,8 @@ enum ApplicationStatus {
 enum PaymentStatus {
   PENDING
   PAID
-  PAYLATER
+  FAILED
+  CANCELLED
 }
 
 enum PaymentMethod {
@@ -71,6 +72,7 @@ model Student {
   userId                String            @unique
   applicationStatus     ApplicationStatus @default(PENDING)
   paymentStatus         PaymentStatus     @default(PENDING)
+  hasPaid               Boolean           @default(false) // Track if student has made any payment
   courseEnrollments     CourseEnrollment[]
   chapterProgresses     ChapterProgress[]
   examAttempts          ExamAttempt[]
@@ -132,10 +134,12 @@ model Application {
 model Payment {
   id                String           @id @default(uuid())
   amount            Decimal          @db.Decimal(10, 2)
-  currency          String           @default("USD")
+  currency          String           @default("INR")
   status            PaymentStatus    @default(PENDING)
   paymentMethod     PaymentMethod
   transactionId     String?
+  razorpayOrderId   String?          // Razorpay order ID
+  razorpayPaymentId String?          // Razorpay payment ID
   student           Student          @relation(fields: [studentId], references: [id], onDelete: Cascade)
   studentId         String
   application       Application?     @relation(fields: [applicationId], references: [id])
