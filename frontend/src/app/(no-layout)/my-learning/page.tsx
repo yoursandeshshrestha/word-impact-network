@@ -10,6 +10,8 @@ import { useEffect, useState, useRef } from "react";
 import { useSelector } from "react-redux";
 import { RootState } from "@/redux/store";
 import { isAuthenticated } from "@/common/services/auth";
+import { usePaymentStatus } from "@/hooks/usePaymentStatus";
+import PaymentButton from "@/components/common/PaymentButton";
 
 interface CourseCardProps {
   id: string;
@@ -124,6 +126,7 @@ const MyLearningPage: React.FC = () => {
   const [showAnnouncementModal, setShowAnnouncementModal] = useState(false);
   const hasLoadedRef = useRef(false);
   const user = useSelector((state: RootState) => state.user.user);
+  const { hasPaid, isLoading: paymentLoading } = usePaymentStatus();
 
   // Load announcements when component mounts
   useEffect(() => {
@@ -163,6 +166,23 @@ const MyLearningPage: React.FC = () => {
             Continue your learning journey with your enrolled courses
           </p>
         </div>
+
+        {/* Payment Button - Show only if user hasn't paid */}
+        {!paymentLoading && !hasPaid && courses.length > 0 && (
+          <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div>
+                <h3 className="text-lg font-semibold text-blue-900 mb-1">
+                  Support Our Mission
+                </h3>
+                <p className="text-blue-700 text-sm">
+                  Make a voluntary contribution to help us continue providing quality education.
+                </p>
+              </div>
+              <PaymentButton variant="primary" size="md" />
+            </div>
+          </div>
+        )}
 
         {/* Main Content */}
         <div>
