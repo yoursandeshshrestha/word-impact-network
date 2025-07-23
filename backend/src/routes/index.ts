@@ -13,6 +13,8 @@ import myLearningRoutes from './mylearning.routes';
 import announcementRoutes from './announcement.routes';
 import newsRoutes from './news.routes';
 import vimeoRoutes from './vimeo.routes';
+import paymentRoutes from './payment.routes';
+import adminPaymentRoutes from './admin.payment.routes';
 
 const router: Router = express.Router();
 
@@ -57,5 +59,11 @@ router.use('/news', newsRoutes);
 
 // vimeo routes
 router.use('/vimeo', vimeoRoutes);
+
+// payment routes
+router.use('/payments', paymentRoutes);
+
+// admin payment routes
+router.use('/admin', adminPaymentRoutes);
 
 export default router;
