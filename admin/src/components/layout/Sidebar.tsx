@@ -16,6 +16,7 @@ import {
   X,
   Megaphone,
   Newspaper,
+  CreditCard,
 } from "lucide-react";
 
 type SidebarProps = {
@@ -83,6 +84,11 @@ const Sidebar: React.FC<SidebarProps> = ({
       path: "/news",
       name: "News",
       icon: <Newspaper className="w-5 h-5" />,
+    },
+    {
+      path: "/payments",
+      name: "Payments",
+      icon: <CreditCard className="w-5 h-5" />,
     },
     {
       path: "/analytics",
