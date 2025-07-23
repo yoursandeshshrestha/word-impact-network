@@ -6,6 +6,8 @@ import {
   useAutoStudentProfile,
   useStudentProfile,
 } from "@/hooks/useStudentProfile";
+import { usePaymentStatus } from "@/hooks/usePaymentStatus";
+import PaymentButton from "@/components/common/PaymentButton";
 import {
   User,
   Save,
@@ -27,11 +29,13 @@ import {
   BarChart3,
   Zap,
   Camera,
+  Heart,
 } from "lucide-react";
 
 function StudentProfile() {
   const { profileData, isLoading, isError, error } = useAutoStudentProfile();
   const { updateProfile } = useStudentProfile();
+  const { paymentStatus } = usePaymentStatus();
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
@@ -381,22 +385,39 @@ function StudentProfile() {
                         Certificates
                       </div>
                     </div>
+                    <div className="w-px h-6 sm:h-8 bg-white/20"></div>
+                    <div className="text-center">
+                      <div className="text-xl sm:text-2xl font-bold text-white">
+                        ₹{paymentStatus?.totalContribution || 0}
+                      </div>
+                      <div className="text-white/70 text-xs sm:text-sm">
+                        Contributions
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
 
               <div className="flex items-center gap-3">
                 {!isEditing ? (
-                  <button
-                    onClick={handleEdit}
-                    disabled={isSaving}
-                    className="group flex items-center gap-2 bg-white/10 hover:bg-white/20 backdrop-blur-sm border border-white/20 px-4 sm:px-6 py-2 sm:py-3 rounded-xl transition-all duration-300 cursor-pointer w-full sm:w-auto justify-center disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <Edit3 className="w-4 h-4 sm:w-5 sm:h-5 text-white group-hover:scale-110 transition-transform" />
-                    <span className="text-white font-medium text-sm sm:text-base">
-                      Edit Profile
-                    </span>
-                  </button>
+                  <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
+                    <button
+                      onClick={handleEdit}
+                      disabled={isSaving}
+                      className="group flex items-center gap-2 bg-white/10 hover:bg-white/20 backdrop-blur-sm border border-white/20 px-4 sm:px-6 py-2 sm:py-3 rounded-xl transition-all duration-300 cursor-pointer w-full sm:w-auto justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <Edit3 className="w-4 h-4 sm:w-5 sm:h-5 text-white group-hover:scale-110 transition-transform" />
+                      <span className="text-white font-medium text-sm sm:text-base">
+                        Edit Profile
+                      </span>
+                    </button>
+                    <PaymentButton
+                      variant="secondary"
+                      size="md"
+                      text="Contribute"
+                      className="bg-white/10 hover:bg-white/20 backdrop-blur-sm border border-white/20 text-white font-medium px-4 sm:px-6 py-2 sm:py-3 rounded-xl transition-all duration-300 flex items-center justify-center gap-2 w-full sm:w-auto"
+                    />
+                  </div>
                 ) : (
                   <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
                     <button
@@ -598,6 +619,68 @@ function StudentProfile() {
                       }%`,
                     }}
                   ></div>
+                </div>
+              </div>
+            </div>
+
+            {/* Contribution Section */}
+            <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl p-4 sm:p-6 border border-green-200 shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-1">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center">
+                  <Heart className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+                </div>
+                <h3 className="text-base sm:text-lg font-bold text-green-800">
+                  Your Contributions
+                </h3>
+              </div>
+
+              <div className="text-center mb-4">
+                <div className="text-3xl sm:text-4xl font-bold text-green-700 mb-2">
+                  ₹{paymentStatus?.totalContribution || 0}
+                </div>
+                <div className="text-green-600 text-sm">
+                  {(paymentStatus?.totalContribution || 0) > 0
+                    ? "Total Contributions"
+                    : "No contributions yet"}
+                </div>
+                {(paymentStatus?.totalPayments || 0) > 0 && (
+                  <div className="text-green-500 text-xs mt-1">
+                    {paymentStatus?.totalPayments || 0} contribution
+                    {(paymentStatus?.totalPayments || 0) > 1 ? "s" : ""}
+                  </div>
+                )}
+              </div>
+
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-green-700 text-xs sm:text-sm font-medium">
+                    Contribution Status
+                  </span>
+                  <span
+                    className={`px-2 py-1 rounded-full text-xs font-medium ${
+                      (paymentStatus?.totalContribution || 0) > 0
+                        ? "bg-green-100 text-green-800"
+                        : "bg-yellow-100 text-yellow-800"
+                    }`}
+                  >
+                    {(paymentStatus?.totalContribution || 0) > 0
+                      ? "Contributor"
+                      : "Not yet contributed"}
+                  </span>
+                </div>
+
+                <div className="pt-2">
+                  <PaymentButton
+                    variant="primary"
+                    size="sm"
+                    className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-medium py-2 px-4 rounded-xl transition-all duration-300 flex items-center justify-center gap-2"
+                  />
+                </div>
+
+                <div className="text-center">
+                  <p className="text-green-600 text-xs">
+                    Support our educational mission
+                  </p>
                 </div>
               </div>
             </div>
