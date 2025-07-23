@@ -28,6 +28,7 @@ import DOMPurify from "dompurify";
 import { isAuthenticated } from "@/common/services/auth";
 import { useRouter } from "next/navigation";
 import placeholderCourseImage from "@/assets/placeholder-image.png";
+import PaymentModal from "@/components/common/PaymentModal";
 
 interface VideoData {
   id: string;
@@ -77,6 +78,7 @@ const CourseDetailPage = () => {
   const [showVideo, setShowVideo] = useState<boolean>(false);
   const [currentVideo, setCurrentVideo] = useState<string | null>(null);
   const [isEnrolling, setIsEnrolling] = useState<boolean>(false);
+  const [showPaymentModal, setShowPaymentModal] = useState<boolean>(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const modalRef = useRef<HTMLDivElement>(null);
 
@@ -109,12 +111,18 @@ const CourseDetailPage = () => {
     try {
       setIsEnrolling(true);
       await dispatch(enrollInCourse(courseid as string)).unwrap();
-      router.push("/my-learning");
+      // Show payment modal after successful enrollment
+      setShowPaymentModal(true);
     } catch {
       // Error is already handled in Redux
     } finally {
       setIsEnrolling(false);
     }
+  };
+
+  const handlePaymentSuccess = () => {
+    setShowPaymentModal(false);
+    router.push("/my-learning");
   };
 
   const handlePlayVideo = (videoId: string) => {
@@ -621,6 +629,14 @@ const CourseDetailPage = () => {
           </div>
         </div>
       </section>
+
+      {/* Payment Modal */}
+      <PaymentModal
+        isOpen={showPaymentModal}
+        onClose={() => setShowPaymentModal(false)}
+        onSuccess={handlePaymentSuccess}
+        courseTitle={currentCourse?.title || 'Course'}
+      />
     </div>
   );
 };
