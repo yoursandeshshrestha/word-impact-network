@@ -48,6 +48,20 @@ export async function getAllApplications(
             fullName: true,
           },
         },
+        payment: {
+          select: {
+            id: true,
+            amount: true,
+            currency: true,
+            status: true,
+            paymentMethod: true,
+            transactionId: true,
+            razorpayOrderId: true,
+            razorpayPaymentId: true,
+            paidAt: true,
+            createdAt: true,
+          },
+        },
       },
       skip,
       take: limit,
@@ -81,6 +95,7 @@ export async function getAllApplications(
       studentId: app.studentId,
       adminId: app.adminId,
       reviewedBy: app.reviewedBy,
+      payment: app.payment,
     }));
 
     return {
@@ -131,6 +146,20 @@ export async function getApplicationById(id: string) {
         reviewedBy: {
           select: {
             fullName: true,
+          },
+        },
+        payment: {
+          select: {
+            id: true,
+            amount: true,
+            currency: true,
+            status: true,
+            paymentMethod: true,
+            transactionId: true,
+            razorpayOrderId: true,
+            razorpayPaymentId: true,
+            paidAt: true,
+            createdAt: true,
           },
         },
       },
@@ -311,15 +340,17 @@ export async function updateApplicationStatus(
       });
     } else if (status === ApplicationStatus.REJECTED && rejectionReason) {
       // Send rejection email
-      sendApplicationRejectedEmail(updatedApplication.email, updatedApplication.fullName, rejectionReason).catch(
-        (emailError) => {
-          logger.error('Failed to send application rejection email', {
-            applicationId,
-            email: updatedApplication.email,
-            error: emailError instanceof Error ? emailError.message : String(emailError),
-          });
-        },
-      );
+      sendApplicationRejectedEmail(
+        updatedApplication.email,
+        updatedApplication.fullName,
+        rejectionReason,
+      ).catch((emailError) => {
+        logger.error('Failed to send application rejection email', {
+          applicationId,
+          email: updatedApplication.email,
+          error: emailError instanceof Error ? emailError.message : String(emailError),
+        });
+      });
     }
 
     logger.info('Application status updated successfully', {
