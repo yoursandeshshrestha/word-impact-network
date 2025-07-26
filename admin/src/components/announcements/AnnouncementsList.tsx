@@ -22,7 +22,7 @@ import Pagination from "../common/Pagination";
 import Loading from "../common/Loading";
 import NoDataFound from "../common/NoDataFound";
 import ResponsiveTable from "../common/ResponsiveTable";
-import ResponsiveTableRow from "../common/ResponsiveTableRow";
+import ResponsiveTableRow, { ResponsiveTableMobileCard } from "../common/ResponsiveTableRow";
 import Image from "next/image";
 
 const AnnouncementsList: React.FC = () => {
@@ -170,146 +170,153 @@ const AnnouncementsList: React.FC = () => {
           title="No Announcements"
           message="Create your first announcement to get started."
         />
-      ) : (
-        <ResponsiveTable
-          headers={[
-            "Announcement",
-            "Status",
-            "Created By",
-            "Created",
-            "Actions",
-          ]}
-        >
-          {announcements?.map((announcement) => (
-            <ResponsiveTableRow
-              key={announcement.id}
-              mobileCardContent={
-                <div className="space-y-4">
-                  {/* Announcement Info */}
-                  <div className="flex items-start space-x-3">
-                    {(announcement.images.length > 0
-                      ? announcement.images[0].url
-                      : announcement.imageUrl) && (
-                      <div className="relative w-16 h-16 flex-shrink-0">
-                        <Image
-                          src={
-                            announcement.images.length > 0
-                              ? announcement.images[0].url
-                              : announcement.imageUrl!
-                          }
-                          alt="Announcement"
-                          fill
-                          className="object-cover rounded-md"
-                          onError={(e) => {
-                            const target = e.target as HTMLImageElement;
-                            target.onerror = null;
-                            target.style.display = "none";
-                          }}
-                        />
-                      </div>
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <h3 className="text-sm font-medium text-gray-900">
-                        {announcement.title}
-                      </h3>
-                      <p className="text-sm text-gray-500 mt-1">
-                        {truncateText(announcement.content)}
-                      </p>
-
-                      {/* Attachment indicators */}
-                      <div className="flex items-center space-x-4 mt-2">
-                        {announcement.images.length > 0 && (
-                          <div className="flex items-center text-xs text-gray-500">
-                            <ImageIcon size={12} className="mr-1" />
-                            {announcement.images.length} image
-                            {announcement.images.length !== 1 ? "s" : ""}
-                          </div>
-                        )}
-                        {announcement.files.length > 0 && (
-                          <div className="flex items-center text-xs text-gray-500">
-                            <FileText size={12} className="mr-1" />
-                            {announcement.files.length} file
-                            {announcement.files.length !== 1 ? "s" : ""}
-                          </div>
-                        )}
-                        {announcement.videos.length > 0 && (
-                          <div className="flex items-center text-xs text-gray-500">
-                            <Video size={12} className="mr-1" />
-                            {announcement.videos.length} video
-                            {announcement.videos.length !== 1 ? "s" : ""}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Status and Created Info */}
-                  <div className="flex items-center justify-between">
-                    <span
-                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        announcement.isActive
-                          ? "bg-green-100 text-green-800"
-                          : "bg-gray-100 text-gray-800"
-                      }`}
-                    >
-                      {announcement.isActive ? "Active" : "Inactive"}
-                    </span>
-                    <div className="flex items-center text-xs text-gray-500">
-                      <User className="h-3 w-3 mr-1" />
-                      <span>{announcement.createdBy.fullName}</span>
-                    </div>
-                  </div>
-
-                  {/* Created Date */}
-                  <div className="flex items-center text-xs text-gray-500">
-                    <Calendar className="h-3 w-3 mr-1" />
-                    <span>
-                      {formatDistanceToNow(new Date(announcement.createdAt), {
-                        addSuffix: true,
-                      })}
-                    </span>
-                  </div>
-
-                  {/* Actions */}
-                  <div className="flex items-center justify-end space-x-2 pt-2 border-t border-gray-100">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleToggleStatus(announcement);
-                      }}
-                      className="text-gray-400 hover:text-gray-600 transition-colors p-1"
-                      title={announcement.isActive ? "Deactivate" : "Activate"}
-                    >
-                      {announcement.isActive ? (
-                        <EyeOff size={16} />
-                      ) : (
-                        <Eye size={16} />
+              ) : (
+          <>
+            {(() => {
+              const mobileCards = announcements?.map((announcement) => (
+                <ResponsiveTableMobileCard key={announcement.id}>
+                  <div className="space-y-4">
+                    {/* Announcement Info */}
+                    <div className="flex items-start space-x-3">
+                      {(announcement.images.length > 0
+                        ? announcement.images[0].url
+                        : announcement.imageUrl) && (
+                        <div className="relative w-16 h-16 flex-shrink-0">
+                          <Image
+                            src={
+                              announcement.images.length > 0
+                                ? announcement.images[0].url
+                                : announcement.imageUrl!
+                            }
+                            alt="Announcement"
+                            fill
+                            className="object-cover rounded-md"
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement;
+                              target.onerror = null;
+                              target.style.display = "none";
+                            }}
+                          />
+                        </div>
                       )}
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setEditingAnnouncement(announcement);
-                      }}
-                      className="text-blue-600 hover:text-blue-900 transition-colors p-1"
-                      title="Edit"
-                    >
-                      <Edit size={16} />
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setDeletingAnnouncement(announcement);
-                      }}
-                      className="text-red-600 hover:text-red-900 transition-colors p-1"
-                      title="Delete"
-                    >
-                      <Trash2 size={16} />
-                    </button>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="text-sm font-medium text-gray-900">
+                          {announcement.title}
+                        </h3>
+                        <p className="text-sm text-gray-500 mt-1">
+                          {truncateText(announcement.content)}
+                        </p>
+
+                        {/* Attachment indicators */}
+                        <div className="flex items-center space-x-4 mt-2">
+                          {announcement.images.length > 0 && (
+                            <div className="flex items-center text-xs text-gray-500">
+                              <ImageIcon size={12} className="mr-1" />
+                              {announcement.images.length} image
+                              {announcement.images.length !== 1 ? "s" : ""}
+                            </div>
+                          )}
+                          {announcement.files.length > 0 && (
+                            <div className="flex items-center text-xs text-gray-500">
+                              <FileText size={12} className="mr-1" />
+                              {announcement.files.length} file
+                              {announcement.files.length !== 1 ? "s" : ""}
+                            </div>
+                          )}
+                          {announcement.videos.length > 0 && (
+                            <div className="flex items-center text-xs text-gray-500">
+                              <Video size={12} className="mr-1" />
+                              {announcement.videos.length} video
+                              {announcement.videos.length !== 1 ? "s" : ""}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Status and Created Info */}
+                    <div className="flex items-center justify-between">
+                      <span
+                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                          announcement.isActive
+                            ? "bg-green-100 text-green-800"
+                            : "bg-gray-100 text-gray-800"
+                        }`}
+                      >
+                        {announcement.isActive ? "Active" : "Inactive"}
+                      </span>
+                      <div className="flex items-center text-xs text-gray-500">
+                        <User className="h-3 w-3 mr-1" />
+                        <span>{announcement.createdBy.fullName}</span>
+                      </div>
+                    </div>
+
+                    {/* Created Date */}
+                    <div className="flex items-center text-xs text-gray-500">
+                      <Calendar className="h-3 w-3 mr-1" />
+                      <span>
+                        {formatDistanceToNow(new Date(announcement.createdAt), {
+                          addSuffix: true,
+                        })}
+                      </span>
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex items-center justify-end space-x-2 pt-2 border-t border-gray-100">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleToggleStatus(announcement);
+                        }}
+                        className="text-gray-400 hover:text-gray-600 transition-colors p-1"
+                        title={announcement.isActive ? "Deactivate" : "Activate"}
+                      >
+                        {announcement.isActive ? (
+                          <EyeOff size={16} />
+                        ) : (
+                          <Eye size={16} />
+                        )}
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setEditingAnnouncement(announcement);
+                        }}
+                        className="text-blue-600 hover:text-blue-900 transition-colors p-1"
+                        title="Edit"
+                      >
+                        <Edit size={16} />
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setDeletingAnnouncement(announcement);
+                        }}
+                        className="text-red-600 hover:text-red-900 transition-colors p-1"
+                        title="Delete"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
                   </div>
-                </div>
-              }
-            >
+                </ResponsiveTableMobileCard>
+              ));
+
+              return (
+                <ResponsiveTable
+                  headers={[
+                    "Announcement",
+                    "Status",
+                    "Created By",
+                    "Created",
+                    "Actions",
+                  ]}
+                  mobileCards={mobileCards}
+                >
+                  {announcements?.map((announcement) => (
+                    <ResponsiveTableRow
+                      key={announcement.id}
+                    >
               <td className="px-6 py-4">
                 <div className="flex items-start space-x-3">
                   {(announcement.images.length > 0
@@ -425,7 +432,10 @@ const AnnouncementsList: React.FC = () => {
             </ResponsiveTableRow>
           ))}
         </ResponsiveTable>
-      )}
+        );
+      })()}
+        </>
+        )}
 
       {/* Pagination */}
       {safePagination.totalPages > 1 && (
