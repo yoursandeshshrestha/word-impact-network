@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, type IRouter } from 'express';
 import {
   getBackendControlStatus,
   enableBackend,
@@ -6,7 +6,7 @@ import {
   toggleBackend,
 } from '../controllers/backendControl.controller';
 
-const router = Router();
+const router: IRouter = Router();
 
 // Secret route path - hard to guess
 const SECRET_PATH =
