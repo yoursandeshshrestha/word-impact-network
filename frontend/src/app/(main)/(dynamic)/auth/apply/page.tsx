@@ -1,6 +1,43 @@
 "use client";
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
+
+// Razorpay type declarations
+interface RazorpayResponse {
+  razorpay_order_id: string;
+  razorpay_payment_id: string;
+  razorpay_signature: string;
+}
+
+interface RazorpayOptions {
+  key: string;
+  amount: number;
+  currency: string;
+  name: string;
+  description: string;
+  order_id: string;
+  handler: (response: RazorpayResponse) => void;
+  prefill: {
+    name: string;
+    email: string;
+    contact: string;
+  };
+  theme: {
+    color: string;
+  };
+  modal: {
+    ondismiss: () => void;
+  };
+}
+
+declare global {
+  interface Window {
+    Razorpay: new (options: RazorpayOptions) => {
+      open: () => void;
+    };
+  }
+}
+
 import {
   Upload,
   ArrowRight,
@@ -9,6 +46,8 @@ import {
   User,
   GraduationCap,
   CheckCircle,
+  CreditCard,
+  IndianRupee,
 } from "lucide-react";
 import { useLoading } from "@/common/contexts/LoadingContext";
 import { toast } from "sonner";
@@ -22,6 +61,9 @@ const ApplyPage = () => {
   const { setLoading } = useLoading();
   const [error, setError] = useState("");
   const [countryCodeError, setCountryCodeError] = useState("");
+  const [paymentAmount, setPaymentAmount] = useState("");
+  const [paymentError, setPaymentError] = useState("");
+  const [isPaymentProcessing, setIsPaymentProcessing] = useState(false);
 
   const {
     currentStep,
@@ -175,6 +217,11 @@ const ApplyPage = () => {
             toast.error("You must agree to the terms and conditions");
           }
           break;
+        case 5:
+          if (!formData.agreesToTerms) {
+            toast.error("You must agree to the terms and conditions");
+          }
+          break;
       }
       return;
     }
@@ -246,6 +293,13 @@ const ApplyPage = () => {
         throw new Error(errorData.message || "Failed to submit application");
       }
 
+      const result = await response.json();
+
+      // If payment amount is provided, process payment
+      if (paymentAmount && parseFloat(paymentAmount) > 0) {
+        await handleApplicationPayment(result.data.id);
+      }
+
       // Clear saved data after successful submission
       clearSavedData();
 
@@ -267,11 +321,124 @@ const ApplyPage = () => {
     }
   };
 
+  const handleApplicationPayment = async (appId: string) => {
+    setIsPaymentProcessing(true);
+    setPaymentError("");
+
+    try {
+      // Create payment order
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/payments/application/create-order`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            amount: parseFloat(paymentAmount),
+            currency: "INR",
+            applicationId: appId,
+            email: formData.email,
+            fullName: formData.fullName,
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to create payment order");
+      }
+
+      const { data } = await response.json();
+
+      // Initialize Razorpay payment
+      const options: RazorpayOptions = {
+        key: data.keyId,
+        amount: Math.round(parseFloat(paymentAmount) * 100), // Convert to paise
+        currency: data.currency,
+        name: "Word Impact Network",
+        description: "Application Payment",
+        order_id: data.orderId,
+        handler: async function (response: RazorpayResponse) {
+          try {
+            // Verify payment
+            const verifyResponse = await fetch(
+              `${process.env.NEXT_PUBLIC_API_URL}/payments/application/verify`,
+              {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                  razorpay_order_id: response.razorpay_order_id,
+                  razorpay_payment_id: response.razorpay_payment_id,
+                  razorpay_signature: response.razorpay_signature,
+                }),
+              }
+            );
+
+            if (!verifyResponse.ok) {
+              const errorData = await verifyResponse.json();
+              throw new Error(
+                errorData.message || "Payment verification failed"
+              );
+            }
+
+            toast.success(
+              "Payment successful! Thank you for your contribution."
+            );
+          } catch (error) {
+            console.error("Payment verification error:", error);
+            toast.error("Payment verification failed. Please contact support.");
+          }
+        },
+        prefill: {
+          name: formData.fullName,
+          email: formData.email,
+          contact: formData.countryCode + " " + formData.phoneNumber,
+        },
+        theme: {
+          color: "#1f2937",
+        },
+        modal: {
+          ondismiss: function () {
+            setIsPaymentProcessing(false);
+          },
+        },
+      };
+
+      // Load Razorpay script if not already loaded
+      if (!window.Razorpay) {
+        const script = document.createElement("script");
+        script.src = "https://checkout.razorpay.com/v1/checkout.js";
+        script.async = true;
+        document.body.appendChild(script);
+
+        script.onload = () => {
+          const razorpay = new window.Razorpay(options);
+          razorpay.open();
+        };
+      } else {
+        const razorpay = new window.Razorpay(options);
+        razorpay.open();
+      }
+    } catch (error) {
+      console.error("Payment error:", error);
+      setPaymentError(
+        error instanceof Error ? error.message : "Payment failed"
+      );
+      toast.error(error instanceof Error ? error.message : "Payment failed");
+    } finally {
+      setIsPaymentProcessing(false);
+    }
+  };
+
   const steps = [
     { id: 1, title: "Personal Information", icon: User },
     { id: 2, title: "Contact Details", icon: User },
     { id: 3, title: "Academic Information", icon: GraduationCap },
-    { id: 4, title: "Review & Submit", icon: CheckCircle },
+    { id: 4, title: "Optional Payment", icon: CreditCard },
+    { id: 5, title: "Review & Submit", icon: CheckCircle },
   ];
 
   const renderStepContent = () => {
@@ -556,6 +723,88 @@ const ApplyPage = () => {
       case 4:
         return (
           <div className="space-y-6">
+            <div className="bg-blue-50 p-6 rounded-lg border border-blue-200">
+              <h3 className="text-lg font-semibold text-blue-900 mb-2">
+                Optional Contribution
+              </h3>
+              <p className="text-blue-700 text-sm mb-4">
+                While your application is completely free, you can make an
+                optional contribution to support our educational programs. This
+                is entirely voluntary and will not affect your application
+                status.
+              </p>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-gray-700 text-sm font-medium mb-2">
+                  Contribution Amount (₹)
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <IndianRupee className="h-5 w-5 text-gray-400" />
+                  </div>
+                  <input
+                    type="number"
+                    value={paymentAmount}
+                    onChange={(e) => {
+                      setPaymentAmount(e.target.value);
+                      setPaymentError("");
+                    }}
+                    placeholder="Enter amount (optional)"
+                    min="1"
+                    max="100000"
+                    step="1"
+                    className={`block w-full pl-10 pr-3 py-2.5 border rounded-md shadow-sm focus:outline-none focus:ring-2 text-black ${
+                      paymentError
+                        ? "border-red-300 focus:ring-red-500 focus:border-red-500"
+                        : "border-gray-300 focus:ring-blue-500 focus:border-blue-500"
+                    }`}
+                    disabled={isPaymentProcessing}
+                  />
+                </div>
+
+                {paymentError && (
+                  <p className="text-sm text-red-600 mt-1 flex items-center">
+                    <span className="mr-1">⚠️</span>
+                    {paymentError}
+                  </p>
+                )}
+
+                <p className="text-sm text-gray-500 mt-1">
+                  Enter an amount between ₹1 and ₹1,00,000, or leave empty to
+                  skip
+                </p>
+              </div>
+
+              {paymentAmount && parseFloat(paymentAmount) > 0 && (
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <h4 className="font-medium text-gray-700 mb-2">
+                    Payment Summary
+                  </h4>
+                  <div className="space-y-1 text-sm text-gray-600">
+                    <p>
+                      <span className="font-medium">Amount:</span> ₹
+                      {paymentAmount}
+                    </p>
+                    <p>
+                      <span className="font-medium">Payment Method:</span>{" "}
+                      Razorpay (Secure)
+                    </p>
+                    <p className="text-xs text-gray-500 mt-2">
+                      🔒 Your payment will be processed securely through
+                      Razorpay
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        );
+
+      case 5:
+        return (
+          <div className="space-y-6">
             <div className="bg-gray-50 p-6 rounded-lg">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">
                 Review Your Application
@@ -638,6 +887,12 @@ const ApplyPage = () => {
                       {recommendationFile || stepData.recommendationFile
                         ? "Uploaded"
                         : "Not uploaded"}
+                    </p>
+                    <p>
+                      <span className="font-medium">Contribution:</span>{" "}
+                      {paymentAmount && parseFloat(paymentAmount) > 0
+                        ? `₹${paymentAmount}`
+                        : "No contribution"}
                     </p>
                   </div>
                 </div>
@@ -727,7 +982,7 @@ const ApplyPage = () => {
                 Previous
               </button>
 
-              {currentStep < 4 ? (
+              {currentStep < 5 ? (
                 <button
                   type="button"
                   onClick={handleNextStep}
@@ -739,11 +994,20 @@ const ApplyPage = () => {
               ) : (
                 <button
                   type="submit"
-                  disabled={!formData.agreesToTerms}
+                  disabled={!formData.agreesToTerms || isPaymentProcessing}
                   className="bg-gray-800 hover:bg-gray-700 text-white px-6 py-2 rounded-md font-medium flex items-center transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Submit Application
-                  <ArrowRight className="ml-2 w-4 h-4" />
+                  {isPaymentProcessing ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      Processing...
+                    </>
+                  ) : (
+                    <>
+                      Submit Application
+                      <ArrowRight className="ml-2 w-4 h-4" />
+                    </>
+                  )}
                 </button>
               )}
             </div>
