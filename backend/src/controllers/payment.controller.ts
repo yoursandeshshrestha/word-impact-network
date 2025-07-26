@@ -9,6 +9,9 @@ import {
   getStudentPaymentStatus,
   CreateOrderRequest,
   PaymentVerificationRequest,
+  createApplicationPaymentOrder,
+  verifyApplicationPayment,
+  CreateApplicationOrderRequest,
 } from '../services/payment.service';
 import { AppError, ErrorTypes } from '../utils/appError';
 import { logger } from '../utils/logger';
@@ -134,39 +137,46 @@ export const getStudentPaymentStatusController = catchAsync(async (req: Request,
 
 // Get payment statistics (admin only)
 export const getPaymentStats = catchAsync(async (req: Request, res: Response) => {
-  const [totalPayments, totalAmount, paidPayments, pendingPayments, todayPayments, todayAmount, uniqueStudentsPaid] =
-    await Promise.all([
-      prisma.payment.count(),
-      prisma.payment.aggregate({
-        where: { status: 'PAID' },
-        _sum: { amount: true },
-      }),
-      prisma.payment.count({ where: { status: 'PAID' } }),
-      prisma.payment.count({ where: { status: 'PENDING' } }),
-      prisma.payment.count({
-        where: {
-          status: 'PAID',
-          paidAt: {
-            gte: new Date(new Date().setHours(0, 0, 0, 0)),
-          },
+  const [
+    totalPayments,
+    totalAmount,
+    paidPayments,
+    pendingPayments,
+    todayPayments,
+    todayAmount,
+    uniqueStudentsPaid,
+  ] = await Promise.all([
+    prisma.payment.count(),
+    prisma.payment.aggregate({
+      where: { status: 'PAID' },
+      _sum: { amount: true },
+    }),
+    prisma.payment.count({ where: { status: 'PAID' } }),
+    prisma.payment.count({ where: { status: 'PENDING' } }),
+    prisma.payment.count({
+      where: {
+        status: 'PAID',
+        paidAt: {
+          gte: new Date(new Date().setHours(0, 0, 0, 0)),
         },
-      }),
-      prisma.payment.aggregate({
-        where: {
-          status: 'PAID',
-          paidAt: {
-            gte: new Date(new Date().setHours(0, 0, 0, 0)),
-          },
+      },
+    }),
+    prisma.payment.aggregate({
+      where: {
+        status: 'PAID',
+        paidAt: {
+          gte: new Date(new Date().setHours(0, 0, 0, 0)),
         },
-        _sum: { amount: true },
-      }),
-      // Count unique students who have made payments
-      prisma.student.count({
-        where: {
-          hasPaid: true,
-        },
-      }),
-    ]);
+      },
+      _sum: { amount: true },
+    }),
+    // Count unique students who have made payments
+    prisma.student.count({
+      where: {
+        hasPaid: true,
+      },
+    }),
+  ]);
 
   res.status(200).json({
     status: 'success',
@@ -181,3 +191,75 @@ export const getPaymentStats = catchAsync(async (req: Request, res: Response) =>
     },
   });
 });
+
+// Create application payment order (no authentication required)
+export const createApplicationOrder = catchAsync(async (req: Request, res: Response) => {
+  const { amount, currency, applicationId, email, fullName } = req.body;
+
+  if (!amount || amount <= 0) {
+    throw new AppError('Valid amount is required', 400, ErrorTypes.VALIDATION);
+  }
+
+  if (!applicationId) {
+    throw new AppError('Application ID is required', 400, ErrorTypes.VALIDATION);
+  }
+
+  if (!email) {
+    throw new AppError('Email is required', 400, ErrorTypes.VALIDATION);
+  }
+
+  if (!fullName) {
+    throw new AppError('Full name is required', 400, ErrorTypes.VALIDATION);
+  }
+
+  const orderData: CreateApplicationOrderRequest = {
+    amount: parseFloat(amount),
+    currency: currency || 'INR',
+    applicationId,
+    email,
+    fullName,
+  };
+
+  const result = await createApplicationPaymentOrder(orderData);
+
+  res.status(201).json({
+    status: 'success',
+    data: result,
+  });
+});
+
+// Verify application payment (no authentication required)
+export const verifyApplicationPaymentController = catchAsync(
+  async (req: Request, res: Response) => {
+    const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
+
+    if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
+      throw new AppError(
+        'Payment verification parameters are required',
+        400,
+        ErrorTypes.VALIDATION,
+      );
+    }
+
+    const verificationData: PaymentVerificationRequest = {
+      razorpay_order_id,
+      razorpay_payment_id,
+      razorpay_signature,
+    };
+
+    const payment = await verifyApplicationPayment(verificationData);
+
+    res.status(200).json({
+      status: 'success',
+      data: {
+        paymentId: payment.id,
+        amount: payment.amount,
+        currency: payment.currency,
+        status: payment.status,
+        transactionId: payment.transactionId,
+        paidAt: payment.paidAt,
+        applicationId: payment.applicationId,
+      },
+    });
+  },
+);
