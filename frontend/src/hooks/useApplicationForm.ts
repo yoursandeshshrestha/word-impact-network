@@ -159,6 +159,9 @@ export const useApplicationForm = () => {
         if (!formData.desiredDegree.trim()) return false;
         return true;
       case 4:
+        // Payment step is optional, always valid
+        return true;
+      case 5:
         if (!formData.agreesToTerms) return false;
         return true;
       default:
@@ -168,7 +171,7 @@ export const useApplicationForm = () => {
 
   const nextStep = () => {
     if (validateStep(currentStep)) {
-      setCurrentStep((prev) => Math.min(prev + 1, 4));
+      setCurrentStep((prev) => Math.min(prev + 1, 5));
       return true;
     }
     return false;
@@ -179,7 +182,7 @@ export const useApplicationForm = () => {
   };
 
   const goToStep = (step: number) => {
-    if (step >= 1 && step <= 4) {
+    if (step >= 1 && step <= 5) {
       setCurrentStep(step);
     }
   };
