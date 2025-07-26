@@ -3,6 +3,19 @@ import { RootState } from "../store";
 import { api } from "@/lib/api";
 
 // Types
+export interface Payment {
+  id: string;
+  amount: number;
+  currency: string;
+  status: "PENDING" | "PAID" | "FAILED" | "CANCELLED";
+  paymentMethod: "RAZORPAY" | "PAYLATER";
+  transactionId?: string;
+  razorpayOrderId?: string;
+  razorpayPaymentId?: string;
+  paidAt?: string;
+  createdAt: string;
+}
+
 export interface Application {
   applicationId: string;
   email: string;
@@ -25,6 +38,7 @@ export interface Application {
   studentId: string | null;
   adminId: string | null;
   reviewedBy?: { fullName: string } | string;
+  payment?: Payment;
 }
 
 export interface Pagination {
@@ -107,7 +121,7 @@ export const updateApplicationStatus = createAsyncThunk(
         payload.rejectionReason = rejectionReason;
       }
 
-          const response = await api.patch<Application>(
+      const response = await api.patch<Application>(
         `/applications/update-status/${id}`,
         payload
       );
@@ -159,7 +173,8 @@ const applicationsSlice = createSlice({
       .addCase(fetchApplications.fulfilled, (state, action) => {
         state.isLoading = false;
         state.applications = action.payload?.applications || [];
-        state.pagination = action.payload?.pagination || initialState.pagination;
+        state.pagination =
+          action.payload?.pagination || initialState.pagination;
       })
       .addCase(fetchApplications.rejected, (state, action) => {
         state.isLoading = false;
@@ -196,14 +211,20 @@ const applicationsSlice = createSlice({
         if (index !== -1) {
           state.applications[index] = {
             ...state.applications[index],
-            status: action.payload?.status as "APPROVED" | "REJECTED" | "PENDING",
+            status: action.payload?.status as
+              | "APPROVED"
+              | "REJECTED"
+              | "PENDING",
             rejectionReason: action.payload?.rejectionReason || null,
             reviewedAt: new Date().toISOString(),
           };
         }
 
         // Update selected application if it's the one being updated
-        if (state.selectedApplication?.applicationId === action.payload?.applicationId) {
+        if (
+          state.selectedApplication?.applicationId ===
+          action.payload?.applicationId
+        ) {
           state.selectedApplication = {
             ...state.selectedApplication,
             status: action.payload?.status as
@@ -231,7 +252,10 @@ const applicationsSlice = createSlice({
           (app) => app.applicationId !== action.payload?.applicationId
         );
 
-        if (state.selectedApplication?.applicationId === action.payload?.applicationId) { 
+        if (
+          state.selectedApplication?.applicationId ===
+          action.payload?.applicationId
+        ) {
           state.selectedApplication = null;
         }
       })
