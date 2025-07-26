@@ -3,12 +3,14 @@ import React from "react";
 interface ResponsiveTableProps {
   headers: string[];
   children: React.ReactNode;
+  mobileCards?: React.ReactNode;
   className?: string;
 }
 
 const ResponsiveTable: React.FC<ResponsiveTableProps> = ({
   headers,
   children,
+  mobileCards,
   className = "",
 }) => {
   return (
@@ -35,7 +37,9 @@ const ResponsiveTable: React.FC<ResponsiveTableProps> = ({
       </div>
 
       {/* Mobile Cards */}
-      <div className="xl:hidden space-y-4">{children}</div>
+      {mobileCards && (
+        <div className="xl:hidden space-y-4">{mobileCards}</div>
+      )}
     </div>
   );
 };
