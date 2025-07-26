@@ -2,7 +2,7 @@ import React from "react";
 import { Student } from "@/redux/features/studentsSlice";
 import Image from "next/image";
 import ResponsiveTable from "@/components/common/ResponsiveTable";
-import ResponsiveTableRow from "@/components/common/ResponsiveTableRow";
+import ResponsiveTableRow, { ResponsiveTableMobileCard } from "@/components/common/ResponsiveTableRow";
 
 interface StudentsListProps {
   students: Student[];
@@ -48,98 +48,104 @@ const StudentsList: React.FC<StudentsListProps> = ({
     "Courses",
   ];
 
+  const mobileCards = students.map((student) => (
+    <ResponsiveTableMobileCard
+      key={student.id}
+      onClick={() => onViewDetails(student)}
+    >
+      <div className="space-y-3">
+        {/* Student Info */}
+        <div className="flex items-center space-x-3">
+          <div className="flex-shrink-0 h-12 w-12">
+            {student.profilePictureUrl ? (
+              <Image
+                src={student.profilePictureUrl}
+                alt={student.fullName}
+                width={48}
+                height={48}
+                className="h-12 w-12 rounded-full object-cover"
+              />
+            ) : (
+              <div className="h-12 w-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-semibold text-sm">
+                {getInitials(student.fullName || "N/A")}
+              </div>
+            )}
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="text-sm font-medium text-gray-900">
+              {student.fullName || "N/A"}
+            </div>
+            <div className="text-sm text-gray-500">
+              {student.email || "N/A"}
+            </div>
+            <div className="text-sm text-gray-500">
+              {student.country || "N/A"}
+            </div>
+          </div>
+          <span
+            className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getPaymentStatusBadgeClass(
+              student.paymentStatus
+            )}`}
+          >
+            {student.paymentStatus || "N/A"}
+          </span>
+        </div>
+
+        {/* Progress */}
+        <div className="space-y-2">
+          <div className="text-sm text-gray-900">
+            <div className="flex items-center justify-between">
+              <span>Chapters Progress:</span>
+              <span className="font-medium">
+                {student.statistics?.overallChapterProgress || 0}%
+              </span>
+            </div>
+            <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
+              <div
+                className="bg-blue-600 h-2 rounded-full"
+                style={{
+                  width: `${
+                    student.statistics?.overallChapterProgress || 0
+                  }%`,
+                }}
+              />
+            </div>
+          </div>
+          <div className="text-sm text-gray-900">
+            <div className="flex items-center justify-between">
+              <span>Exams Progress:</span>
+              <span className="font-medium">
+                {student.statistics?.overallExamProgress || 0}%
+              </span>
+            </div>
+            <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
+              <div
+                className="bg-green-600 h-2 rounded-full"
+                style={{
+                  width: `${
+                    student.statistics?.overallExamProgress || 0
+                  }%`,
+                }}
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Courses */}
+        <div className="text-sm text-gray-500">
+          {student.statistics?.coursesEnrolled || 0} courses enrolled
+        </div>
+      </div>
+    </ResponsiveTableMobileCard>
+  ));
+
   return (
-    <ResponsiveTable headers={headers}>
+    <ResponsiveTable headers={headers} mobileCards={mobileCards}>
       {students.length > 0 ? (
         students.map((student) => (
           <ResponsiveTableRow
             key={student.id}
             onClick={() => onViewDetails(student)}
-            mobileCardContent={
-              <div className="space-y-3">
-                {/* Student Info */}
-                <div className="flex items-center space-x-3">
-                  <div className="flex-shrink-0 h-12 w-12">
-                    {student.profilePictureUrl ? (
-                      <Image
-                        src={student.profilePictureUrl}
-                        alt={student.fullName}
-                        width={48}
-                        height={48}
-                        className="h-12 w-12 rounded-full object-cover"
-                      />
-                    ) : (
-                      <div className="h-12 w-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-semibold text-sm">
-                        {getInitials(student.fullName || "N/A")}
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-sm font-medium text-gray-900">
-                      {student.fullName || "N/A"}
-                    </div>
-                    <div className="text-sm text-gray-500">
-                      {student.email || "N/A"}
-                    </div>
-                    <div className="text-sm text-gray-500">
-                      {student.country || "N/A"}
-                    </div>
-                  </div>
-                  <span
-                    className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getPaymentStatusBadgeClass(
-                      student.paymentStatus
-                    )}`}
-                  >
-                    {student.paymentStatus || "N/A"}
-                  </span>
-                </div>
-
-                {/* Progress */}
-                <div className="space-y-2">
-                  <div className="text-sm text-gray-900">
-                    <div className="flex items-center justify-between">
-                      <span>Chapters Progress:</span>
-                      <span className="font-medium">
-                        {student.statistics?.overallChapterProgress || 0}%
-                      </span>
-                    </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
-                      <div
-                        className="bg-blue-600 h-2 rounded-full"
-                        style={{
-                          width: `${
-                            student.statistics?.overallChapterProgress || 0
-                          }%`,
-                        }}
-                      />
-                    </div>
-                  </div>
-                  <div className="text-sm text-gray-900">
-                    <div className="flex items-center justify-between">
-                      <span>Exams Progress:</span>
-                      <span className="font-medium">
-                        {student.statistics?.overallExamProgress || 0}%
-                      </span>
-                    </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
-                      <div
-                        className="bg-green-600 h-2 rounded-full"
-                        style={{
-                          width: `${
-                            student.statistics?.overallExamProgress || 0
-                          }%`,
-                        }}
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Courses */}
-                <div className="text-sm text-gray-500">
-                  {student.statistics?.coursesEnrolled || 0} courses enrolled
-                </div>
-              </div>
-            }
           >
             <td className="px-6 py-4 whitespace-nowrap">
               <div className="flex items-center">
