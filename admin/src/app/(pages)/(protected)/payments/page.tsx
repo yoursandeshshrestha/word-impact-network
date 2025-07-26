@@ -9,7 +9,7 @@ import {
 import Loading from "@/components/common/Loading";
 import NoDataFound from "@/components/common/NoDataFound";
 import ResponsiveTable from "@/components/common/ResponsiveTable";
-import ResponsiveTableRow from "@/components/common/ResponsiveTableRow";
+import ResponsiveTableRow, { ResponsiveTableMobileCard } from "@/components/common/ResponsiveTableRow";
 import {
   DollarSign,
   CreditCard,
@@ -30,13 +30,17 @@ interface Payment {
   razorpayPaymentId?: string;
   paidAt?: string;
   createdAt: string;
-  student: {
+  student?: {
     id: string;
     fullName: string;
     user: {
       email: string;
     };
-  };
+  } | null;
+  application?: {
+    fullName: string;
+    email: string;
+  } | null;
 }
 
 const PaymentsPage = () => {
@@ -208,34 +212,24 @@ const PaymentsPage = () => {
             <NoDataFound message="No payments found" />
           </div>
         ) : (
-          <ResponsiveTable
-            headers={[
-              "Student",
-              "Amount",
-              "Status",
-              "Method",
-              "Date",
-              "Transaction ID",
-            ]}
-          >
-            {payments.map((payment: Payment) => (
-              <ResponsiveTableRow
-                key={payment.id}
-                mobileCardContent={
+          <>
+            {(() => {
+              const mobileCards = payments.map((payment: Payment) => (
+                <ResponsiveTableMobileCard key={payment.id}>
                   <div className="space-y-3">
                     {/* Student Info */}
                     <div className="flex items-center space-x-3">
-                      <div className="flex-shrink-0 h-10 w-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold text-sm">
-                        {payment.student.fullName.charAt(0).toUpperCase()}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="text-sm font-medium text-gray-900">
-                          {payment.student.fullName}
-                        </div>
-                        <div className="text-sm text-gray-500">
-                          {payment.student.user.email}
-                        </div>
-                      </div>
+                                        <div className="flex-shrink-0 h-10 w-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold text-sm">
+                    {(payment.student?.fullName || payment.application?.fullName)?.charAt(0).toUpperCase() || 'N'}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-medium text-gray-900">
+                      {payment.student?.fullName || payment.application?.fullName || 'Unknown Person'}
+                    </div>
+                    <div className="text-sm text-gray-500">
+                      {payment.student?.user?.email || payment.application?.email || 'No email'}
+                    </div>
+                  </div>
                       {getStatusBadge(payment.status)}
                     </div>
 
@@ -278,15 +272,32 @@ const PaymentsPage = () => {
                       </div>
                     </div>
                   </div>
-                }
-              >
+                </ResponsiveTableMobileCard>
+              ));
+
+              return (
+                <ResponsiveTable
+                  headers={[
+                    "Student",
+                    "Amount",
+                    "Status",
+                    "Method",
+                    "Date",
+                    "Transaction ID",
+                  ]}
+                  mobileCards={mobileCards}
+                >
+                  {payments.map((payment: Payment) => (
+                    <ResponsiveTableRow
+                      key={payment.id}
+                    >
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div>
                     <div className="text-sm font-medium text-gray-900">
-                      {payment.student.fullName}
+                      {payment.student?.fullName || payment.application?.fullName || 'Unknown Person'}
                     </div>
                     <div className="text-sm text-gray-500">
-                      {payment.student.user.email}
+                      {payment.student?.user?.email || payment.application?.email || 'No email'}
                     </div>
                   </div>
                 </td>
@@ -323,6 +334,9 @@ const PaymentsPage = () => {
               </ResponsiveTableRow>
             ))}
           </ResponsiveTable>
+        );
+      })()}
+        </>
         )}
 
         {/* Infinite Scroll Loading */}
