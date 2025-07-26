@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   app:
     build:
@@ -57,21 +55,6 @@ services:
       timeout: 5s
       retries: 5
 
-  pgadmin:
-    image: dpage/pgadmin4
-    ports:
-      - '5051:80' # Different port than local to avoid conflicts
-    environment:
-      - PGADMIN_DEFAULT_EMAIL=admin@admin.com
-      - PGADMIN_DEFAULT_PASSWORD=admin
-    volumes:
-      - pgadmin_prod_data:/var/lib/pgadmin
-    depends_on:
-      postgres:
-        condition: service_healthy
-    restart: always
-
 volumes:
   postgres_prod_data:
   redis_prod_data:
-  pgadmin_prod_data:
