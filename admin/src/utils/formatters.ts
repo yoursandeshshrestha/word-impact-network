@@ -36,7 +36,7 @@ export const formatDate = (
  */
 export const formatCurrency = (
   value: number | string,
-  currency = "USD"
+  currency = "INR"
 ): string => {
   if (value === null || value === undefined) return "N/A";
 
