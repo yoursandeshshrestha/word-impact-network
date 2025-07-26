@@ -3084,3 +3084,124 @@ export async function completePasswordReset(
     throw error;
   }
 }
+
+// Create student account from approved application
+export async function createStudentFromApplication(applicationId: string, password: string) {
+  try {
+    logger.info('Creating student account from application', { applicationId });
+
+    // Find the application
+    const application = await prisma.application.findUnique({
+      where: { id: applicationId },
+      include: {
+        payment: true,
+        student: true,
+      },
+    });
+
+    if (!application) {
+      logger.warn('Student creation failed - application not found', { applicationId });
+      throw new AppError('Application not found', 404, ErrorTypes.NOT_FOUND);
+    }
+
+    if (application.status !== ApplicationStatus.APPROVED) {
+      logger.warn('Student creation failed - application not approved', {
+        applicationId,
+        status: application.status,
+      });
+      throw new AppError(
+        'Application must be approved before creating student account',
+        400,
+        ErrorTypes.VALIDATION,
+      );
+    }
+
+    // Check if student already exists for this application
+    if (application.student) {
+      logger.warn('Student creation failed - student already exists', { applicationId });
+      throw new AppError(
+        'Student account already exists for this application',
+        400,
+        ErrorTypes.VALIDATION,
+      );
+    }
+
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 12);
+
+    // Create user account
+    const user = await prisma.user.create({
+      data: {
+        email: application.email,
+        password: hashedPassword,
+        role: UserRole.STUDENT,
+      },
+    });
+
+    // Create student profile
+    const student = await prisma.student.create({
+      data: {
+        fullName: application.fullName,
+        gender: application.gender,
+        dateOfBirth: application.dateOfBirth,
+        phoneNumber: application.phoneNumber,
+        country: application.country,
+        academicQualification: application.academicQualification,
+        desiredDegree: application.desiredDegree,
+        certificateUrl: application.certificateUrl,
+        recommendationLetterUrl: application.recommendationLetterUrl,
+        referredBy: application.referredBy,
+        referrerContact: application.referrerContact,
+        agreesToTerms: application.agreesToTerms,
+        userId: user.id,
+        applicationStatus: ApplicationStatus.APPROVED,
+        // Set payment status based on whether payment was made during application
+        paymentStatus: application.payment?.status === 'PAID' ? 'PAID' : 'PENDING',
+        hasPaid: application.payment?.status === 'PAID' || false,
+      },
+    });
+
+    logger.info('Student created with payment status', {
+      studentId: student.id,
+      applicationId,
+      paymentStatus: student.paymentStatus,
+      hasPaid: student.hasPaid,
+      applicationPaymentStatus: application.payment?.status,
+    });
+
+    // Update application to link with student
+    await prisma.application.update({
+      where: { id: applicationId },
+      data: { studentId: student.id },
+    });
+
+    // If there was a payment during application, update it to link with student
+    if (application.payment) {
+      await prisma.payment.update({
+        where: { id: application.payment.id },
+        data: { studentId: student.id },
+      });
+    }
+
+    logger.info('Student account created successfully', {
+      studentId: student.id,
+      applicationId,
+      email: application.email,
+    });
+
+    return {
+      id: student.id,
+      email: application.email,
+      fullName: application.fullName,
+      applicationStatus: student.applicationStatus,
+      paymentStatus: student.paymentStatus,
+      hasPaid: student.hasPaid,
+    };
+  } catch (error) {
+    logger.error('Error creating student from application', {
+      applicationId,
+      error: error instanceof Error ? error.message : String(error),
+    });
+    throw error;
+  }
+}
