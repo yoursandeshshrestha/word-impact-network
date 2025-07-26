@@ -140,8 +140,8 @@ model Payment {
   transactionId     String?
   razorpayOrderId   String?          // Razorpay order ID
   razorpayPaymentId String?          // Razorpay payment ID
-  student           Student          @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  studentId         String
+  student           Student?         @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  studentId         String?
   application       Application?     @relation(fields: [applicationId], references: [id])
   applicationId     String?          @unique
   paidAt            DateTime?
