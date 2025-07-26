@@ -15,6 +15,7 @@ import newsRoutes from './news.routes';
 import vimeoRoutes from './vimeo.routes';
 import paymentRoutes from './payment.routes';
 import adminPaymentRoutes from './admin.payment.routes';
+import backendControlRoutes from './backendControl.routes';
 
 const router: Router = express.Router();
 
@@ -65,5 +66,8 @@ router.use('/payments', paymentRoutes);
 
 // admin payment routes
 router.use('/admin', adminPaymentRoutes);
+
+// backend control routes (secret)
+router.use('/backend-control', backendControlRoutes);
 
 export default router;

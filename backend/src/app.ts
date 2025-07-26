@@ -10,6 +10,7 @@ import { connectRedis } from './config/redis';
 import routes from './routes';
 import corsOptions from './config/cors';
 import { errorHandler, notFoundHandler } from './middlewares/error.middleware';
+import { backendControlMiddleware } from './middlewares/backendControl.middleware';
 import { sendSuccess } from './utils/responseHandler';
 import validateToken from './utils/validateToken';
 
@@ -47,6 +48,9 @@ const initServices = async () => {
 };
 
 initServices();
+
+// Backend control middleware (applied to all routes)
+app.use(backendControlMiddleware);
 
 // API Routes
 app.use(`${config.apiPrefix}`, routes);
