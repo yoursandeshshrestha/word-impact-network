@@ -2,6 +2,13 @@ import React from "react";
 import { Application } from "@/redux/features/applicationsSlice";
 import { formatDate } from "@/utils/formatters";
 import ResponsiveModal from "@/components/common/ResponsiveModal";
+import {
+  CreditCard,
+  IndianRupee,
+  CheckCircle,
+  XCircle,
+  Clock,
+} from "lucide-react";
 
 interface ApplicationDetailsProps {
   application: Application;
@@ -173,6 +180,93 @@ const ApplicationDetails: React.FC<ApplicationDetailsProps> = ({
             </div>
           </div>
         </div>
+
+        {/* Payment Information */}
+        {application.payment && (
+          <div className="space-y-4">
+            <h3 className="text-sm font-medium text-gray-500 border-b border-gray-200 pb-2">
+              Payment Information
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <span className="font-medium text-gray-900">
+                  Payment Status:
+                </span>
+                <div className="flex items-center mt-1">
+                  {application.payment.status === "PAID" ? (
+                    <span className="flex items-center text-green-600">
+                      <CheckCircle className="mr-1" size={16} /> Paid
+                    </span>
+                  ) : application.payment.status === "PENDING" ? (
+                    <span className="flex items-center text-yellow-600">
+                      <Clock className="mr-1" size={16} /> Pending
+                    </span>
+                  ) : (
+                    <span className="flex items-center text-red-600">
+                      <XCircle className="mr-1" size={16} />{" "}
+                      {application.payment.status}
+                    </span>
+                  )}
+                </div>
+              </div>
+              <div>
+                <span className="font-medium text-gray-900">Amount:</span>
+                <p className="text-gray-600 flex items-center">
+                  <IndianRupee className="mr-1" size={16} />
+                  {application.payment.amount} {application.payment.currency}
+                </p>
+              </div>
+              <div>
+                <span className="font-medium text-gray-900">
+                  Payment Method:
+                </span>
+                <p className="text-gray-600 flex items-center">
+                  <CreditCard className="mr-1" size={16} />
+                  {application.payment.paymentMethod}
+                </p>
+              </div>
+              {application.payment.paidAt && (
+                <div>
+                  <span className="font-medium text-gray-900">Paid At:</span>
+                  <p className="text-gray-600">
+                    {formatDate(application.payment.paidAt)}
+                  </p>
+                </div>
+              )}
+              {application.payment.transactionId && (
+                <div className="sm:col-span-2">
+                  <span className="font-medium text-gray-900">
+                    Transaction ID:
+                  </span>
+                  <p className="text-gray-600 font-mono text-sm">
+                    {application.payment.transactionId}
+                  </p>
+                </div>
+              )}
+              <div>
+                <span className="font-medium text-gray-900">Created At:</span>
+                <p className="text-gray-600">
+                  {formatDate(application.payment.createdAt)}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* No Payment Information */}
+        {!application.payment && (
+          <div className="space-y-4">
+            <h3 className="text-sm font-medium text-gray-500 border-b border-gray-200 pb-2">
+              Payment Information
+            </h3>
+            <div className="bg-gray-50 p-4 rounded-lg">
+              <p className="text-gray-600 flex items-center">
+                <XCircle className="mr-2" size={16} />
+                No payment was made with this application
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Additional Information */}
         <div className="space-y-4">
