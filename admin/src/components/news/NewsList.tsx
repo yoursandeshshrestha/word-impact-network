@@ -21,7 +21,7 @@ import Pagination from "../common/Pagination";
 import Loading from "../common/Loading";
 import NoDataFound from "../common/NoDataFound";
 import ResponsiveTable from "../common/ResponsiveTable";
-import ResponsiveTableRow from "../common/ResponsiveTableRow";
+import ResponsiveTableRow, { ResponsiveTableMobileCard } from "../common/ResponsiveTableRow";
 import Image from "next/image";
 
 const NewsList: React.FC = () => {
@@ -165,125 +165,131 @@ const NewsList: React.FC = () => {
           title="No News"
           message="Create your first news article to get started."
         />
-      ) : (
-        <ResponsiveTable headers={["News", "Status", "Created By", "Created", "Actions"]}>
+              ) : (
+          <>
+            {(() => {
+              const mobileCards = news?.map((newsItem) => (
+                <ResponsiveTableMobileCard key={newsItem.id}>
+                  <div className="space-y-4">
+                    {/* News Info */}
+                    <div className="flex items-start space-x-3">
+                      {newsItem.images.length > 0 && (
+                        <div className="relative w-16 h-16 flex-shrink-0">
+                          <Image
+                            src={newsItem.images[0].url}
+                            alt="News"
+                            fill
+                            className="object-cover rounded-md"
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement;
+                              target.onerror = null;
+                              target.style.display = "none";
+                            }}
+                          />
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <h3 className="text-sm font-medium text-gray-900">
+                          {newsItem.title}
+                        </h3>
+                        {newsItem.description && (
+                          <p className="text-sm text-gray-500 mt-1">
+                            {truncateText(newsItem.description, 80)}
+                          </p>
+                        )}
+                        <div className="flex items-center gap-2 mt-2 text-xs text-gray-400">
+                          <span className="text-blue-600 font-medium">
+                            /{newsItem.slug}
+                          </span>
+                          {newsItem.images.length > 0 && (
+                            <div className="flex items-center gap-1">
+                              <ImageIcon size={12} />
+                              <span>{newsItem.images.length}</span>
+                            </div>
+                          )}
+                          {newsItem.videos.length > 0 && (
+                            <div className="flex items-center gap-1">
+                              <Video size={12} />
+                              <span>{newsItem.videos.length}</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Status and Created Info */}
+                    <div className="flex items-center justify-between">
+                      <span
+                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                          newsItem.isActive
+                            ? "bg-green-100 text-green-800"
+                            : "bg-red-100 text-red-800"
+                        }`}
+                      >
+                        {newsItem.isActive ? "Active" : "Inactive"}
+                      </span>
+                      <div className="flex items-center text-xs text-gray-500">
+                  <User className="h-3 w-3 mr-1" />
+                  <span>{newsItem.createdBy.fullName}</span>
+                </div>
+              </div>
+
+              {/* Created Date */}
+              <div className="flex items-center text-xs text-gray-500">
+                <Calendar className="h-3 w-3 mr-1" />
+                <span>
+                  {formatDistanceToNow(new Date(newsItem.createdAt), {
+                    addSuffix: true,
+                  })}
+                </span>
+              </div>
+
+              {/* Actions */}
+              <div className="flex items-center justify-end space-x-2 pt-2 border-t border-gray-100">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleToggleStatus(newsItem);
+                  }}
+                  className="text-gray-400 hover:text-gray-600 transition-colors p-1"
+                  title={newsItem.isActive ? "Deactivate" : "Activate"}
+                >
+                  {newsItem.isActive ? (
+                    <EyeOff size={16} />
+                  ) : (
+                    <Eye size={16} />
+                  )}
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setEditingNews(newsItem);
+                  }}
+                  className="text-blue-600 hover:text-blue-900 transition-colors p-1"
+                  title="Edit"
+                >
+                  <Edit size={16} />
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setDeletingNews(newsItem);
+                  }}
+                  className="text-red-600 hover:text-red-900 transition-colors p-1"
+                  title="Delete"
+                >
+                  <Trash2 size={16} />
+                </button>
+              </div>
+            </div>
+          </ResponsiveTableMobileCard>
+        ));
+
+        return (
+          <ResponsiveTable headers={["News", "Status", "Created By", "Created", "Actions"]} mobileCards={mobileCards}>
           {news?.map((newsItem) => (
             <ResponsiveTableRow
               key={newsItem.id}
-              mobileCardContent={
-                <div className="space-y-4">
-                  {/* News Info */}
-                  <div className="flex items-start space-x-3">
-                    {newsItem.images.length > 0 && (
-                      <div className="relative w-16 h-16 flex-shrink-0">
-                        <Image
-                          src={newsItem.images[0].url}
-                          alt="News"
-                          fill
-                          className="object-cover rounded-md"
-                          onError={(e) => {
-                            const target = e.target as HTMLImageElement;
-                            target.onerror = null;
-                            target.style.display = "none";
-                          }}
-                        />
-                      </div>
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <h3 className="text-sm font-medium text-gray-900">
-                        {newsItem.title}
-                      </h3>
-                      {newsItem.description && (
-                        <p className="text-sm text-gray-500 mt-1">
-                          {truncateText(newsItem.description, 80)}
-                        </p>
-                      )}
-                      <div className="flex items-center gap-2 mt-2 text-xs text-gray-400">
-                        <span className="text-blue-600 font-medium">
-                          /{newsItem.slug}
-                        </span>
-                        {newsItem.images.length > 0 && (
-                          <div className="flex items-center gap-1">
-                            <ImageIcon size={12} />
-                            <span>{newsItem.images.length}</span>
-                          </div>
-                        )}
-                        {newsItem.videos.length > 0 && (
-                          <div className="flex items-center gap-1">
-                            <Video size={12} />
-                            <span>{newsItem.videos.length}</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Status and Created Info */}
-                  <div className="flex items-center justify-between">
-                    <span
-                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        newsItem.isActive
-                          ? "bg-green-100 text-green-800"
-                          : "bg-red-100 text-red-800"
-                      }`}
-                    >
-                      {newsItem.isActive ? "Active" : "Inactive"}
-                    </span>
-                    <div className="flex items-center text-xs text-gray-500">
-                      <User className="h-3 w-3 mr-1" />
-                      <span>{newsItem.createdBy.fullName}</span>
-                    </div>
-                  </div>
-
-                  {/* Created Date */}
-                  <div className="flex items-center text-xs text-gray-500">
-                    <Calendar className="h-3 w-3 mr-1" />
-                    <span>
-                      {formatDistanceToNow(new Date(newsItem.createdAt), {
-                        addSuffix: true,
-                      })}
-                    </span>
-                  </div>
-
-                  {/* Actions */}
-                  <div className="flex items-center justify-end space-x-2 pt-2 border-t border-gray-100">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleToggleStatus(newsItem);
-                      }}
-                      className="text-gray-400 hover:text-gray-600 transition-colors p-1"
-                      title={newsItem.isActive ? "Deactivate" : "Activate"}
-                    >
-                      {newsItem.isActive ? (
-                        <EyeOff size={16} />
-                      ) : (
-                        <Eye size={16} />
-                      )}
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setEditingNews(newsItem);
-                      }}
-                      className="text-blue-600 hover:text-blue-900 transition-colors p-1"
-                      title="Edit"
-                    >
-                      <Edit size={16} />
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setDeletingNews(newsItem);
-                      }}
-                      className="text-red-600 hover:text-red-900 transition-colors p-1"
-                      title="Delete"
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  </div>
-                </div>
-              }
             >
               <td className="px-6 py-4">
                 <div className="flex items-start space-x-3">
@@ -392,7 +398,10 @@ const NewsList: React.FC = () => {
             </ResponsiveTableRow>
           ))}
         </ResponsiveTable>
-      )}
+        );
+      })()}
+        </>
+        )}
 
       {/* Pagination */}
       {safePagination.totalPages > 1 && (
