@@ -59,14 +59,14 @@ const AcademicProgram: React.FC = () => {
             </div>
           </div>
 
-          {/* Master in Theology - Fourth Year */}
+          {/* Bachelor in Ministry - Fourth Year */}
           <div className="bg-[#2c3e50] text-white p-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
             <div className="flex flex-col h-full text-center">
               <div className="bg-white/10 p-4 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
                 <GraduationCap className="w-8 h-8 text-white" />
               </div>
               <div className="text-xl font-bold text-white mb-2">
-                Master in Theology
+                Bachelor in Ministry
               </div>
               <div className="text-gray-200 font-medium">Fourth Year</div>
             </div>
