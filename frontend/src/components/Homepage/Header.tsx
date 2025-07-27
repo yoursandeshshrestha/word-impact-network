@@ -265,7 +265,7 @@ const Header: React.FC = () => {
       >
         <div className="p-6">
           {/* Mobile Menu Header */}
-          <div className="flex sticky top-1 bg-white items-center justify-between mb-8 py-2 ">
+          <div className="flex sticky top-1 bg-white items-center justify-between mb-6 py-2 ">
             <Link href="/" className="block" onClick={toggleMobileMenu}>
               <Image
                 src={logo}
@@ -281,6 +281,36 @@ const Header: React.FC = () => {
             >
               <X className="h-6 w-6" />
             </button>
+          </div>
+
+          {/* Mobile Authentication - Moved to top */}
+          <div className="mb-8 space-y-3">
+            {isLoggedIn ? (
+              <Link
+                href="/my-learning"
+                onClick={toggleMobileMenu}
+                className="block w-full text-center px-6 py-3 bg-gray-900 text-white rounded-lg font-medium hover:bg-gray-800 transition-colors"
+              >
+                Dashboard
+              </Link>
+            ) : (
+              <>
+                <Link
+                  href="/auth/login"
+                  onClick={toggleMobileMenu}
+                  className="block w-full text-center px-6 py-3 text-gray-700 border border-gray-300 rounded-lg font-medium hover:bg-gray-50 transition-colors"
+                >
+                  Login
+                </Link>
+                <Link
+                  href="/auth/apply"
+                  onClick={toggleMobileMenu}
+                  className="block w-full text-center px-6 py-3 bg-gray-900 text-white rounded-lg font-medium hover:bg-gray-800 transition-colors"
+                >
+                  Apply Now
+                </Link>
+              </>
+            )}
           </div>
 
           {/* Mobile Navigation */}
@@ -320,36 +350,6 @@ const Header: React.FC = () => {
               ))}
             </ul>
           </nav>
-
-          {/* Mobile Authentication */}
-          <div className="border-t border-gray-200 pt-6 space-y-4">
-            {isLoggedIn ? (
-              <Link
-                href="/my-learning"
-                onClick={toggleMobileMenu}
-                className="block w-full text-center px-6 py-3 bg-gray-900 text-white rounded-lg font-medium hover:bg-gray-800 transition-colors"
-              >
-                Dashboard
-              </Link>
-            ) : (
-              <>
-                <Link
-                  href="/auth/login"
-                  onClick={toggleMobileMenu}
-                  className="block w-full text-center px-6 py-3 text-gray-700 border border-gray-300 rounded-lg font-medium hover:bg-gray-50 transition-colors"
-                >
-                  Login
-                </Link>
-                <Link
-                  href="/auth/apply"
-                  onClick={toggleMobileMenu}
-                  className="block w-full text-center px-6 py-3 bg-gray-900 text-white rounded-lg font-medium hover:bg-gray-800 transition-colors"
-                >
-                  Apply Now
-                </Link>
-              </>
-            )}
-          </div>
         </div>
       </div>
     </>
