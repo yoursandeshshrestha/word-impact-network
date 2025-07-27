@@ -14,7 +14,7 @@ const FacultyProfiles = () => {
     {
       name: "Pastor Jagannath Banerjee",
       title: "Faculty – Discipleship & Mission",
-      image: "/placeholder-image.svg",
+      image: "/jagannath-banerjee.jpeg",
       description:
         "As the founder of Word Impact Network, Pastor Jagannath teaches from a life of deep surrender and hands-on experience. His classes on discipleship, spiritual growth, and church planting are rooted in personal stories, biblical truths, and practical wisdom that challenge and equip future Gospel workers.",
     },
