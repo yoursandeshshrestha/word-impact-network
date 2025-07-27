@@ -56,7 +56,7 @@ const videoFilter = (req: any, file: Express.Multer.File, cb: multer.FileFilterC
 const uploadMultiple = multer({
   storage,
   limits: { 
-    fileSize: 100 * 1024 * 1024, // 100MB limit for videos
+    fileSize: 5 * 1024 * 1024 * 1024, // 5GB limit for videos
     files: 10 // Maximum 10 files total
   },
 }).fields([
