@@ -141,14 +141,14 @@ const AnnouncementForm: React.FC<AnnouncementFormProps> = ({
       "video/ogg",
       "video/quicktime",
     ];
-    const maxSize = 100 * 1024 * 1024; // 100MB
+    const maxSize = 5 * 1024 * 1024 * 1024; // 5GB
 
     if (!validTypes.includes(file.type)) {
       return "Please upload a valid video file (MP4, WebM, OGG, QuickTime)";
     }
 
     if (file.size > maxSize) {
-      return "Video size exceeds 100MB. Please upload a smaller video.";
+      return "Video size exceeds 5GB. Please upload a smaller video.";
     }
 
     return null;
