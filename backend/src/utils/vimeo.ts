@@ -224,7 +224,7 @@ export const uploadToVimeo = async (
         name: title,
         description: description || '',
         privacy: {
-          view: 'nobody',
+          view: 'unlisted',
           embed: 'whitelist',
           domains: [
             'wordimpactnetwork.org',
@@ -566,7 +566,3 @@ export const getValidVimeoToken = async (): Promise<string | null> => {
 
   return null;
 };
-
-
-
-

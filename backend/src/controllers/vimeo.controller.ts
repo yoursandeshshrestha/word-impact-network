@@ -113,7 +113,7 @@ export const createVimeoUploadSession = catchAsync(async (req: Request, res: Res
         name: title,
         description: description || '',
         privacy: {
-          view: 'nobody',
+          view: 'unlisted',
           embed: 'whitelist',
           domains: [
             'wordimpactnetwork.org',
@@ -162,7 +162,3 @@ export const createVimeoUploadSession = catchAsync(async (req: Request, res: Res
     sendError(res, 500, 'Failed to create upload session');
   }
 });
-
-
-
-
