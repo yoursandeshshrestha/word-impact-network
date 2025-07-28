@@ -556,3 +556,70 @@ export const getValidVimeoToken = async (): Promise<string | null> => {
 
   return null;
 };
+
+/**
+ * Update video privacy settings to restrict access to specific domains
+ */
+export const updateVideoPrivacySettings = async (videoId: string): Promise<void> => {
+  try {
+    if (!hasValidVimeoToken()) {
+      throw new AppError(
+        'Vimeo access token not available. Please complete OAuth authentication first.',
+        401,
+        ErrorTypes.AUTHORIZATION,
+      );
+    }
+
+    logger.info('Updating video privacy settings', { videoId });
+
+    const response = await axios.patch(
+      `${VIMEO_CONFIG.apiBaseUrl}/videos/${videoId}`,
+      {
+        privacy: {
+          view: 'nobody',
+          embed: 'whitelist',
+          domains: ['wordimpactnetwork.org', 'admin.wordimpactnetwork.org'],
+        },
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${vimeoAccessToken}`,
+          'Content-Type': 'application/json',
+        },
+      },
+    );
+
+    logger.info('Video privacy settings updated successfully', { videoId });
+  } catch (error) {
+    logger.error('Error updating video privacy settings', {
+      videoId,
+      error: error instanceof Error ? error.message : String(error),
+    });
+    throw new AppError('Failed to update video privacy settings', 500, ErrorTypes.SERVER);
+  }
+};
+
+/**
+ * Check if a video has domain restrictions
+ */
+export const hasDomainRestrictions = async (videoId: string): Promise<boolean> => {
+  try {
+    const videoInfo = await getVimeoVideoInfo(videoId);
+
+    // Check if video has whitelist embed settings
+    if (videoInfo.privacy?.view === 'nobody') {
+      // For whitelist embed, we need to check the embed settings
+      // This is a simplified check - in practice, you might need to make an additional API call
+      // to get the detailed embed settings
+      return true;
+    }
+
+    return false;
+  } catch (error) {
+    logger.error('Error checking video domain restrictions', {
+      videoId,
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return false;
+  }
+};
