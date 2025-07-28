@@ -148,7 +148,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ video, onClose }) => {
             preload="auto"
             poster={video.thumbnailUrl || ""}
             autoPlay // Attempt autoplay
-            src={video.vimeoId}
+            src={video.embedUrl}
             crossOrigin="anonymous"
           >
             Your browser does not support the video tag.
