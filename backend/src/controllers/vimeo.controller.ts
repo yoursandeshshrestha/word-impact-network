@@ -115,7 +115,17 @@ export const createVimeoUploadSession = catchAsync(async (req: Request, res: Res
         privacy: {
           view: 'nobody',
           embed: 'whitelist',
-          domains: ['wordimpactnetwork.org', 'admin.wordimpactnetwork.org'],
+          domains: [
+            'wordimpactnetwork.org',
+            'www.wordimpactnetwork.org',
+            'admin.wordimpactnetwork.org',
+            'https://wordimpactnetwork.org',
+            'https://www.wordimpactnetwork.org',
+            'https://admin.wordimpactnetwork.org',
+            'http://wordimpactnetwork.org',
+            'http://www.wordimpactnetwork.org',
+            'http://admin.wordimpactnetwork.org',
+          ],
         },
       },
       {
@@ -153,69 +163,6 @@ export const createVimeoUploadSession = catchAsync(async (req: Request, res: Res
   }
 });
 
-/**
- * Update video privacy settings to restrict access to specific domains
- * @route PATCH /api/v1/vimeo/videos/:videoId/privacy
- * @access Private (Admin only)
- */
-export const updateVideoPrivacy = catchAsync(async (req: Request, res: Response) => {
-  try {
-    const { videoId } = req.params;
 
-    if (!videoId) {
-      return sendError(res, 400, 'Video ID is required');
-    }
 
-    const { updateVideoPrivacySettings } = await import('../utils/vimeo');
-    await updateVideoPrivacySettings(videoId);
 
-    sendSuccess(res, 200, 'Video privacy settings updated successfully', { videoId });
-  } catch (error) {
-    logger.error('Error updating video privacy settings', {
-      videoId: req.params.videoId,
-      error: error instanceof Error ? error.message : String(error),
-    });
-
-    if (error instanceof Error) {
-      return sendError(res, 500, error.message);
-    }
-
-    sendError(res, 500, 'Failed to update video privacy settings');
-  }
-});
-
-/**
- * Check if a video has domain restrictions
- * @route GET /api/v1/vimeo/videos/:videoId/privacy
- * @access Private (Admin only)
- */
-export const checkVideoPrivacy = catchAsync(async (req: Request, res: Response) => {
-  try {
-    const { videoId } = req.params;
-
-    if (!videoId) {
-      return sendError(res, 400, 'Video ID is required');
-    }
-
-    const { hasDomainRestrictions, getVimeoVideoInfo } = await import('../utils/vimeo');
-    const hasRestrictions = await hasDomainRestrictions(videoId);
-    const videoInfo = await getVimeoVideoInfo(videoId);
-
-    sendSuccess(res, 200, 'Video privacy status retrieved', {
-      videoId,
-      hasDomainRestrictions: hasRestrictions,
-      privacy: videoInfo.privacy,
-    });
-  } catch (error) {
-    logger.error('Error checking video privacy settings', {
-      videoId: req.params.videoId,
-      error: error instanceof Error ? error.message : String(error),
-    });
-
-    if (error instanceof Error) {
-      return sendError(res, 500, error.message);
-    }
-
-    sendError(res, 500, 'Failed to check video privacy settings');
-  }
-});
