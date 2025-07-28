@@ -4,6 +4,8 @@ import {
   getVimeoAuth,
   handleVimeoCallback,
   createVimeoUploadSession,
+  updateVideoPrivacy,
+  checkVideoPrivacy,
 } from '../controllers/vimeo.controller';
 
 const router: Router = express.Router();
@@ -20,5 +22,11 @@ router.get('/callback', handleVimeoCallback);
 
 // POST /api/v1/vimeo/create-upload - Create Vimeo TUS upload session
 router.post('/create-upload', authenticate, requireAdmin, createVimeoUploadSession);
+
+// PATCH /api/v1/vimeo/videos/:videoId/privacy - Update video privacy settings
+router.patch('/videos/:videoId/privacy', authenticate, requireAdmin, updateVideoPrivacy);
+
+// GET /api/v1/vimeo/videos/:videoId/privacy - Check video privacy settings
+router.get('/videos/:videoId/privacy', authenticate, requireAdmin, checkVideoPrivacy);
 
 export default router;
