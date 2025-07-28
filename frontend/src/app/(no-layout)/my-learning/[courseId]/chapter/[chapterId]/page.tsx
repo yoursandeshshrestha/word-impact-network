@@ -58,9 +58,15 @@ interface VideoItemProps {
     isCompleted: boolean;
   };
   isCurrentlyPlaying: boolean;
-  onPlayVideo: (video: { id: string; title: string; vimeoId: string }) => void;
+  onPlayVideo: (video: {
+    id: string;
+    title: string;
+    vimeoId: string;
+    embedUrl: string;
+  }) => void;
   onMarkAsCompleted: (videoId: string, videoTitle: string) => void;
   isMarkingAsCompleted?: boolean;
+  embedUrl: string;
 }
 
 const VideoItem: React.FC<VideoItemProps> = ({
@@ -70,6 +76,7 @@ const VideoItem: React.FC<VideoItemProps> = ({
   duration,
   orderIndex,
   vimeoId,
+  embedUrl,
   isLocked,
   progress,
   isCurrentlyPlaying,
@@ -110,7 +117,7 @@ const VideoItem: React.FC<VideoItemProps> = ({
 
   const handleClick = () => {
     if (!isLocked) {
-      onPlayVideo({ id, title, vimeoId });
+      onPlayVideo({ id, title, vimeoId, embedUrl });
     }
   };
 
@@ -245,6 +252,7 @@ const ChapterDetailPage: React.FC = () => {
     id: string;
     title: string;
     vimeoId: string;
+    embedUrl: string;
   } | null>(null);
 
   // State for tracking manual completion
@@ -271,6 +279,7 @@ const ChapterDetailPage: React.FC = () => {
     id: string;
     title: string;
     vimeoId: string;
+    embedUrl: string;
   }) => {
     setCurrentVideo(video);
   };
@@ -556,7 +565,14 @@ const ChapterDetailPage: React.FC = () => {
                     key={video.id}
                     {...video}
                     isCurrentlyPlaying={currentVideo?.id === video.id}
-                    onPlayVideo={handlePlayVideo}
+                    onPlayVideo={(video) =>
+                      handlePlayVideo({
+                        id: video.id,
+                        title: video.title,
+                        vimeoId: video.vimeoId,
+                        embedUrl: video.embedUrl,
+                      })
+                    }
                     onMarkAsCompleted={handleMarkAsCompleted}
                     isMarkingAsCompleted={markingAsCompleted === video.id}
                   />
@@ -628,7 +644,7 @@ const ChapterDetailPage: React.FC = () => {
                   <div className="aspect-video bg-black">
                     <iframe
                       ref={iframeRef}
-                      src={`https://player.vimeo.com/video/${currentVideo.vimeoId}?autoplay=1&title=0&byline=0&portrait=0&controls=1&responsive=1`}
+                      src={`${currentVideo.embedUrl}?autoplay=1&title=0&byline=0&portrait=0&controls=1&responsive=1`}
                       className="w-full h-full"
                       frameBorder="0"
                       allow="autoplay; fullscreen; picture-in-picture"
