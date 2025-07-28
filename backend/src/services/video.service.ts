@@ -61,6 +61,7 @@ export async function createVideo(
         duration,
         vimeoId: vimeoResult.videoId,
         vimeoUrl: vimeoResult.videoUrl,
+        embedUrl: vimeoResult.embedUrl,
         chapterId,
       },
       include: {
@@ -146,6 +147,7 @@ export async function createVideoWithVimeoId(
         duration,
         vimeoId,
         vimeoUrl: vimeoInfo.link,
+        embedUrl: vimeoInfo.player_embed_url,
         chapterId,
       },
       include: {
