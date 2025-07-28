@@ -14,6 +14,7 @@ interface Video {
   orderIndex: number;
   vimeoId: string;
   vimeoUrl: string;
+  embedUrl: string;
   isLocked: boolean;
   progress: VideoProgress;
 }
