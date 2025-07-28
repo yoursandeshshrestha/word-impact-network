@@ -8,6 +8,7 @@ export interface Video {
   description: string | null;
   vimeoId: string;
   vimeoUrl: string;
+  embedUrl: string;
   duration: number; // in seconds
   orderIndex: number;
   chapterId: string;
