@@ -12,9 +12,9 @@ const VimeoPlayer: React.FC<VimeoPlayerProps> = ({ video, onClose }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Generate Vimeo embed URL
-  const getVimeoEmbedUrl = (vimeoId: string) => {
-    return `https://player.vimeo.com/video/${vimeoId}?autoplay=1&title=0&byline=0&portrait=0&controls=1&responsive=1`;
+  // Generate Vimeo embed URL with parameters
+  const getVimeoEmbedUrl = (embedUrl: string) => {
+    return `${embedUrl}?autoplay=1&title=0&byline=0&portrait=0&controls=1&responsive=1`;
   };
 
   // Handle iframe load
@@ -34,7 +34,7 @@ const VimeoPlayer: React.FC<VimeoPlayerProps> = ({ video, onClose }) => {
     if (video && iframeRef.current) {
       setIsLoading(true);
       setError(null);
-      const embedUrl = getVimeoEmbedUrl(video.vimeoId);
+      const embedUrl = getVimeoEmbedUrl(video.embedUrl);
       iframeRef.current.src = embedUrl;
     }
   }, [video]);
@@ -109,7 +109,7 @@ const VimeoPlayer: React.FC<VimeoPlayerProps> = ({ video, onClose }) => {
                   setError(null);
                   setIsLoading(true);
                   if (iframeRef.current && video) {
-                    const embedUrl = getVimeoEmbedUrl(video.vimeoId);
+                    const embedUrl = getVimeoEmbedUrl(video.embedUrl);
                     iframeRef.current.src = embedUrl;
                   }
                 }}
