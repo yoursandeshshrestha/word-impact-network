@@ -31,7 +31,6 @@ interface AnnouncementFile {
 interface AnnouncementVideo {
   id: string;
   vimeoId: string;
-  vimeoUrl: string;
   embedUrl: string;
   fileName: string;
   fileSize: number;
@@ -217,7 +216,7 @@ const AnnouncementModal: React.FC<AnnouncementModalProps> = ({
                         <Video className="w-5 h-5 mr-2" />
                       </h3>
                       <a
-                        href={video.vimeoUrl}
+                        href={video.embedUrl}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="flex items-center gap-1 text-purple-600 hover:text-purple-800 text-sm font-medium"

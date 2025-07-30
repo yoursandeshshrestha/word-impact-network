@@ -697,7 +697,7 @@ const AnnouncementForm: React.FC<AnnouncementFormProps> = ({
                           </div>
                           <div className="flex items-center space-x-2">
                             <a
-                              href={video.vimeoUrl}
+                              href={video.embedUrl}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="text-blue-500 hover:text-blue-700 transition-colors"

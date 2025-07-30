@@ -358,7 +358,7 @@ const Announcements: React.FC = () => {
                             </p>
                           </div>
                           <a
-                            href={video.vimeoUrl}
+                            href={video.embedUrl}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="flex items-center gap-1 text-purple-600 hover:text-purple-800 text-sm font-medium"
