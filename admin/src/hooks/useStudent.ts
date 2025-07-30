@@ -62,7 +62,6 @@ export const useStudents = () => {
     if (error) {
       // Don't retry if it's an authentication error
       if (error.includes("Authentication failed")) {
-        console.log("Authentication failed, stopping retries");
         return;
       }
       return;
