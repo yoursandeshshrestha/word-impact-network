@@ -86,7 +86,6 @@ const Register = () => {
         adminCreationSecret: formData.adminCreationSecret,
       });
 
-      console.log("Registration response:", response);
 
       // Show success message
       toast.success(response.message || "Registration successful!");
