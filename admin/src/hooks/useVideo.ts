@@ -5,6 +5,7 @@ import {
   addVideo,
   addVideoWithVimeo,
   getVideosByChapter,
+  getVideosWithStatus,
   getVideoById,
   updateVideo,
   deleteVideo,
@@ -14,6 +15,7 @@ import {
   clearVideos,
   setShouldCloseModal,
   setShouldCloseDeleteModal,
+  updateVideoStatus as updateVideoStatusAction,
   selectVideos,
   selectVideo,
   selectVideosLoading,
@@ -49,6 +51,10 @@ export const useVideo = () => {
 
   const fetchVideosByChapter = (chapterId: string) => {
     dispatch(getVideosByChapter(chapterId));
+  };
+
+  const fetchVideosWithStatus = (chapterId: string) => {
+    dispatch(getVideosWithStatus(chapterId));
   };
 
   const fetchVideoById = (id: string) => {
@@ -95,6 +101,14 @@ export const useVideo = () => {
     dispatch(setShouldCloseDeleteModal(false));
   };
 
+  const updateVideoStatus = (
+    videoId: string,
+    status: string,
+    errorMessage?: string
+  ) => {
+    dispatch(updateVideoStatusAction({ videoId, status, errorMessage }));
+  };
+
   return {
     videos,
     video,
@@ -107,6 +121,7 @@ export const useVideo = () => {
     shouldCloseModal,
     shouldCloseDeleteModal,
     fetchVideosByChapter,
+    fetchVideosWithStatus,
     fetchVideoById,
     uploadVideo,
     uploadVideoWithVimeo,
@@ -118,5 +133,6 @@ export const useVideo = () => {
     clearVideosList,
     closeModal,
     closeDeleteModal,
+    updateVideoStatus,
   };
 };
