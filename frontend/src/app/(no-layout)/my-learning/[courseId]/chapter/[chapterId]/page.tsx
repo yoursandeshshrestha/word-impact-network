@@ -644,7 +644,7 @@ const ChapterDetailPage: React.FC = () => {
                   <div className="aspect-video bg-black">
                     <iframe
                       ref={iframeRef}
-                      src={`${currentVideo.embedUrl}&autoplay=1&title=0&byline=0&portrait=0&controls=1&responsive=1`}
+                      src={`${currentVideo.embedUrl}&autoplay=1&title=0&byline=0&portrait=0&controls=1&responsive=1&badge=0&logo=0&branding=0&showinfo=0`}
                       className="w-full h-full"
                       frameBorder="0"
                       allow="autoplay; fullscreen; picture-in-picture"
