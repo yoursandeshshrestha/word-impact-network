@@ -1,6 +1,9 @@
 import { Request, Response } from 'express';
 import { catchAsync } from '../utils/catchAsync';
-import { sendSuccess } from '../utils/responseHandler';
+import { sendSuccess, sendError } from '../utils/responseHandler';
+import { logger } from '../utils/logger';
+import { PrismaClient } from '@prisma/client';
+import { videoProcessingQueue } from '../config/queue';
 import { AppError, ErrorTypes } from '../utils/appError';
 import {
   createVideo,
@@ -11,6 +14,126 @@ import {
   deleteVideoById,
 } from '../services/video.service';
 import { cleanupTempFile } from '../utils/upload';
+
+const prisma = new PrismaClient();
+
+/**
+ * Get video processing status
+ */
+export const getVideoStatus = catchAsync(async (req: Request, res: Response) => {
+  const { videoId } = req.params;
+
+  if (!videoId) {
+    return sendError(res, 400, 'Video ID is required');
+  }
+
+  const video = await prisma.video.findUnique({
+    where: { id: videoId },
+    select: {
+      id: true,
+      title: true,
+      status: true,
+      processingJobId: true,
+      errorMessage: true,
+      processedAt: true,
+      embedUrl: true,
+      vimeoId: true,
+    },
+  });
+
+  if (!video) {
+    return sendError(res, 404, 'Video not found');
+  }
+
+  // If video is processing, get job status
+  let jobStatus = null;
+  if (video.processingJobId) {
+    try {
+      const job = await videoProcessingQueue.getJob(video.processingJobId);
+      if (job) {
+        jobStatus = {
+          id: job.id,
+          status: await job.getState(),
+          progress: job.progress(),
+          failedReason: job.failedReason,
+        };
+      }
+    } catch (error) {
+      logger.error('Error getting job status', { videoId, jobId: video.processingJobId, error });
+    }
+  }
+
+  sendSuccess(res, 200, 'Video status retrieved', {
+    video,
+    jobStatus,
+  });
+});
+
+/**
+ * Get all videos with their processing status for a chapter
+ */
+export const getVideosWithStatus = catchAsync(async (req: Request, res: Response) => {
+  const { chapterId } = req.params;
+
+  if (!chapterId) {
+    return sendError(res, 400, 'Chapter ID is required');
+  }
+
+  const videos = await prisma.video.findMany({
+    where: { chapterId },
+    select: {
+      id: true,
+      title: true,
+      description: true,
+      status: true,
+      processingJobId: true,
+      errorMessage: true,
+      processedAt: true,
+      embedUrl: true,
+      vimeoId: true,
+      duration: true,
+      orderIndex: true,
+      createdAt: true,
+      updatedAt: true,
+    },
+    orderBy: { orderIndex: 'asc' },
+  });
+
+  // Get job status for processing videos
+  const videosWithJobStatus = await Promise.all(
+    videos.map(async (video) => {
+      let jobStatus = null;
+      if (video.processingJobId) {
+        try {
+          const job = await videoProcessingQueue.getJob(video.processingJobId);
+          if (job) {
+            jobStatus = {
+              id: job.id,
+              status: await job.getState(),
+              progress: job.progress(),
+              failedReason: job.failedReason,
+            };
+          }
+        } catch (error) {
+          logger.error('Error getting job status', {
+            videoId: video.id,
+            jobId: video.processingJobId,
+            error,
+          });
+        }
+      }
+
+      return {
+        ...video,
+        jobStatus,
+      };
+    }),
+  );
+
+  sendSuccess(res, 200, 'Videos with status retrieved', {
+    videos: videosWithJobStatus,
+  });
+});
 
 /**
  * Add video to chapter
