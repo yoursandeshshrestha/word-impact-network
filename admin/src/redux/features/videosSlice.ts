@@ -7,7 +7,6 @@ export interface Video {
   title: string;
   description: string | null;
   vimeoId: string;
-  vimeoUrl: string;
   embedUrl: string;
   duration: number; // in seconds
   orderIndex: number;
@@ -193,7 +192,11 @@ export const updateVideo = createAsyncThunk(
         // Set isUploading to true
         dispatch(setIsUploading(true));
 
-        response = await api.uploadWithMethod<Video>(`/videos/${id}`, videoData, "PUT");
+        response = await api.uploadWithMethod<Video>(
+          `/videos/${id}`,
+          videoData,
+          "PUT"
+        );
 
         // Reset upload progress and isUploading once done
         dispatch(setUploadProgress(0));
