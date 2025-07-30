@@ -39,7 +39,7 @@ export const useAuth = (requireAuth: boolean = true) => {
           router.push("/dashboard");
         }
       } catch (error) {
-        console.error("Auth check failed:", error);
+        console.error("useAuth: Error checking authentication", error);
         setAuthStatus(false);
         if (requireAuth) {
           router.push("/auth/login");
