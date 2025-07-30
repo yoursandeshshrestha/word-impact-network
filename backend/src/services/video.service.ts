@@ -197,6 +197,18 @@ export async function fetchVideosByChapterId(chapterId: string) {
     const videos = await prisma.video.findMany({
       where: { chapterId },
       orderBy: { orderIndex: 'asc' },
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        vimeoId: true,
+        embedUrl: true,
+        duration: true,
+        orderIndex: true,
+        chapterId: true,
+        createdAt: true,
+        updatedAt: true,
+      },
     });
 
     return videos;
@@ -217,7 +229,17 @@ export async function fetchVideoById(id: string) {
     logger.info('Fetching video by ID', { videoId: id });
     const video = await prisma.video.findUnique({
       where: { id },
-      include: {
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        vimeoId: true,
+        embedUrl: true,
+        duration: true,
+        orderIndex: true,
+        chapterId: true,
+        createdAt: true,
+        updatedAt: true,
         chapter: {
           select: {
             title: true,
