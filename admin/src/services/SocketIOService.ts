@@ -9,6 +9,7 @@ export enum SocketEvents {
   MESSAGE_READ = "message_read",
   NEW_NOTIFICATION = "new_notification",
   NOTIFICATION_READ = "notification_read",
+  VIDEO_STATUS_UPDATE = "video_status_update",
   ERROR = "error",
 }
 
@@ -55,7 +56,7 @@ class SocketIOService {
       // Set up event handlers
       this.setupEventHandlers();
     } catch (error) {
-      console.error("Socket.IO: Connection error", error);
+      console.error("SocketIOService: Connection error", error);
       this.scheduleReconnect();
     }
   }
@@ -99,7 +100,6 @@ class SocketIOService {
 
     // Connection error
     this.socket.on("connect_error", (error) => {
-      console.error("Socket.IO: Connection error", error);
       this.connected = false;
       this.wasDisconnected = true;
       this.scheduleReconnect();
@@ -129,6 +129,12 @@ class SocketIOService {
       this.emitToListeners(SocketEvents.NEW_NOTIFICATION, data);
     });
 
+    // Video status update received
+    this.socket.on(SocketEvents.VIDEO_STATUS_UPDATE, (data) => {
+      // Emit event to any listeners
+      this.emitToListeners(SocketEvents.VIDEO_STATUS_UPDATE, data);
+    });
+
     // Message read event
     this.socket.on(SocketEvents.MESSAGE_READ, (data) => {
       // Don't automatically fetch unread count here since the frontend
@@ -147,8 +153,6 @@ class SocketIOService {
 
     // Error event
     this.socket.on(SocketEvents.ERROR, (error) => {
-      console.error("Socket.IO: Error event received", error);
-
       // Emit event to any listeners
       this.emitToListeners(SocketEvents.ERROR, { error });
     });
@@ -162,10 +166,8 @@ class SocketIOService {
         try {
           listener(data);
         } catch (error) {
-          console.error(
-            `Socket.IO: Error in listener for event ${event}`,
-            error
-          );
+          console.error("SocketIOService: Error in listener", error);
+          // Error in listener handled silently
         }
       });
     }
@@ -186,17 +188,10 @@ class SocketIOService {
         30000
       );
 
-      console.log(
-        `Socket.IO: Scheduling reconnect in ${delay}ms (attempt ${this.connectionAttempts})`
-      );
-
       this.reconnectTimer = setTimeout(() => {
         this.connect();
       }, delay);
     } else {
-      console.warn(
-        `Socket.IO: Maximum reconnection attempts (${this.maxReconnectionAttempts}) reached`
-      );
       // Reset connection attempts after max attempts
       this.connectionAttempts = 0;
     }
@@ -209,10 +204,8 @@ class SocketIOService {
       store.dispatch(fetchUnreadCount()),
       store.dispatch(fetchNotifications({ page: 1, limit: 10 })),
     ]).catch((error) => {
-      console.error(
-        "Socket.IO: Error refreshing data after reconnection:",
-        error
-      );
+      console.error("SocketIOService: Error refreshing data", error);
+      // Error refreshing data handled silently
     });
   }
 
@@ -221,7 +214,6 @@ class SocketIOService {
     if (this.socket && this.connected) {
       this.socket.emit(event, { type: event, data });
     } else {
-      console.warn("Socket.IO: Cannot send message, connection not open");
       // Try to reconnect
       if (!this.connected) {
         this.connect();
@@ -282,13 +274,9 @@ class SocketIOService {
   // Force a refresh of all real-time data
   refreshAllData(): void {
     if (this.connected) {
-      console.log("Socket.IO: Manually refreshing all data");
       this.refreshData();
     } else {
       // Try to reconnect first
-      console.log(
-        "Socket.IO: Not connected, attempting to connect before refreshing data"
-      );
       this.connect();
     }
   }
@@ -296,7 +284,6 @@ class SocketIOService {
   // Force a refresh of just notification data
   refreshNotifications(): void {
     if (this.connected) {
-      console.log("Socket.IO: Manually refreshing notifications");
       store.dispatch(fetchNotifications({ page: 1, limit: 10 }));
     }
   }
