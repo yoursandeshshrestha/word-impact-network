@@ -12,6 +12,7 @@ import {
 } from '../utils/vimeo';
 import { logger } from '../utils/logger';
 import axios from 'axios';
+import { AppError, ErrorTypes } from '../utils/appError';
 
 /**
  * Get Vimeo authorization URL
@@ -119,12 +120,6 @@ export const createVimeoUploadSession = catchAsync(async (req: Request, res: Res
             'wordimpactnetwork.org',
             'www.wordimpactnetwork.org',
             'admin.wordimpactnetwork.org',
-            'https://wordimpactnetwork.org',
-            'https://www.wordimpactnetwork.org',
-            'https://admin.wordimpactnetwork.org',
-            'http://wordimpactnetwork.org',
-            'http://www.wordimpactnetwork.org',
-            'http://admin.wordimpactnetwork.org',
           ],
         },
       },
@@ -160,5 +155,77 @@ export const createVimeoUploadSession = catchAsync(async (req: Request, res: Res
     }
 
     sendError(res, 500, 'Failed to create upload session');
+  }
+});
+
+export const checkVideoReadiness = catchAsync(async (req: Request, res: Response) => {
+  if (!req.user) {
+    throw new AppError('Authentication required', 401, ErrorTypes.AUTHENTICATION);
+  }
+
+  const { videoId } = req.params;
+
+  if (!videoId) {
+    return sendError(res, 400, 'Video ID is required');
+  }
+
+  try {
+    const { isVideoReadyToPlay } = await import('../utils/vimeo');
+    const readiness = await isVideoReadyToPlay(videoId);
+
+    sendSuccess(res, 200, 'Video readiness checked', readiness);
+  } catch (error) {
+    logger.error('Error checking video readiness', {
+      videoId,
+      error: error instanceof Error ? error.message : String(error),
+    });
+
+    sendError(res, 500, 'Failed to check video readiness');
+  }
+});
+
+export const getVideoDetails = catchAsync(async (req: Request, res: Response) => {
+  if (!req.user) {
+    throw new AppError('Authentication required', 401, ErrorTypes.AUTHENTICATION);
+  }
+
+  const { videoId } = req.params;
+
+  if (!videoId) {
+    return sendError(res, 400, 'Video ID is required');
+  }
+
+  try {
+    const { getVimeoVideoInfo, isVideoReadyToPlay } = await import('../utils/vimeo');
+
+    // Get video info
+    const videoInfo = await getVimeoVideoInfo(videoId);
+
+    // Check readiness
+    const readiness = await isVideoReadyToPlay(videoId);
+
+    // Extract embed URL details
+    const embedUrl = videoInfo.player_embed_url;
+    const embedHtml = videoInfo.embed?.html;
+
+    sendSuccess(res, 200, 'Video details retrieved', {
+      videoId,
+      title: videoInfo.name,
+      description: videoInfo.description,
+      duration: videoInfo.duration,
+      status: videoInfo.status,
+      play: videoInfo.play,
+      privacy: videoInfo.privacy,
+      embedUrl,
+      embedHtml,
+      readiness,
+    });
+  } catch (error) {
+    logger.error('Error getting video details', {
+      videoId,
+      error: error instanceof Error ? error.message : String(error),
+    });
+
+    sendError(res, 500, 'Failed to get video details');
   }
 });
