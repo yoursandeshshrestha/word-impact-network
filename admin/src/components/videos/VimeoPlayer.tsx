@@ -14,7 +14,7 @@ const VimeoPlayer: React.FC<VimeoPlayerProps> = ({ video, onClose }) => {
 
   // Generate Vimeo embed URL with parameters
   const getVimeoEmbedUrl = (embedUrl: string) => {
-    return `${embedUrl}&autoplay=1&title=0&byline=0&portrait=0&controls=1&responsive=1`;
+    return `${embedUrl}&autoplay=1&title=0&byline=0&portrait=0&controls=1&responsive=1&badge=0&logo=0&branding=0&showinfo=0`;
   };
 
   // Handle iframe load
