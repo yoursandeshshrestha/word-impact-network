@@ -62,8 +62,6 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
   // Enhanced initialization with robust options processing
   useEffect(() => {
     if (initialData) {
-      console.log("Initializing form with data:", initialData);
-
       // Process options to handle all possible formats
       let processedOptions: QuestionOption[] = [];
 
@@ -147,7 +145,6 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
         }
       }
 
-      console.log("Processed options:", processedOptions);
 
       // Update form state with processed data
       setFormData({
@@ -352,7 +349,6 @@ const QuestionForm: React.FC<QuestionFormProps> = ({
         points: formData.points,
       };
 
-      console.log("Form payload being submitted:", payload);
       onSubmit(payload);
     }
   };
