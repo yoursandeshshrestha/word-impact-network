@@ -9,7 +9,6 @@ export interface NewsImage {
 export interface NewsVideo {
   id: string;
   vimeoId: string;
-  vimeoUrl: string;
   embedUrl: string;
   fileName: string;
   fileSize: number;
