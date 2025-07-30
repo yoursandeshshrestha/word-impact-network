@@ -20,7 +20,9 @@ const upload = multer({
 // GET /api/v1/videos/:id - Get Video by ID
 router.get('/:id', getVideoById);
 
+// GET /api/v1/videos/:id/status - Get Video Processing Status
 
+// GET /api/v1/videos/chapter/:chapterId/status - Get All Videos with Status for Chapter
 
 // PUT /api/v1/videos/:id - Update Video (Admin only)
 router.put(
