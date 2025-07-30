@@ -1,14 +1,31 @@
 import React, { useState } from "react";
 import { Video } from "@/redux/features/videosSlice";
 import { formatDate, formatDuration } from "@/utils/formatters";
-import { Play, Edit, Trash2, Clock, Hash, Calendar, Film } from "lucide-react";
+import {
+  Play,
+  Edit,
+  Trash2,
+  Clock,
+  Hash,
+  Calendar,
+  Film,
+  Loader2,
+  XCircle,
+} from "lucide-react";
 import Image from "next/image";
+import VideoStatusIndicator from "./VideoStatusIndicator";
 
 interface VideoCardProps {
   video: Video;
   onEdit: (video: Video) => void;
   onDelete: (id: string) => void;
   onPlay: (video: Video) => void;
+  jobStatus?: {
+    id: string;
+    status: string;
+    progress: number;
+    failedReason?: string;
+  };
 }
 
 const VideoCard: React.FC<VideoCardProps> = ({
@@ -16,6 +33,7 @@ const VideoCard: React.FC<VideoCardProps> = ({
   onEdit,
   onDelete,
   onPlay,
+  jobStatus,
 }) => {
   const [imageError, setImageError] = useState(false);
 
@@ -43,10 +61,12 @@ const VideoCard: React.FC<VideoCardProps> = ({
   return (
     <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-all duration-300">
       <div
-        className={`relative h-40 ${generateBackgroundColor(
-          video.title
-        )} cursor-pointer group`}
-        onClick={() => onPlay(video)}
+        className={`relative h-40 ${generateBackgroundColor(video.title)} ${
+          video.status === "READY"
+            ? "cursor-pointer group"
+            : "cursor-not-allowed"
+        }`}
+        onClick={() => video.status === "READY" && onPlay(video)}
       >
         {/* Video thumbnail - with fallback */}
         {video.thumbnailUrl && !imageError ? (
@@ -67,27 +87,61 @@ const VideoCard: React.FC<VideoCardProps> = ({
           </div>
         )}
 
-        {/* Play button overlay */}
-        <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-40 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-          <div className="bg-indigo-600 rounded-full p-3 transform hover:scale-110 transition-transform duration-200">
-            <Play size={24} className="text-white" fill="white" />
+        {/* Play button overlay - only show when video is ready */}
+        {video.status === "READY" && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-40 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+            <div className="bg-indigo-600 rounded-full p-3 transform hover:scale-110 transition-transform duration-200">
+              <Play size={24} className="text-white" fill="white" />
+            </div>
           </div>
-        </div>
+        )}
+
+        {/* Processing overlay */}
+        {(video.status === "UPLOADING" || video.status === "PROCESSING") && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-70">
+            <div className="text-center text-white">
+              <Loader2 size={32} className="animate-spin mx-auto mb-2" />
+              <p className="text-sm font-medium">Processing</p>
+            </div>
+          </div>
+        )}
+
+        {/* Failed overlay */}
+        {video.status === "FAILED" && (
+          <div className="absolute inset-0 flex items-center justify-center bg-red-900 bg-opacity-70">
+            <div className="text-center text-white">
+              <XCircle size={32} className="mx-auto mb-2" />
+              <p className="text-sm font-medium">Failed</p>
+              {video.errorMessage && (
+                <p className="text-xs mt-1 opacity-75">{video.errorMessage}</p>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Duration badge */}
         <div className="absolute bottom-2 right-2 bg-black bg-opacity-70 text-white text-xs rounded px-2 py-1 flex items-center">
           <Clock size={12} className="mr-1" />
-          {formatDuration(video.duration)}
+          {video.status === "READY"
+            ? formatDuration(video.duration)
+            : "Processing..."}
         </div>
       </div>
 
       <div className="p-4">
-        <h3
-          className="text-md font-semibold text-gray-900 mb-1 line-clamp-1"
-          title={video.title}
-        >
-          {video.title}
-        </h3>
+        <div className="flex items-start justify-between mb-1">
+          <h3
+            className="text-md font-semibold text-gray-900 line-clamp-1 flex-1 mr-2"
+            title={video.title}
+          >
+            {video.title}
+          </h3>
+          <VideoStatusIndicator
+            status={video.status || "UPLOADING"}
+            errorMessage={video.errorMessage}
+            jobStatus={jobStatus}
+          />
+        </div>
 
         {video.description && (
           <p
