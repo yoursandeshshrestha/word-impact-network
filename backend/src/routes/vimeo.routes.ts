@@ -6,6 +6,7 @@ import {
   createVimeoUploadSession,
   checkVideoReadiness,
   getVideoDetails,
+  updateVideoEmbedUrl,
 } from '../controllers/vimeo.controller';
 
 const router: Router = express.Router();
@@ -28,5 +29,8 @@ router.get('/videos/:videoId/readiness', authenticate, requireAdmin, checkVideoR
 
 // GET /api/v1/vimeo/videos/:videoId/details - Get detailed video information
 router.get('/videos/:videoId/details', authenticate, requireAdmin, getVideoDetails);
+
+// PUT /api/v1/vimeo/videos/:videoId/embed-url - Update video embed URL
+router.put('/videos/:videoId/embed-url', authenticate, requireAdmin, updateVideoEmbedUrl);
 
 export default router;

@@ -30,29 +30,30 @@ import { useRouter } from "next/navigation";
 import placeholderCourseImage from "@/assets/placeholder-image.png";
 import PaymentModal from "@/components/common/PaymentModal";
 
-interface VideoData {
+// Import types from the Redux slice to avoid conflicts
+type VideoData = {
   id: string;
   title: string;
   description: string;
   duration: number;
   vimeoId: string;
   embedUrl: string;
-}
+};
 
-interface ChapterData {
+type ChapterData = {
   id: string;
   title: string;
   description: string;
   previewVideo?: VideoData;
-}
+};
 
-interface YearData {
+type YearData = {
   year: number;
   chapterCount: number;
   previewChapters: ChapterData[];
-}
+};
 
-interface CourseData {
+type CourseData = {
   id: string;
   title: string;
   description: string;
@@ -64,7 +65,7 @@ interface CourseData {
   createdAt: string;
   yearlyStructure: YearData[];
   previewChapter: ChapterData;
-}
+};
 
 const CourseDetailPage = () => {
   const { courseid } = useParams();
@@ -635,7 +636,7 @@ const CourseDetailPage = () => {
         isOpen={showPaymentModal}
         onClose={() => setShowPaymentModal(false)}
         onSuccess={handlePaymentSuccess}
-        courseTitle={currentCourse?.title || 'Course'}
+        courseTitle={currentCourse?.title || "Course"}
       />
     </div>
   );

@@ -229,3 +229,61 @@ export const getVideoDetails = catchAsync(async (req: Request, res: Response) =>
     sendError(res, 500, 'Failed to get video details');
   }
 });
+
+export const updateVideoEmbedUrl = catchAsync(async (req: Request, res: Response) => {
+  if (!req.user) {
+    throw new AppError('Authentication required', 401, ErrorTypes.AUTHENTICATION);
+  }
+
+  const { videoId } = req.params;
+
+  if (!videoId) {
+    return sendError(res, 400, 'Video ID is required');
+  }
+
+  try {
+    const { getVimeoVideoInfo } = await import('../utils/vimeo');
+    const { PrismaClient } = await import('@prisma/client');
+    const prisma = new PrismaClient();
+
+    // Get video info from Vimeo
+    const vimeoInfo = await getVimeoVideoInfo(videoId);
+
+    // Find video by Vimeo ID first
+    const video = await prisma.video.findFirst({
+      where: { vimeoId: videoId },
+    });
+
+    if (!video) {
+      return sendError(res, 404, 'Video not found');
+    }
+
+    // Update the video in database with new embed URL
+    const updatedVideo = await prisma.video.update({
+      where: { id: video.id },
+      data: {
+        embedUrl: vimeoInfo.player_embed_url,
+      },
+      select: {
+        id: true,
+        title: true,
+        vimeoId: true,
+        embedUrl: true,
+      },
+    });
+
+    sendSuccess(res, 200, 'Video embed URL updated successfully', {
+      videoId: updatedVideo.id,
+      vimeoId: updatedVideo.vimeoId,
+      title: updatedVideo.title,
+      embedUrl: updatedVideo.embedUrl,
+    });
+  } catch (error) {
+    logger.error('Error updating video embed URL', {
+      videoId,
+      error: error instanceof Error ? error.message : String(error),
+    });
+
+    sendError(res, 500, 'Failed to update video embed URL');
+  }
+});
