@@ -135,7 +135,10 @@ export async function createVideoWithVimeoId(
     }
 
     // Get video info from Vimeo to get the URL
-    const { getVimeoVideoInfo } = await import('../utils/vimeo');
+    const { getVimeoVideoInfo, waitForVideoProcessing } = await import('../utils/vimeo');
+
+    // Wait for video processing to get the final embed URL
+    const finalEmbedUrl = await waitForVideoProcessing(vimeoId);
     const vimeoInfo = await getVimeoVideoInfo(vimeoId);
 
     // Create the video record in the database
@@ -147,7 +150,7 @@ export async function createVideoWithVimeoId(
         duration,
         vimeoId,
         vimeoUrl: vimeoInfo.link,
-        embedUrl: vimeoInfo.player_embed_url,
+        embedUrl: finalEmbedUrl,
         chapterId,
       },
       include: {

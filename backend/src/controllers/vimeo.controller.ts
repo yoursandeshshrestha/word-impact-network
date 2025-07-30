@@ -196,7 +196,9 @@ export const getVideoDetails = catchAsync(async (req: Request, res: Response) =>
   }
 
   try {
-    const { getVimeoVideoInfo, isVideoReadyToPlay } = await import('../utils/vimeo');
+    const { getVimeoVideoInfo, isVideoReadyToPlay, waitForVideoProcessing } = await import(
+      '../utils/vimeo'
+    );
 
     // Get video info
     const videoInfo = await getVimeoVideoInfo(videoId);
@@ -204,8 +206,8 @@ export const getVideoDetails = catchAsync(async (req: Request, res: Response) =>
     // Check readiness
     const readiness = await isVideoReadyToPlay(videoId);
 
-    // Extract embed URL details
-    const embedUrl = videoInfo.player_embed_url;
+    // Get the final embed URL (wait for processing if needed)
+    const finalEmbedUrl = await waitForVideoProcessing(videoId);
     const embedHtml = videoInfo.embed?.html;
 
     sendSuccess(res, 200, 'Video details retrieved', {
@@ -216,7 +218,7 @@ export const getVideoDetails = catchAsync(async (req: Request, res: Response) =>
       status: videoInfo.status,
       play: videoInfo.play,
       privacy: videoInfo.privacy,
-      embedUrl,
+      embedUrl: finalEmbedUrl,
       embedHtml,
       readiness,
     });
@@ -242,11 +244,12 @@ export const updateVideoEmbedUrl = catchAsync(async (req: Request, res: Response
   }
 
   try {
-    const { getVimeoVideoInfo } = await import('../utils/vimeo');
+    const { getVimeoVideoInfo, waitForVideoProcessing } = await import('../utils/vimeo');
     const { PrismaClient } = await import('@prisma/client');
     const prisma = new PrismaClient();
 
-    // Get video info from Vimeo
+    // Wait for video processing and get the final embed URL
+    const finalEmbedUrl = await waitForVideoProcessing(videoId);
     const vimeoInfo = await getVimeoVideoInfo(videoId);
 
     // Find video by Vimeo ID first
@@ -262,7 +265,7 @@ export const updateVideoEmbedUrl = catchAsync(async (req: Request, res: Response
     const updatedVideo = await prisma.video.update({
       where: { id: video.id },
       data: {
-        embedUrl: vimeoInfo.player_embed_url,
+        embedUrl: finalEmbedUrl,
       },
       select: {
         id: true,

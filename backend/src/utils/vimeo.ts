@@ -286,7 +286,12 @@ export const uploadToVimeo = async (
       throw uploadError;
     }
 
-    // Step 3: Get video info
+    // Step 3: Wait for video processing and get final embed URL
+    logger.info('Waiting for video processing to complete', { videoId });
+
+    const finalEmbedUrl = await waitForVideoProcessing(videoId);
+
+    // Get final video info
     const videoInfoResponse = await axios.get(`${VIMEO_CONFIG.apiBaseUrl}/videos/${videoId}`, {
       headers: {
         Authorization: `Bearer ${vimeoAccessToken}`,
@@ -298,14 +303,17 @@ export const uploadToVimeo = async (
     logger.info('Vimeo upload completed successfully', {
       videoId,
       videoUrl: videoInfo.link,
-      embedUrl: videoInfo.player_embed_url,
+      embedUrl: finalEmbedUrl,
+      embedHtml: videoInfo.embed?.html,
+      status: videoInfo.status,
+      play: videoInfo.play,
     });
 
     return {
       success: true,
       videoId,
       videoUrl: videoInfo.link,
-      embedUrl: videoInfo.player_embed_url,
+      embedUrl: finalEmbedUrl,
       fileName,
     };
   } catch (error) {
@@ -412,7 +420,7 @@ export const isVideoReadyToPlay = async (
     }
 
     // Check play status
-    if (videoInfo.play?.status !== 'available') {
+    if (videoInfo.play?.status !== 'available' && videoInfo.play?.status !== 'playable') {
       return {
         ready: false,
         status: 'unavailable',
@@ -585,4 +593,71 @@ export const getValidVimeoToken = async (): Promise<string | null> => {
   }
 
   return null;
+};
+
+/**
+ * Wait for video to be fully processed and get the final embed URL
+ */
+export const waitForVideoProcessing = async (
+  videoId: string,
+  maxWaitTime: number = 300000,
+): Promise<string> => {
+  const startTime = Date.now();
+  const checkInterval = 5000; // Check every 5 seconds
+
+  while (Date.now() - startTime < maxWaitTime) {
+    try {
+      const videoInfo = await getVimeoVideoInfo(videoId);
+
+      // Check if video is fully processed
+      const uploadComplete = videoInfo.status?.upload?.status === 'complete';
+      const transcodeComplete = videoInfo.status?.transcode?.status === 'complete';
+      const playReady =
+        videoInfo.play?.status === 'available' || videoInfo.play?.status === 'playable';
+
+      logger.info('Video processing check', {
+        videoId,
+        uploadComplete,
+        transcodeComplete,
+        playReady,
+        uploadStatus: videoInfo.status?.upload?.status,
+        transcodeStatus: videoInfo.status?.transcode?.status,
+        playStatus: videoInfo.play?.status,
+      });
+
+      // If video is playable, consider it ready regardless of upload/transcode status
+      // Sometimes Vimeo marks videos as playable before all processing is complete
+      if (playReady) {
+        logger.info('Video processing completed', {
+          videoId,
+          embedUrl: videoInfo.player_embed_url,
+        });
+
+        return videoInfo.player_embed_url;
+      }
+
+      logger.info('Video still processing', {
+        videoId,
+        uploadStatus: videoInfo.status?.upload?.status,
+        transcodeStatus: videoInfo.status?.transcode?.status,
+        playStatus: videoInfo.play?.status,
+        allStatuses: {
+          upload: videoInfo.status?.upload?.status,
+          transcode: videoInfo.status?.transcode?.status,
+          play: videoInfo.play?.status,
+        },
+      });
+
+      // Wait before checking again
+      await new Promise((resolve) => setTimeout(resolve, checkInterval));
+    } catch (error) {
+      logger.error('Error checking video processing status', {
+        videoId,
+        error: error instanceof Error ? error.message : String(error),
+      });
+      throw error;
+    }
+  }
+
+  throw new AppError('Video processing timeout', 500, ErrorTypes.SERVER);
 };
