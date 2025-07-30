@@ -4,6 +4,8 @@ import {
   getVimeoAuth,
   handleVimeoCallback,
   createVimeoUploadSession,
+  checkVideoReadiness,
+  getVideoDetails,
 } from '../controllers/vimeo.controller';
 
 const router: Router = express.Router();
@@ -20,5 +22,11 @@ router.get('/callback', handleVimeoCallback);
 
 // POST /api/v1/vimeo/create-upload - Create Vimeo TUS upload session
 router.post('/create-upload', authenticate, requireAdmin, createVimeoUploadSession);
+
+// GET /api/v1/vimeo/videos/:videoId/readiness - Check video readiness
+router.get('/videos/:videoId/readiness', authenticate, requireAdmin, checkVideoReadiness);
+
+// GET /api/v1/vimeo/videos/:videoId/details - Get detailed video information
+router.get('/videos/:videoId/details', authenticate, requireAdmin, getVideoDetails);
 
 export default router;
