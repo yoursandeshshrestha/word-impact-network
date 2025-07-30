@@ -93,7 +93,6 @@ export const useWebSocketConnection = () => {
   const reconnectTimerRef = useRef<NodeJS.Timeout | null>(null);
   const dispatchRef = useRef(dispatch);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const hookId = useRef(`hook-${Date.now()}-${Math.random()}`);
 
   // Update the ref when dispatch changes
   useEffect(() => {
@@ -107,7 +106,10 @@ export const useWebSocketConnection = () => {
         await AuthService.getCurrentUser();
         setIsAuthenticated(true);
       } catch (error) {
-        console.error("Authentication check failed:", error);
+        console.error(
+          "useWebSocketConnection: Error checking authentication",
+          error
+        );
         setIsAuthenticated(false);
       }
     };
@@ -126,8 +128,6 @@ export const useWebSocketConnection = () => {
       const delay = Math.min(Math.pow(2, attempt) * 1000, 30000);
 
       reconnectTimerRef.current = setTimeout(() => {
-        console.log(`Attempting to reconnect (attempt ${attempt})...`);
-
         if (!websocketService.isConnected() && isAuthenticated) {
           websocketService.connect();
 
@@ -236,7 +236,6 @@ export const useWebSocketConnection = () => {
     };
 
     const errorHandler = (error: unknown) => {
-      console.log(`[${hookId.current}] Error event`);
       handleConnectionError(error);
     };
 
@@ -250,7 +249,6 @@ export const useWebSocketConnection = () => {
       if (document.visibilityState === "visible" && isAuthenticated) {
         // When tab becomes visible, check connection and refresh data
         if (!websocketService.isConnected()) {
-          console.log("Tab became visible, reconnecting WebSocket");
           websocketService.connect();
         }
 
