@@ -129,7 +129,7 @@ export async function fetchCourseById(id: string) {
                 title: true,
                 description: true,
                 vimeoId: true,
-                vimeoUrl: true,
+                embedUrl: true,
                 duration: true,
                 orderIndex: true,
                 createdAt: true,
