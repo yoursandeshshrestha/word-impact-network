@@ -14,6 +14,16 @@ export interface Video {
   createdAt: string;
   updatedAt: string;
   thumbnailUrl?: string;
+  status?: "UPLOADING" | "PROCESSING" | "READY" | "FAILED";
+  errorMessage?: string;
+  processingJobId?: string;
+  processedAt?: string;
+  jobStatus?: {
+    id: string;
+    status: string;
+    progress: number;
+    failedReason?: string;
+  };
 }
 
 interface VideosState {
@@ -177,6 +187,26 @@ export const getVideoById = createAsyncThunk(
   }
 );
 
+// Get videos with status for a chapter
+export const getVideosWithStatus = createAsyncThunk(
+  "videos/getVideosWithStatus",
+  async (chapterId: string, { rejectWithValue }) => {
+    try {
+      const response = await api.get<{ videos: Video[] }>(
+        `/videos/chapter/${chapterId}/status`
+      );
+      return response;
+    } catch (error: unknown) {
+      console.error("Error fetching videos with status:", error);
+      return rejectWithValue(
+        error instanceof Error
+          ? error.message
+          : "Failed to fetch videos with status"
+      );
+    }
+  }
+);
+
 // Update video
 export const updateVideo = createAsyncThunk(
   "videos/updateVideo",
@@ -286,6 +316,26 @@ const videosSlice = createSlice({
     setShouldCloseDeleteModal: (state, action: PayloadAction<boolean>) => {
       state.shouldCloseDeleteModal = action.payload;
     },
+    updateVideoStatus: (
+      state,
+      action: PayloadAction<{
+        videoId: string;
+        status: string;
+        errorMessage?: string;
+      }>
+    ) => {
+      const { videoId, status, errorMessage } = action.payload;
+      const videoIndex = state.videos.findIndex(
+        (video) => video.id === videoId
+      );
+      if (videoIndex !== -1) {
+        state.videos[videoIndex] = {
+          ...state.videos[videoIndex],
+          status: status as "UPLOADING" | "PROCESSING" | "READY" | "FAILED",
+          errorMessage,
+        };
+      }
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -297,17 +347,12 @@ const videosSlice = createSlice({
       .addCase(
         addVideo.fulfilled,
         (state, action: PayloadAction<AddVideoPayload>) => {
-          console.log("addVideo fulfilled:", action.payload);
           state.loading = false;
           state.success = true;
           state.message = action.payload?.message || "";
           state.shouldCloseModal = true;
           if (action.payload?.data) {
             state.videos.push(action.payload.data);
-            console.log(
-              "Video added to state, total videos:",
-              state.videos.length
-            );
           }
         }
       )
@@ -324,17 +369,12 @@ const videosSlice = createSlice({
       .addCase(
         addVideoWithVimeo.fulfilled,
         (state, action: PayloadAction<AddVideoPayload>) => {
-          console.log("addVideoWithVimeo fulfilled:", action.payload);
           state.loading = false;
           state.success = true;
           state.message = action.payload?.message || "";
           state.shouldCloseModal = true;
           if (action.payload?.data) {
             state.videos.push(action.payload.data);
-            console.log(
-              "Video added to state, total videos:",
-              state.videos.length
-            );
           }
         }
       )
@@ -411,6 +451,20 @@ const videosSlice = createSlice({
         state.loading = false;
         state.error = action.payload as string;
         state.shouldCloseDeleteModal = false;
+      })
+      // Get videos with status
+      .addCase(getVideosWithStatus.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(getVideosWithStatus.fulfilled, (state, action) => {
+        state.loading = false;
+        // The new API returns { videos: [...] } structure
+        state.videos = action.payload.data?.videos || [];
+      })
+      .addCase(getVideosWithStatus.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
       });
   },
 });
@@ -439,6 +493,7 @@ export const {
   setIsUploading,
   setShouldCloseModal,
   setShouldCloseDeleteModal,
+  updateVideoStatus,
 } = videosSlice.actions;
 
 export default videosSlice.reducer;
