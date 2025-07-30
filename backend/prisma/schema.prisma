@@ -36,6 +36,13 @@ enum UserRole {
   STUDENT
 }
 
+enum VideoStatus {
+  UPLOADING
+  PROCESSING
+  READY
+  FAILED
+}
+
 model User {
   id                String           @id @default(uuid())
   email             String           @unique
@@ -211,9 +218,13 @@ model Video {
   description       String?          @db.Text
   vimeoId           String           // Vimeo video ID
   vimeoUrl          String           // Vimeo video URL
-  embedUrl          String           // Vimeo embed URL
+  embedUrl          String?          // Vimeo embed URL (nullable during processing)
   duration          Int              // Duration in seconds
   orderIndex        Int              // For ordering videos within a chapter
+  status            VideoStatus      @default(UPLOADING)
+  processingJobId   String?          // Bull job ID for tracking
+  errorMessage      String?          // Error message if processing fails
+  processedAt       DateTime?        // When processing completed
   chapter           Chapter          @relation(fields: [chapterId], references: [id], onDelete: Cascade)
   chapterId         String
   watchedBy         VideoProgress[]

@@ -5,6 +5,7 @@ import app from './app';
 import config from './types';
 import { PrismaClient } from '@prisma/client';
 import { initializeSocketIO } from './websocket/websocket';
+import { startVideoProcessor, stopVideoProcessor } from './processors/videoProcessor';
 
 const prisma = new PrismaClient();
 const PORT = config.port;
@@ -23,6 +24,9 @@ const io = initializeSocketIO(server);
 // Make io available globally
 (global as any).io = io;
 
+// Start video processing queue
+startVideoProcessor();
+
 // Function to gracefully close server and database connections
 const gracefulShutdown = async (signal?: string) => {
   console.log(`\n${signal || 'Shutting down gracefully'} 🔄`);
@@ -36,6 +40,10 @@ const gracefulShutdown = async (signal?: string) => {
         resolve();
       });
     });
+
+    // Stop video processor
+    await stopVideoProcessor();
+    console.log('✅ Video processor stopped');
 
     // Then close database connections
     await prisma.$disconnect();
