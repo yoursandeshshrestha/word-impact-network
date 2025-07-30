@@ -24,7 +24,17 @@ export async function getActiveAnnouncements() {
         },
         images: true,
         files: true,
-        videos: true,
+        videos: {
+          select: {
+            id: true,
+            vimeoId: true,
+            embedUrl: true,
+            fileName: true,
+            fileSize: true,
+            duration: true,
+            createdAt: true,
+          },
+        },
       },
       orderBy: {
         createdAt: 'desc',
@@ -62,7 +72,17 @@ export async function getAllAnnouncements(page: number = 1, limit: number = 10) 
           },
           images: true,
           files: true,
-          videos: true,
+          videos: {
+            select: {
+              id: true,
+              vimeoId: true,
+              embedUrl: true,
+              fileName: true,
+              fileSize: true,
+              duration: true,
+              createdAt: true,
+            },
+          },
         },
         orderBy: {
           createdAt: 'desc',
@@ -114,7 +134,17 @@ export async function getAnnouncementById(id: string) {
         },
         images: true,
         files: true,
-        videos: true,
+        videos: {
+          select: {
+            id: true,
+            vimeoId: true,
+            embedUrl: true,
+            fileName: true,
+            fileSize: true,
+            duration: true,
+            createdAt: true,
+          },
+        },
       },
     });
 
@@ -252,7 +282,17 @@ export async function createAnnouncement(
         },
         images: true,
         files: true,
-        videos: true,
+        videos: {
+          select: {
+            id: true,
+            vimeoId: true,
+            embedUrl: true,
+            fileName: true,
+            fileSize: true,
+            duration: true,
+            createdAt: true,
+          },
+        },
       },
     });
 
@@ -347,14 +387,14 @@ export async function updateAnnouncement(
       for (const videoFile of videoFiles) {
         // Write video to temp file for Vimeo upload
         const tempFilePath = await writeBufferToTempFile(videoFile.buffer);
-        
+
         try {
           const vimeoResult = await uploadToVimeo(
             tempFilePath,
             `${title} - ${videoFile.originalname}`,
             content,
           );
-          
+
           videoUploads.push({
             vimeoId: vimeoResult.videoId,
             vimeoUrl: vimeoResult.videoUrl,
@@ -454,7 +494,17 @@ export async function updateAnnouncement(
         },
         images: true,
         files: true,
-        videos: true,
+        videos: {
+          select: {
+            id: true,
+            vimeoId: true,
+            embedUrl: true,
+            fileName: true,
+            fileSize: true,
+            duration: true,
+            createdAt: true,
+          },
+        },
       },
     });
 
