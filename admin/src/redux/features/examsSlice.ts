@@ -216,8 +216,6 @@ export const addQuestion = createAsyncThunk(
         points: questionData.points,
       };
 
-      console.log("Clean API payload:", cleanPayload);
-
       const response = await api.post<Question>(
         `/exams/${examId}/questions`,
         cleanPayload
@@ -268,8 +266,6 @@ export const updateQuestion = createAsyncThunk(
             ? null
             : questionData.options.map((option) => option.text);
       }
-
-      console.log("Clean update payload:", cleanPayload);
 
       const response = await api.put<Question>(
         `/exams/${examId}/questions/${questionId}`,
