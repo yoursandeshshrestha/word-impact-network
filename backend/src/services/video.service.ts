@@ -2,6 +2,7 @@ import { PrismaClient } from '@prisma/client';
 import { AppError, ErrorTypes } from '../utils/appError';
 import { logger } from '../utils/logger';
 import { uploadToVimeo, deleteFromVimeo } from '../utils/vimeo';
+import { videoProcessingQueue } from '../config/queue';
 
 const prisma = new PrismaClient();
 
@@ -52,7 +53,7 @@ export async function createVideo(
     // Upload video to Vimeo
     const vimeoResult = await uploadToVimeo(videoFile.path, title, description);
 
-    // Create the video record in the database
+    // Create the video record in the database with initial status
     const video = await prisma.video.create({
       data: {
         title,
@@ -61,7 +62,8 @@ export async function createVideo(
         duration,
         vimeoId: vimeoResult.videoId,
         vimeoUrl: vimeoResult.videoUrl,
-        embedUrl: vimeoResult.embedUrl,
+        embedUrl: vimeoResult.embedUrl, // Temporary embed URL
+        status: 'UPLOADING',
         chapterId,
       },
       include: {
@@ -76,6 +78,19 @@ export async function createVideo(
           },
         },
       },
+    });
+
+    // Add video processing job to queue
+    const job = await videoProcessingQueue.add('process-video', {
+      videoId: video.id,
+      vimeoId: vimeoResult.videoId,
+      title,
+      chapterId,
+    });
+
+    logger.info('Video processing job added to queue', {
+      videoId: video.id,
+      jobId: job.id,
     });
 
     logger.info('Video created successfully', { videoId: video.id });
@@ -135,13 +150,10 @@ export async function createVideoWithVimeoId(
     }
 
     // Get video info from Vimeo to get the URL
-    const { getVimeoVideoInfo, waitForVideoProcessing } = await import('../utils/vimeo');
-
-    // Wait for video processing to get the final embed URL
-    const finalEmbedUrl = await waitForVideoProcessing(vimeoId);
+    const { getVimeoVideoInfo } = await import('../utils/vimeo');
     const vimeoInfo = await getVimeoVideoInfo(vimeoId);
 
-    // Create the video record in the database
+    // Create the video record in the database with initial status
     const video = await prisma.video.create({
       data: {
         title,
@@ -150,7 +162,8 @@ export async function createVideoWithVimeoId(
         duration,
         vimeoId,
         vimeoUrl: vimeoInfo.link,
-        embedUrl: finalEmbedUrl,
+        embedUrl: vimeoInfo.player_embed_url, // Temporary embed URL
+        status: 'UPLOADING',
         chapterId,
       },
       include: {
@@ -165,6 +178,19 @@ export async function createVideoWithVimeoId(
           },
         },
       },
+    });
+
+    // Add video processing job to queue
+    const job = await videoProcessingQueue.add('process-video', {
+      videoId: video.id,
+      vimeoId,
+      title,
+      chapterId,
+    });
+
+    logger.info('Video processing job added to queue', {
+      videoId: video.id,
+      jobId: job.id,
     });
 
     logger.info('Video created successfully with Vimeo ID', { videoId: video.id, vimeoId });
