@@ -376,10 +376,23 @@ export const deleteFromVimeo = async (videoId: string): Promise<void> => {
  */
 export const getVimeoVideoInfo = async (videoId: string): Promise<VimeoVideoInfo> => {
   try {
+    const token = await getValidVimeoToken();
+    if (!token) {
+      throw new AppError('No valid Vimeo token available', 500, ErrorTypes.SERVER);
+    }
+
     const response = await axios.get(`${VIMEO_CONFIG.apiBaseUrl}/videos/${videoId}`, {
       headers: {
-        Authorization: `Bearer ${vimeoAccessToken}`,
+        Authorization: `Bearer ${token}`,
       },
+    });
+
+    logger.info('Video info retrieved from Vimeo', {
+      videoId,
+      player_embed_url: response.data.player_embed_url,
+      embed_html: response.data.embed?.html,
+      status: response.data.status,
+      play: response.data.play,
     });
 
     return response.data;
@@ -631,9 +644,24 @@ export const waitForVideoProcessing = async (
         logger.info('Video processing completed', {
           videoId,
           embedUrl: videoInfo.player_embed_url,
+          embedHtml: videoInfo.embed?.html,
+          allVideoInfo: {
+            player_embed_url: videoInfo.player_embed_url,
+            embed_html: videoInfo.embed?.html,
+            status: videoInfo.status,
+            play: videoInfo.play,
+          },
         });
-
-        return videoInfo.player_embed_url;
+        // Check if the embed URL has the hash parameter
+        const embedUrl = videoInfo.player_embed_url;
+        if (!embedUrl.includes('?h=')) {
+          logger.warn('Embed URL does not contain hash parameter', {
+            videoId,
+            embedUrl,
+            embedHtml: videoInfo.embed?.html,
+          });
+        }
+        return embedUrl;
       }
 
       logger.info('Video still processing', {
