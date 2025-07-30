@@ -6,6 +6,8 @@ import { useChapter } from "@/hooks/useChapter";
 import { useCourse } from "@/hooks/useCourses";
 import { useVideo } from "@/hooks/useVideo";
 import { useExam } from "@/hooks/useExam";
+import socketService from "@/services/SocketIOService";
+import { SocketEvents } from "@/types";
 import { Video as VideoIcon } from "lucide-react";
 import ChapterModal from "@/components/chapter/ChapterModel";
 import DeleteChapterModal from "@/components/chapter/DeleteChapterModel";
@@ -99,7 +101,7 @@ const ChapterDetailPage: React.FC<ChapterDetailPageProps> = ({ params }) => {
     isUploading,
     shouldCloseModal,
     shouldCloseDeleteModal,
-    fetchVideosByChapter,
+    fetchVideosWithStatus,
     uploadVideo,
     uploadVideoWithVimeo,
     editVideo,
@@ -109,6 +111,7 @@ const ChapterDetailPage: React.FC<ChapterDetailPageProps> = ({ params }) => {
     clearVideosList,
     closeModal,
     closeDeleteModal,
+    updateVideoStatus,
   } = useVideo();
 
   const {
@@ -140,7 +143,7 @@ const ChapterDetailPage: React.FC<ChapterDetailPageProps> = ({ params }) => {
   useEffect(() => {
     fetchChapterById(chapterId);
     fetchCourseById(courseId);
-    fetchVideosByChapter(chapterId);
+    fetchVideosWithStatus(chapterId); // Use the new API with status
     fetchChaptersByCourse(courseId);
 
     // Cleanup when component unmounts
@@ -151,6 +154,36 @@ const ChapterDetailPage: React.FC<ChapterDetailPageProps> = ({ params }) => {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [chapterId, courseId]);
+
+  // WebSocket video status updates
+  useEffect(() => {
+    // Connect to WebSocket service
+    socketService.connect();
+
+    const handleVideoStatusUpdate = (data: unknown) => {
+      const videoData = data as {
+        videoId: string;
+        status: "UPLOADING" | "PROCESSING" | "READY" | "FAILED";
+        progress?: number;
+        errorMessage?: string;
+      };
+      updateVideoStatus(
+        videoData.videoId,
+        videoData.status,
+        videoData.errorMessage
+      );
+    };
+
+    // Register event listeners
+    socketService.on(SocketEvents.VIDEO_STATUS_UPDATE, handleVideoStatusUpdate);
+
+    return () => {
+      socketService.off(
+        SocketEvents.VIDEO_STATUS_UPDATE,
+        handleVideoStatusUpdate
+      );
+    };
+  }, [updateVideoStatus]);
 
   useEffect(() => {
     // Handle chapter-related success/error
@@ -282,8 +315,11 @@ const ChapterDetailPage: React.FC<ChapterDetailPageProps> = ({ params }) => {
   };
 
   const handlePlayVideo = (video: VideoType) => {
-    setVideoToPlay(video);
-    setIsVideoPlayerOpen(true);
+    // Only allow playing if video is ready
+    if (video.status === "READY") {
+      setVideoToPlay(video);
+      setIsVideoPlayerOpen(true);
+    }
   };
 
   const handleUploadVideo = (formData: FormData) => {
@@ -457,7 +493,8 @@ const ChapterDetailPage: React.FC<ChapterDetailPageProps> = ({ params }) => {
 
               {videoLoading && <Loading />}
 
-              {!videoLoading && videoCount === 0 ? (
+              {!videoLoading &&
+              (!Array.isArray(videos) || videos.length === 0) ? (
                 <div className="bg-gray-50 rounded-lg p-8 text-center">
                   <Play size={48} className="mx-auto text-gray-400 mb-4" />
                   <h3 className="text-lg font-medium text-gray-900 mb-2">
@@ -478,17 +515,24 @@ const ChapterDetailPage: React.FC<ChapterDetailPageProps> = ({ params }) => {
               ) : (
                 !videoLoading && (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {[...videos]
-                      .sort((a, b) => a.orderIndex - b.orderIndex)
-                      .map((video) => (
-                        <VideoCard
-                          key={video.id}
-                          video={video}
-                          onEdit={handleEditVideo}
-                          onDelete={handleDeleteVideo}
-                          onPlay={handlePlayVideo}
-                        />
-                      ))}
+                    {Array.isArray(videos) && videos.length > 0 ? (
+                      [...videos]
+                        .sort((a, b) => a.orderIndex - b.orderIndex)
+                        .map((video) => (
+                          <VideoCard
+                            key={video.id}
+                            video={video}
+                            onEdit={handleEditVideo}
+                            onDelete={handleDeleteVideo}
+                            onPlay={handlePlayVideo}
+                            jobStatus={video.jobStatus}
+                          />
+                        ))
+                    ) : (
+                      <div className="col-span-full text-center text-gray-500">
+                        No videos found
+                      </div>
+                    )}
                   </div>
                 )
               )}
