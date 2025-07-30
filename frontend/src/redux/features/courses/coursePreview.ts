@@ -7,7 +7,7 @@ interface PreviewVideo {
   description: string;
   duration: number;
   vimeoId: string;
-  vimeoUrl: string;
+  embedUrl: string;
 }
 
 interface PreviewChapter {

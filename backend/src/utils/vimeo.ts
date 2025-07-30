@@ -230,12 +230,6 @@ export const uploadToVimeo = async (
             'wordimpactnetwork.org',
             'www.wordimpactnetwork.org',
             'admin.wordimpactnetwork.org',
-            'https://wordimpactnetwork.org',
-            'https://www.wordimpactnetwork.org',
-            'https://admin.wordimpactnetwork.org',
-            'http://wordimpactnetwork.org',
-            'http://www.wordimpactnetwork.org',
-            'http://admin.wordimpactnetwork.org',
           ],
         },
       },
@@ -497,6 +491,32 @@ export const extractVimeoVideoId = (url: string): string | null => {
  */
 export const generateVimeoEmbedUrl = (videoId: string): string => {
   return `https://player.vimeo.com/video/${videoId}`;
+};
+
+/**
+ * Generate embed URL with domain whitelist hash
+ * This function creates an embed URL that includes the hash needed for domain whitelisting
+ */
+export const generateWhitelistedEmbedUrl = async (videoId: string): Promise<string> => {
+  try {
+    const videoInfo = await getVimeoVideoInfo(videoId);
+
+    // Use the player_embed_url from Vimeo which includes the proper hash
+    if (videoInfo.player_embed_url) {
+      return videoInfo.player_embed_url;
+    }
+
+    // Fallback to basic embed URL
+    return `https://player.vimeo.com/video/${videoId}`;
+  } catch (error) {
+    logger.error('Error generating whitelisted embed URL', {
+      videoId,
+      error: error instanceof Error ? error.message : String(error),
+    });
+
+    // Fallback to basic embed URL
+    return `https://player.vimeo.com/video/${videoId}`;
+  }
 };
 
 /**

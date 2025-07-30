@@ -7,7 +7,7 @@ interface VideoData {
   description: string;
   duration: number;
   vimeoId: string;
-  vimeoUrl: string;
+  embedUrl: string;
 }
 
 interface ChapterData {

@@ -21,7 +21,6 @@ export interface AnnouncementFile {
 export interface AnnouncementVideo {
   id: string;
   vimeoId: string;
-  vimeoUrl: string;
   embedUrl: string;
   fileName: string;
   fileSize: number;
