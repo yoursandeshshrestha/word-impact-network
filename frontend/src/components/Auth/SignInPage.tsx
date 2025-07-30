@@ -15,7 +15,6 @@ const SignInPage: React.FC<SignInPageProps> = ({ isVisible }) => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Sign in submitted:", { email, password, rememberMe });
     // Add your authentication logic here
   };
 

@@ -2,7 +2,7 @@ import express, { Router } from 'express';
 import { authenticate, requireAdmin } from '../middlewares/auth.middleware';
 import { validateUpdateVideo } from '../validations/video.validation';
 import multer from 'multer';
-import { getVideoById, updateVideo, deleteVideo } from '../controllers/video.controller';
+import { getVideoById, updateVideo, deleteVideo, getVideoStatus, getVideosWithStatus } from '../controllers/video.controller';
 
 const router: Router = express.Router();
 
@@ -21,8 +21,10 @@ const upload = multer({
 router.get('/:id', getVideoById);
 
 // GET /api/v1/videos/:id/status - Get Video Processing Status
+router.get('/:id/status', getVideoStatus);
 
 // GET /api/v1/videos/chapter/:chapterId/status - Get All Videos with Status for Chapter
+router.get('/chapter/:chapterId/status', getVideosWithStatus);
 
 // PUT /api/v1/videos/:id - Update Video (Admin only)
 router.put(

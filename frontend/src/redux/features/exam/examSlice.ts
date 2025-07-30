@@ -114,16 +114,6 @@ export const fetchExamData = createAsyncThunk(
 
       const data = await response.json();
 
-      // Debug logging
-      console.log("Exam Data Response:", {
-        exam: data.data.exam,
-        progress: data.data.progress,
-        canStartExam: data.data.canStartExam,
-        videosCompleted: data.data.progress?.videosCompleted,
-        totalVideos: data.data.progress?.totalVideos,
-        allVideosCompleted: data.data.progress?.allVideosCompleted,
-      });
-
       return data.data;
     } catch (error) {
       const errorMessage =
@@ -260,16 +250,6 @@ const examSlice = createSlice({
         state.status = "succeeded";
         state.examData = action.payload;
         state.error = null;
-
-        // Debug logging
-        console.log("Exam State Updated:", {
-          exam: state.examData?.exam,
-          progress: state.examData?.progress,
-          canStartExam: state.examData?.canStartExam,
-          videosCompleted: state.examData?.progress?.videosCompleted,
-          totalVideos: state.examData?.progress?.totalVideos,
-          allVideosCompleted: state.examData?.progress?.allVideosCompleted,
-        });
       })
       .addCase(fetchExamData.rejected, (state, action) => {
         state.status = "failed";

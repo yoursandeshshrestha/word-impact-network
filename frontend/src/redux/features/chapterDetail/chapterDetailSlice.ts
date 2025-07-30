@@ -340,16 +340,6 @@ const chapterDetailSlice = createSlice({
             }
 
             // Log milestone achievements
-            if (action.payload.milestones?.justCompleted) {
-              console.log(
-                `🎉 Video "${state.chapterDetail.videos[videoIndex].title}" completed!`
-              );
-            }
-            if (action.payload.milestones?.chapterCompleted) {
-              console.log(
-                `🎊 Chapter "${state.chapterDetail.chapter.title}" completed!`
-              );
-            }
           }
         }
       })
@@ -394,10 +384,6 @@ const chapterDetailSlice = createSlice({
             if (nextVideoIndex !== -1) {
               state.chapterDetail.videos[nextVideoIndex].isLocked = false;
             }
-
-            console.log(
-              `🎉 Video "${state.chapterDetail.videos[videoIndex].title}" manually marked as completed!`
-            );
           }
         }
       })

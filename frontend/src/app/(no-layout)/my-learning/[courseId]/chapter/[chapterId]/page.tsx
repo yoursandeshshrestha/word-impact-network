@@ -475,9 +475,7 @@ const ChapterDetailPage: React.FC = () => {
       <Script
         src="https://player.vimeo.com/api/player.js"
         strategy="beforeInteractive"
-        onLoad={() => {
-          console.log("Vimeo Player SDK loaded");
-        }}
+        onLoad={() => {}}
       />
 
       <div className="px-5 pt-4">

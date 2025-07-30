@@ -8,6 +8,8 @@ export enum SocketEvents {
   NOTIFICATION = 'notification',
   NOTIFICATION_READ = 'notification_read',
   NOTIFICATION_READ_ALL = 'notification_read_all',
+  VIDEO_STATUS_UPDATE = 'video_status_update',
+  VIDEO_PROCESSING_PROGRESS = 'video_processing_progress',
 }
 
 export interface WebSocketMessage {

@@ -52,11 +52,7 @@ const ApplyPage: React.FC<ApplyPageProps> = ({ isVisible }) => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Form submitted:", {
-      formData,
-      certificateFile,
-      recommendationFile,
-    });
+
     // Add your form submission logic here
   };
 
