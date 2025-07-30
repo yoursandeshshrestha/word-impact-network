@@ -52,7 +52,6 @@ const Login = () => {
         formData.email,
         formData.password
       );
-      console.log("Login response:", response);
 
       if (!response.data.admin) {
         throw new Error("Invalid response from server");
