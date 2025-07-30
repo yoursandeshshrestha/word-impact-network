@@ -55,7 +55,17 @@ export async function getActiveNews() {
           },
         },
         images: true,
-        videos: true,
+        videos: {
+          select: {
+            id: true,
+            vimeoId: true,
+            embedUrl: true,
+            fileName: true,
+            fileSize: true,
+            duration: true,
+            createdAt: true,
+          },
+        },
       },
       orderBy: {
         createdAt: 'desc',
@@ -92,7 +102,17 @@ export async function getAllNews(page: number = 1, limit: number = 10) {
             },
           },
           images: true,
-          videos: true,
+          videos: {
+            select: {
+              id: true,
+              vimeoId: true,
+              embedUrl: true,
+              fileName: true,
+              fileSize: true,
+              duration: true,
+              createdAt: true,
+            },
+          },
         },
         orderBy: {
           createdAt: 'desc',
@@ -143,7 +163,17 @@ export async function getNewsById(id: string) {
           },
         },
         images: true,
-        videos: true,
+        videos: {
+          select: {
+            id: true,
+            vimeoId: true,
+            embedUrl: true,
+            fileName: true,
+            fileSize: true,
+            duration: true,
+            createdAt: true,
+          },
+        },
       },
     });
 
@@ -179,7 +209,17 @@ export async function getNewsBySlug(slug: string) {
           },
         },
         images: true,
-        videos: true,
+        videos: {
+          select: {
+            id: true,
+            vimeoId: true,
+            embedUrl: true,
+            fileName: true,
+            fileSize: true,
+            duration: true,
+            createdAt: true,
+          },
+        },
       },
     });
 
@@ -297,7 +337,17 @@ export async function createNews(
           },
         },
         images: true,
-        videos: true,
+        videos: {
+          select: {
+            id: true,
+            vimeoId: true,
+            embedUrl: true,
+            fileName: true,
+            fileSize: true,
+            duration: true,
+            createdAt: true,
+          },
+        },
       },
     });
 
@@ -453,7 +503,17 @@ export async function updateNews(
             },
           },
           images: true,
-          videos: true,
+          videos: {
+            select: {
+              id: true,
+              vimeoId: true,
+              embedUrl: true,
+              fileName: true,
+              fileSize: true,
+              duration: true,
+              createdAt: true,
+            },
+          },
         },
       });
 
@@ -535,7 +595,17 @@ export async function toggleNewsStatus(id: string) {
           },
         },
         images: true,
-        videos: true,
+        videos: {
+          select: {
+            id: true,
+            vimeoId: true,
+            embedUrl: true,
+            fileName: true,
+            fileSize: true,
+            duration: true,
+            createdAt: true,
+          },
+        },
       },
     });
 
