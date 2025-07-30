@@ -7,7 +7,11 @@ import {
   deleteChapter,
   reorderChapterController,
 } from '@/controllers/chapter.controller';
-import { addVideoToChapter, getVideosByChapterId, addVideoToChapterWithVimeo } from '@/controllers/video.controller';
+import {
+  addVideoToChapter,
+  getVideosByChapterId,
+  addVideoToChapterWithVimeo,
+} from '@/controllers/video.controller';
 import { validateCreateVideo, validateCreateVideoWithVimeo } from '@/validations/video.validation';
 import { upload } from '../utils/upload';
 
