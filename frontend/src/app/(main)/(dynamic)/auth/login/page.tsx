@@ -6,6 +6,9 @@ import { useLoading } from "@/common/contexts/LoadingContext";
 import { toast } from "sonner";
 import Link from "next/link";
 import { login, isAuthenticated, getCurrentUser } from "@/common/services/auth";
+import PasswordResetModal from "@/components/common/PasswordResetModal";
+import { usePasswordChange } from "@/hooks/usePasswordChange";
+import type { User } from "@/lib/api-client";
 
 const LoginPage = () => {
   const [formData, setFormData] = useState({
@@ -14,7 +17,11 @@ const LoginPage = () => {
   });
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
+  const [showPasswordResetModal, setShowPasswordResetModal] = useState(false);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
   const { setLoading } = useLoading();
+  const { changePassword, isLoading: isPasswordChangeLoading } =
+    usePasswordChange();
 
   // Check if user is already authenticated on component mount
   useEffect(() => {
@@ -48,6 +55,28 @@ const LoginPage = () => {
     setShowPassword(!showPassword);
   };
 
+  const handlePasswordChange = async (
+    currentPassword: string,
+    newPassword: string
+  ) => {
+    try {
+      await changePassword(currentPassword, newPassword);
+      setShowPasswordResetModal(false);
+
+      // Redirect after successful password change
+      let redirectPath = "/my-learning";
+      if (currentUser && currentUser.role === "ADMIN") {
+        redirectPath = "/admin/dashboard";
+      }
+
+      setTimeout(() => {
+        window.location.href = redirectPath;
+      }, 100);
+    } catch {
+      // Error is handled by the hook
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -57,10 +86,19 @@ const LoginPage = () => {
     const result = await login(formData.email, formData.password);
 
     if (result.success) {
+      const user = result.user;
+
+      // Check if user needs to change password (first-time login)
+      if (user && user.hasChangedPassword === false) {
+        setCurrentUser(user);
+        setShowPasswordResetModal(true);
+        setLoading(false);
+        return;
+      }
+
       toast.success("Logged in successfully!");
 
       // Redirect based on user role if needed
-      const user = result.user;
       let redirectPath = "/my-learning";
 
       if (user && user.role === "ADMIN") {
@@ -189,6 +227,13 @@ const LoginPage = () => {
           </form>
         </div>
       </main>
+
+      <PasswordResetModal
+        isOpen={showPasswordResetModal}
+        onClose={() => setShowPasswordResetModal(false)}
+        onSubmit={handlePasswordChange}
+        isLoading={isPasswordChangeLoading}
+      />
     </div>
   );
 };

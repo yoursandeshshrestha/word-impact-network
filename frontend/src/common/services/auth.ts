@@ -1,6 +1,7 @@
 "use client";
 
-import { apiClient, type User, type AuthResult } from "@/lib/api-client";
+import { apiClient, type AuthResult } from "@/lib/api-client";
+import type { User } from "@/lib/api-client";
 import Cookies from "js-cookie";
 
 // Re-export types for backward compatibility
