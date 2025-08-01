@@ -17,6 +17,7 @@ import {
   updateVideoProgress,
   requestPasswordReset,
   completePasswordReset,
+  changeStudentPassword,
 } from '../services/student.service';
 import { sendError, sendSuccess } from '../utils/responseHandler';
 import { catchAsync } from '../utils/catchAsync';
@@ -155,6 +156,7 @@ export const loginStudentController = catchAsync(async (req: Request, res: Respo
       fullName: student.fullName,
       role: student.role,
       applicationStatus: student.applicationStatus,
+      hasChangedPassword: student.hasChangedPassword,
     },
     token,
   });
@@ -874,6 +876,39 @@ export const completePasswordResetController = catchAsync(async (req: Request, r
 
   sendSuccess(res, 200, 'Password reset successful', {
     message: 'Your password has been updated successfully',
+  });
+});
+
+// Change password for student
+export const changePasswordController = catchAsync(async (req: Request, res: Response) => {
+  const userId = req.user?.userId;
+  const { currentPassword, newPassword } = req.body;
+
+  if (!userId) {
+    throw new AppError('User ID is required', 400, ErrorTypes.VALIDATION);
+  }
+
+  if (!currentPassword || !newPassword) {
+    throw new AppError(
+      'Current password and new password are required',
+      400,
+      ErrorTypes.VALIDATION,
+    );
+  }
+
+  // Validate password requirements
+  if (newPassword.length < 8) {
+    throw new AppError(
+      'New password must be at least 8 characters long',
+      400,
+      ErrorTypes.VALIDATION,
+    );
+  }
+
+  await changeStudentPassword(userId, currentPassword, newPassword);
+
+  sendSuccess(res, 200, 'Password changed successfully', {
+    message: 'Your password has been changed successfully',
   });
 });
 

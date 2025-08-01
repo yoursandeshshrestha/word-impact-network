@@ -48,6 +48,7 @@ model User {
   email             String           @unique
   password          String
   role              UserRole
+  hasChangedPassword Boolean          @default(false) // Track if user has changed password from default
   student           Student?
   admin             Admin?
   createdAt         DateTime         @default(now())
