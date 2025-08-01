@@ -1,7 +1,7 @@
 import React from "react";
 import Link from "next/link";
 import Image from "next/image";
-import aboutImg from "@/assets/graduation-image-two.jpg";
+import { ArrowRight } from "lucide-react";
 
 const About: React.FC = () => {
   return (
@@ -43,31 +43,51 @@ const About: React.FC = () => {
                 className="inline-flex items-center gap-2 bg-gray-800 hover:bg-gray-700 text-white px-6 py-3 rounded-md text-base font-semibold transition-colors shadow-sm"
               >
                 Learn More
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-5 w-5"
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z"
-                    clipRule="evenodd"
-                  />
-                </svg>
+                <ArrowRight className="h-5 w-5" />
               </Link>
             </div>
           </div>
 
-          {/* Image Column */}
+          {/* Image Grid Column */}
           <div className="w-full lg:w-1/2 mt-8 lg:mt-0">
-            <Image
-              src={aboutImg}
-              alt="WIN ministry and training"
-              width={600}
-              height={600}
-              className="w-full h-[600px] rounded-lg shadow-lg object-cover"
-            />
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-4">
+                <div className="relative h-48 rounded-lg overflow-hidden shadow-lg">
+                  <Image
+                    src="/Pictures/one.jpg"
+                    alt="WIN ministry activities"
+                    fill
+                    className="object-cover"
+                  />
+                </div>
+                <div className="relative h-32 rounded-lg overflow-hidden shadow-lg">
+                  <Image
+                    src="/Pictures/two.png"
+                    alt="Community engagement"
+                    fill
+                    className="object-cover"
+                  />
+                </div>
+              </div>
+              <div className="space-y-4 pt-8">
+                <div className="relative h-32 rounded-lg overflow-hidden shadow-lg">
+                  <Image
+                    src="/Pictures/three.png"
+                    alt="Training and education"
+                    fill
+                    className="object-cover"
+                  />
+                </div>
+                <div className="relative h-48 rounded-lg overflow-hidden shadow-lg">
+                  <Image
+                    src="/Pictures/four.png"
+                    alt="WIN ministry and training"
+                    fill
+                    className="object-cover"
+                  />
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
