@@ -1,5 +1,11 @@
 import React from "react";
-import { BookOpen, Users, Presentation, GraduationCap } from "lucide-react";
+import {
+  BookOpen,
+  Users,
+  Presentation,
+  GraduationCap,
+  ArrowRight,
+} from "lucide-react";
 
 const AcademicProgram: React.FC = () => {
   return (
@@ -74,7 +80,7 @@ const AcademicProgram: React.FC = () => {
         </div>
 
         {/* Program Highlights */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
           <div className="bg-white p-6 rounded-lg shadow-md text-center">
             <div className="bg-gray-100 p-4 rounded-full w-fit mx-auto mb-4">
               <BookOpen size={32} className="text-gray-600" />
@@ -122,18 +128,7 @@ const AcademicProgram: React.FC = () => {
             className="inline-flex items-center gap-2 bg-gray-800 hover:bg-gray-700 text-white px-8 py-4 rounded-lg text-lg font-semibold transition-colors shadow-lg"
           >
             Explore All Programs
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-5 w-5"
-              viewBox="0 0 20 20"
-              fill="currentColor"
-            >
-              <path
-                fillRule="evenodd"
-                d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z"
-                clipRule="evenodd"
-              />
-            </svg>
+            <ArrowRight className="h-5 w-5" />
           </a>
         </div>
       </div>
