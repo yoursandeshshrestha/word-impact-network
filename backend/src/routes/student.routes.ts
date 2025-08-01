@@ -19,6 +19,7 @@ import {
   updateStudentVideoProgress,
   requestPasswordResetController,
   completePasswordResetController,
+  changePasswordController,
   refreshStudentToken,
 } from '../controllers/student.controller';
 import {
@@ -215,5 +216,8 @@ router.get(
 // Password reset routes
 router.post('/request-password-reset', requestPasswordResetController);
 router.post('/complete-password-reset', completePasswordResetController);
+
+// Change password route
+router.post('/change-password', authenticateStudent, validateStudent, changePasswordController);
 
 export default router;
