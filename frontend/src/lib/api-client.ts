@@ -7,6 +7,7 @@ export interface User {
   fullName: string;
   role: string;
   applicationStatus: string;
+  hasChangedPassword?: boolean;
   profilePictureUrl?: string;
 }
 
@@ -366,6 +367,13 @@ class ApiClient {
 
   async getNewsBySlug(slug: string) {
     return this.request<News>(`/news/slug/${slug}`);
+  }
+
+  async changePassword(currentPassword: string, newPassword: string) {
+    return this.request('/student/change-password', {
+      method: 'POST',
+      body: JSON.stringify({ currentPassword, newPassword }),
+    });
   }
 }
 
