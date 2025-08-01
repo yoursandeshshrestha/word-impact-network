@@ -10,6 +10,7 @@ import {
   ChevronRight,
   MessageCircle,
   Megaphone,
+  Home,
 } from "lucide-react";
 import { useAnnouncements } from "@/hooks/useAnnouncements";
 import { formatDistanceToNow } from "date-fns";
@@ -215,10 +216,24 @@ const Sidebar: React.FC = () => {
           </div>
         </nav>
 
-        {/* Bottom Section - Copyright */}
-        <div className="mt-auto p-4 border-t border-white/10">
-          <div className="text-center text-xs text-white/50">
-            © 2025 Word Impact Network
+        {/* Bottom Section - Go Home Button and Copyright */}
+        <div className="mt-auto border-t border-white/10">
+          {/* Go Home Button */}
+          <div className="p-4">
+            <Link
+              href="/"
+              className="flex items-center justify-center gap-2 w-full p-3 text-sm font-medium rounded-xl transition-all duration-200 bg-white/5 hover:bg-white/10 text-white/70 hover:text-white border border-white/10 hover:border-white/20"
+            >
+              <Home className="w-5 h-5" />
+              <span>Go Home</span>
+            </Link>
+          </div>
+
+          {/* Copyright */}
+          <div className="p-4 border-t border-white/10">
+            <div className="text-center text-xs text-white/50">
+              © 2025 Word Impact Network
+            </div>
           </div>
         </div>
       </aside>
