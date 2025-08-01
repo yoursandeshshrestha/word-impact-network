@@ -173,6 +173,7 @@ export async function loginStudent(email: string, password: string) {
       fullName: user.student.fullName,
       role: user.role,
       applicationStatus: user.student.applicationStatus,
+      hasChangedPassword: user.hasChangedPassword,
     };
   } catch (error) {
     logger.error('Error in loginStudent', {
@@ -3073,12 +3074,71 @@ export async function completePasswordReset(
     // Clean up the reset request from Redis
     await redisClient.del(`student_password_reset:${resetId}`);
 
+    // Update hasChangedPassword field to true
+    await prisma.user.update({
+      where: { id: resetData.userId },
+      data: { hasChangedPassword: true },
+    });
+
     logger.info('Password reset completed successfully', { userId: resetData.userId });
 
     return { success: true };
   } catch (error) {
     logger.error('Error in completePasswordReset', {
       resetId,
+      error: error instanceof Error ? error.message : String(error),
+    });
+    throw error;
+  }
+}
+
+// Change password for student
+export async function changeStudentPassword(
+  userId: string,
+  currentPassword: string,
+  newPassword: string,
+) {
+  try {
+    logger.info('Student password change attempt', { userId });
+
+    // Find the user
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      include: {
+        student: true,
+      },
+    });
+
+    if (!user || user.role !== UserRole.STUDENT || !user.student) {
+      logger.warn('Password change failed - user not found or not a student', { userId });
+      throw new AppError('User not found', 404, ErrorTypes.NOT_FOUND);
+    }
+
+    // Verify current password
+    const isCurrentPasswordValid = await bcrypt.compare(currentPassword, user.password);
+    if (!isCurrentPasswordValid) {
+      logger.warn('Password change failed - invalid current password', { userId });
+      throw new AppError('Invalid current password', 401, ErrorTypes.AUTHENTICATION);
+    }
+
+    // Hash the new password
+    const newPasswordHash = await bcrypt.hash(newPassword, 12);
+
+    // Update password and set hasChangedPassword to true
+    await prisma.user.update({
+      where: { id: userId },
+      data: {
+        password: newPasswordHash,
+        hasChangedPassword: true,
+      },
+    });
+
+    logger.info('Student password changed successfully', { userId });
+
+    return { success: true };
+  } catch (error) {
+    logger.error('Error in changeStudentPassword', {
+      userId,
       error: error instanceof Error ? error.message : String(error),
     });
     throw error;
